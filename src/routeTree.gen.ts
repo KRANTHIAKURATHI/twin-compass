@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as ShellIndexRouteImport } from './routes/_shell.index'
 import { Route as ShellDigitalTwinsRouteImport } from './routes/_shell.digital-twins'
+import { Route as ShellExplainabilityRouteImport } from './routes/_shell.explainability'
+import { Route as ShellPredictionsRouteImport } from './routes/_shell.predictions'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
 import { Route as ShellPatientsIndexRouteImport } from './routes/_shell.patients.index'
 import { Route as ShellPatientsPatientIdRouteImport } from './routes/_shell.patients.$patientId'
@@ -28,6 +30,16 @@ const ShellIndexRoute = ShellIndexRouteImport.update({
 const ShellDigitalTwinsRoute = ShellDigitalTwinsRouteImport.update({
   id: '/digital-twins',
   path: '/digital-twins',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellExplainabilityRoute = ShellExplainabilityRouteImport.update({
+  id: '/explainability',
+  path: '/explainability',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellPredictionsRoute = ShellPredictionsRouteImport.update({
+  id: '/predictions',
+  path: '/predictions',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellSimulatorRoute = ShellSimulatorRouteImport.update({
@@ -49,12 +61,16 @@ const ShellPatientsPatientIdRoute = ShellPatientsPatientIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof ShellIndexRoute
   '/digital-twins': typeof ShellDigitalTwinsRoute
+  '/explainability': typeof ShellExplainabilityRoute
+  '/predictions': typeof ShellPredictionsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRoute
   '/patients/': typeof ShellPatientsIndexRoute
 }
 export interface FileRoutesByTo {
   '/digital-twins': typeof ShellDigitalTwinsRoute
+  '/explainability': typeof ShellExplainabilityRoute
+  '/predictions': typeof ShellPredictionsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/': typeof ShellIndexRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRoute
@@ -64,6 +80,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_shell': typeof ShellRouteWithChildren
   '/_shell/digital-twins': typeof ShellDigitalTwinsRoute
+  '/_shell/explainability': typeof ShellExplainabilityRoute
+  '/_shell/predictions': typeof ShellPredictionsRoute
   '/_shell/simulator': typeof ShellSimulatorRoute
   '/_shell/': typeof ShellIndexRoute
   '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRoute
@@ -74,16 +92,26 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/digital-twins'
+    | '/explainability'
+    | '/predictions'
     | '/simulator'
     | '/patients/$patientId'
     | '/patients/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/digital-twins' | '/simulator' | '/' | '/patients/$patientId' | '/patients'
+    | '/digital-twins'
+    | '/explainability'
+    | '/predictions'
+    | '/simulator'
+    | '/'
+    | '/patients/$patientId'
+    | '/patients'
   id:
     | '__root__'
     | '/_shell'
     | '/_shell/digital-twins'
+    | '/_shell/explainability'
+    | '/_shell/predictions'
     | '/_shell/simulator'
     | '/_shell/'
     | '/_shell/patients/$patientId'
@@ -117,6 +145,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellDigitalTwinsRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/explainability': {
+      id: '/_shell/explainability'
+      path: '/explainability'
+      fullPath: '/explainability'
+      preLoaderRoute: typeof ShellExplainabilityRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/predictions': {
+      id: '/_shell/predictions'
+      path: '/predictions'
+      fullPath: '/predictions'
+      preLoaderRoute: typeof ShellPredictionsRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/simulator': {
       id: '/_shell/simulator'
       path: '/simulator'
@@ -143,6 +185,8 @@ declare module '@tanstack/react-router' {
 
 interface ShellRouteChildren {
   ShellDigitalTwinsRoute: typeof ShellDigitalTwinsRoute
+  ShellExplainabilityRoute: typeof ShellExplainabilityRoute
+  ShellPredictionsRoute: typeof ShellPredictionsRoute
   ShellSimulatorRoute: typeof ShellSimulatorRoute
   ShellIndexRoute: typeof ShellIndexRoute
   ShellPatientsPatientIdRoute: typeof ShellPatientsPatientIdRoute
@@ -151,6 +195,8 @@ interface ShellRouteChildren {
 
 const ShellRouteChildren: ShellRouteChildren = {
   ShellDigitalTwinsRoute: ShellDigitalTwinsRoute,
+  ShellExplainabilityRoute: ShellExplainabilityRoute,
+  ShellPredictionsRoute: ShellPredictionsRoute,
   ShellSimulatorRoute: ShellSimulatorRoute,
   ShellIndexRoute: ShellIndexRoute,
   ShellPatientsPatientIdRoute: ShellPatientsPatientIdRoute,
