@@ -33,6 +33,7 @@ import { Route as ShellSearchRouteImport } from './routes/_shell.search'
 import { Route as ShellSettingsRouteImport } from './routes/_shell.settings'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
 import { Route as ShellTimelineRouteImport } from './routes/_shell.timeline'
+import { Route as AdminAdminIndexRouteImport } from './routes/_admin.admin.index'
 import { Route as AdminAdminAuditRouteImport } from './routes/_admin.admin.audit'
 import { Route as AdminAdminDepartmentsRouteImport } from './routes/_admin.admin.departments'
 import { Route as AdminAdminDoctorsRouteImport } from './routes/_admin.admin.doctors'
@@ -171,6 +172,11 @@ const ShellTimelineRoute = ShellTimelineRouteImport.update({
   id: '/timeline',
   path: '/timeline',
   getParentRoute: () => ShellRoute,
+} as any)
+const AdminAdminIndexRoute = AdminAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminAdminAuditRoute = AdminAdminAuditRouteImport.update({
   id: '/admin/audit',
@@ -330,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/research/versions': typeof ResearchResearchVersionsRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
   '/patients/new': typeof ShellPatientsNewRoute
+  '/admin/': typeof AdminAdminIndexRoute
   '/portal/': typeof PatientPortalIndexRoute
   '/patients/': typeof ShellPatientsIndexRoute
   '/patients/$patientId/edit': typeof ShellPatientsPatientIdEditRoute
@@ -374,6 +381,7 @@ export interface FileRoutesByTo {
   '/research/versions': typeof ResearchResearchVersionsRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
   '/patients/new': typeof ShellPatientsNewRoute
+  '/admin': typeof AdminAdminIndexRoute
   '/portal': typeof PatientPortalIndexRoute
   '/patients': typeof ShellPatientsIndexRoute
   '/patients/$patientId/edit': typeof ShellPatientsPatientIdEditRoute
@@ -423,6 +431,7 @@ export interface FileRoutesById {
   '/_research/research/versions': typeof ResearchResearchVersionsRoute
   '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
   '/_shell/patients/new': typeof ShellPatientsNewRoute
+  '/_admin/admin/': typeof AdminAdminIndexRoute
   '/_patient/portal/': typeof PatientPortalIndexRoute
   '/_shell/patients/': typeof ShellPatientsIndexRoute
   '/_shell/patients/$patientId/edit': typeof ShellPatientsPatientIdEditRoute
@@ -469,6 +478,7 @@ export interface FileRouteTypes {
     | '/research/versions'
     | '/patients/$patientId'
     | '/patients/new'
+    | '/admin/'
     | '/portal/'
     | '/patients/'
     | '/patients/$patientId/edit'
@@ -513,6 +523,7 @@ export interface FileRouteTypes {
     | '/research/versions'
     | '/patients/$patientId'
     | '/patients/new'
+    | '/admin'
     | '/portal'
     | '/patients'
     | '/patients/$patientId/edit'
@@ -561,6 +572,7 @@ export interface FileRouteTypes {
     | '/_research/research/versions'
     | '/_shell/patients/$patientId'
     | '/_shell/patients/new'
+    | '/_admin/admin/'
     | '/_patient/portal/'
     | '/_shell/patients/'
     | '/_shell/patients/$patientId/edit'
@@ -748,6 +760,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellTimelineRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_admin/admin/': {
+      id: '/_admin/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminAdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/admin/audit': {
       id: '/_admin/admin/audit'
       path: '/admin/audit'
@@ -912,6 +931,7 @@ interface AdminRouteChildren {
   AdminAdminHospitalsRoute: typeof AdminAdminHospitalsRoute
   AdminAdminPermissionsRoute: typeof AdminAdminPermissionsRoute
   AdminAdminUsersRoute: typeof AdminAdminUsersRoute
+  AdminAdminIndexRoute: typeof AdminAdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -921,6 +941,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAdminHospitalsRoute: AdminAdminHospitalsRoute,
   AdminAdminPermissionsRoute: AdminAdminPermissionsRoute,
   AdminAdminUsersRoute: AdminAdminUsersRoute,
+  AdminAdminIndexRoute: AdminAdminIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
