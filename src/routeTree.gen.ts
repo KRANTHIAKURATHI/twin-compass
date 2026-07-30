@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as PatientRouteImport } from './routes/_patient'
 import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -31,6 +32,7 @@ import { Route as ShellSearchRouteImport } from './routes/_shell.search'
 import { Route as ShellSettingsRouteImport } from './routes/_shell.settings'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
 import { Route as ShellTimelineRouteImport } from './routes/_shell.timeline'
+import { Route as AdminAdminHospitalsRouteImport } from './routes/_admin.admin.hospitals'
 import { Route as PatientPortalIndexRouteImport } from './routes/_patient.portal.index'
 import { Route as PatientPortalAppointmentsRouteImport } from './routes/_patient.portal.appointments'
 import { Route as PatientPortalNotificationsRouteImport } from './routes/_patient.portal.notifications'
@@ -43,6 +45,10 @@ import { Route as ShellPatientsPatientIdRouteImport } from './routes/_shell.pati
 import { Route as ShellPatientsNewRouteImport } from './routes/_shell.patients.new'
 import { Route as ShellPatientsPatientIdEditRouteImport } from './routes/_shell.patients.$patientId.edit'
 
+const AdminRoute = AdminRouteImport.update({
+  id: '/_admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PatientRoute = PatientRouteImport.update({
   id: '/_patient',
   getParentRoute: () => rootRouteImport,
@@ -151,6 +157,11 @@ const ShellTimelineRoute = ShellTimelineRouteImport.update({
   path: '/timeline',
   getParentRoute: () => ShellRoute,
 } as any)
+const AdminAdminHospitalsRoute = AdminAdminHospitalsRouteImport.update({
+  id: '/admin/hospitals',
+  path: '/admin/hospitals',
+  getParentRoute: () => AdminRoute,
+} as any)
 const PatientPortalIndexRoute = PatientPortalIndexRouteImport.update({
   id: '/portal/',
   path: '/portal/',
@@ -231,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/timeline': typeof ShellTimelineRoute
+  '/admin/hospitals': typeof AdminAdminHospitalsRoute
   '/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/portal/notifications': typeof PatientPortalNotificationsRoute
   '/portal/profile': typeof PatientPortalProfileRoute
@@ -264,6 +276,7 @@ export interface FileRoutesByTo {
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/timeline': typeof ShellTimelineRoute
+  '/admin/hospitals': typeof AdminAdminHospitalsRoute
   '/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/portal/notifications': typeof PatientPortalNotificationsRoute
   '/portal/profile': typeof PatientPortalProfileRoute
@@ -278,6 +291,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_admin': typeof AdminRouteWithChildren
   '/_patient': typeof PatientRouteWithChildren
   '/_shell': typeof ShellRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
@@ -300,6 +314,7 @@ export interface FileRoutesById {
   '/_shell/simulator': typeof ShellSimulatorRoute
   '/_shell/timeline': typeof ShellTimelineRoute
   '/_shell/': typeof ShellIndexRoute
+  '/_admin/admin/hospitals': typeof AdminAdminHospitalsRoute
   '/_patient/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/_patient/portal/notifications': typeof PatientPortalNotificationsRoute
   '/_patient/portal/profile': typeof PatientPortalProfileRoute
@@ -335,6 +350,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/simulator'
     | '/timeline'
+    | '/admin/hospitals'
     | '/portal/appointments'
     | '/portal/notifications'
     | '/portal/profile'
@@ -368,6 +384,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/simulator'
     | '/timeline'
+    | '/admin/hospitals'
     | '/portal/appointments'
     | '/portal/notifications'
     | '/portal/profile'
@@ -381,6 +398,7 @@ export interface FileRouteTypes {
     | '/patients/$patientId/edit'
   id:
     | '__root__'
+    | '/_admin'
     | '/_patient'
     | '/_shell'
     | '/forgot-password'
@@ -403,6 +421,7 @@ export interface FileRouteTypes {
     | '/_shell/simulator'
     | '/_shell/timeline'
     | '/_shell/'
+    | '/_admin/admin/hospitals'
     | '/_patient/portal/appointments'
     | '/_patient/portal/notifications'
     | '/_patient/portal/profile'
@@ -417,6 +436,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  AdminRoute: typeof AdminRouteWithChildren
   PatientRoute: typeof PatientRouteWithChildren
   ShellRoute: typeof ShellRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -428,6 +448,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_admin': {
+      id: '/_admin'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_patient': {
       id: '/_patient'
       path: ''
@@ -582,6 +609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellTimelineRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_admin/admin/hospitals': {
+      id: '/_admin/admin/hospitals'
+      path: '/admin/hospitals'
+      fullPath: '/admin/hospitals'
+      preLoaderRoute: typeof AdminAdminHospitalsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_patient/portal/': {
       id: '/_patient/portal/'
       path: '/portal'
@@ -661,6 +695,16 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AdminRouteChildren {
+  AdminAdminHospitalsRoute: typeof AdminAdminHospitalsRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAdminHospitalsRoute: AdminAdminHospitalsRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface PatientRouteChildren {
   PatientPortalAppointmentsRoute: typeof PatientPortalAppointmentsRoute
@@ -744,6 +788,7 @@ const ShellRouteChildren: ShellRouteChildren = {
 const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  AdminRoute: AdminRouteWithChildren,
   PatientRoute: PatientRouteWithChildren,
   ShellRoute: ShellRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
