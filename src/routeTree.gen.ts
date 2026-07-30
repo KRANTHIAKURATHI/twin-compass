@@ -26,6 +26,7 @@ import { Route as ShellOcrRouteImport } from './routes/_shell.ocr'
 import { Route as ShellPredictionsRouteImport } from './routes/_shell.predictions'
 import { Route as ShellProfileRouteImport } from './routes/_shell.profile'
 import { Route as ShellReportsRouteImport } from './routes/_shell.reports'
+import { Route as ShellSearchRouteImport } from './routes/_shell.search'
 import { Route as ShellSettingsRouteImport } from './routes/_shell.settings'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
 import { Route as ShellTimelineRouteImport } from './routes/_shell.timeline'
@@ -124,6 +125,11 @@ const ShellReportsRoute = ShellReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellSearchRoute = ShellSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellSettingsRoute = ShellSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -214,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/predictions': typeof ShellPredictionsRoute
   '/profile': typeof ShellProfileRoute
   '/reports': typeof ShellReportsRoute
+  '/search': typeof ShellSearchRoute
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/timeline': typeof ShellTimelineRoute
@@ -245,6 +252,7 @@ export interface FileRoutesByTo {
   '/predictions': typeof ShellPredictionsRoute
   '/profile': typeof ShellProfileRoute
   '/reports': typeof ShellReportsRoute
+  '/search': typeof ShellSearchRoute
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/timeline': typeof ShellTimelineRoute
@@ -278,6 +286,7 @@ export interface FileRoutesById {
   '/_shell/predictions': typeof ShellPredictionsRoute
   '/_shell/profile': typeof ShellProfileRoute
   '/_shell/reports': typeof ShellReportsRoute
+  '/_shell/search': typeof ShellSearchRoute
   '/_shell/settings': typeof ShellSettingsRoute
   '/_shell/simulator': typeof ShellSimulatorRoute
   '/_shell/timeline': typeof ShellTimelineRoute
@@ -312,6 +321,7 @@ export interface FileRouteTypes {
     | '/predictions'
     | '/profile'
     | '/reports'
+    | '/search'
     | '/settings'
     | '/simulator'
     | '/timeline'
@@ -343,6 +353,7 @@ export interface FileRouteTypes {
     | '/predictions'
     | '/profile'
     | '/reports'
+    | '/search'
     | '/settings'
     | '/simulator'
     | '/timeline'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/_shell/predictions'
     | '/_shell/profile'
     | '/_shell/reports'
+    | '/_shell/search'
     | '/_shell/settings'
     | '/_shell/simulator'
     | '/_shell/timeline'
@@ -521,6 +533,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ShellReportsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/search': {
+      id: '/_shell/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof ShellSearchRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/settings': {
@@ -671,6 +690,7 @@ interface ShellRouteChildren {
   ShellPredictionsRoute: typeof ShellPredictionsRoute
   ShellProfileRoute: typeof ShellProfileRoute
   ShellReportsRoute: typeof ShellReportsRoute
+  ShellSearchRoute: typeof ShellSearchRoute
   ShellSettingsRoute: typeof ShellSettingsRoute
   ShellSimulatorRoute: typeof ShellSimulatorRoute
   ShellTimelineRoute: typeof ShellTimelineRoute
@@ -690,6 +710,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellPredictionsRoute: ShellPredictionsRoute,
   ShellProfileRoute: ShellProfileRoute,
   ShellReportsRoute: ShellReportsRoute,
+  ShellSearchRoute: ShellSearchRoute,
   ShellSettingsRoute: ShellSettingsRoute,
   ShellSimulatorRoute: ShellSimulatorRoute,
   ShellTimelineRoute: ShellTimelineRoute,
