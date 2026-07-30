@@ -115,7 +115,7 @@ function DigitalTwinsPage() {
                   {twin.age} years · {twin.hospital}
                 </p>
 
-                <dl className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <dl className="mt-5 grid grid-cols-2 gap-4 xl:grid-cols-4">
                   {[
                     { icon: Ruler, label: "Tumor size", value: `${twin.tumorSizeMm} mm` },
                     { icon: Syringe, label: "Treatment", value: twin.currentTreatment },
@@ -125,7 +125,7 @@ function DigitalTwinsPage() {
                     <div key={m.label} className="rounded-xl border border-border p-3">
                       <m.icon className="size-4 text-primary" aria-hidden="true" />
                       <dt className="mt-2 text-xs text-muted-foreground">{m.label}</dt>
-                      <dd className="text-sm font-medium leading-snug">{m.value}</dd>
+                      <dd className="text-sm font-medium leading-snug break-words">{m.value}</dd>
                     </div>
                   ))}
                 </dl>
