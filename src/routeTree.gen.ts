@@ -22,6 +22,7 @@ import { Route as ShellDigitalTwinsRouteImport } from './routes/_shell.digital-t
 import { Route as ShellDocumentsRouteImport } from './routes/_shell.documents'
 import { Route as ShellExplainabilityRouteImport } from './routes/_shell.explainability'
 import { Route as ShellNotificationsRouteImport } from './routes/_shell.notifications'
+import { Route as ShellOcrRouteImport } from './routes/_shell.ocr'
 import { Route as ShellPredictionsRouteImport } from './routes/_shell.predictions'
 import { Route as ShellProfileRouteImport } from './routes/_shell.profile'
 import { Route as ShellReportsRouteImport } from './routes/_shell.reports'
@@ -100,6 +101,11 @@ const ShellExplainabilityRoute = ShellExplainabilityRouteImport.update({
 const ShellNotificationsRoute = ShellNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellOcrRoute = ShellOcrRouteImport.update({
+  id: '/ocr',
+  path: '/ocr',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellPredictionsRoute = ShellPredictionsRouteImport.update({
@@ -198,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof ShellDocumentsRoute
   '/explainability': typeof ShellExplainabilityRoute
   '/notifications': typeof ShellNotificationsRoute
+  '/ocr': typeof ShellOcrRoute
   '/predictions': typeof ShellPredictionsRoute
   '/profile': typeof ShellProfileRoute
   '/reports': typeof ShellReportsRoute
@@ -227,6 +234,7 @@ export interface FileRoutesByTo {
   '/documents': typeof ShellDocumentsRoute
   '/explainability': typeof ShellExplainabilityRoute
   '/notifications': typeof ShellNotificationsRoute
+  '/ocr': typeof ShellOcrRoute
   '/predictions': typeof ShellPredictionsRoute
   '/profile': typeof ShellProfileRoute
   '/reports': typeof ShellReportsRoute
@@ -258,6 +266,7 @@ export interface FileRoutesById {
   '/_shell/documents': typeof ShellDocumentsRoute
   '/_shell/explainability': typeof ShellExplainabilityRoute
   '/_shell/notifications': typeof ShellNotificationsRoute
+  '/_shell/ocr': typeof ShellOcrRoute
   '/_shell/predictions': typeof ShellPredictionsRoute
   '/_shell/profile': typeof ShellProfileRoute
   '/_shell/reports': typeof ShellReportsRoute
@@ -290,6 +299,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/explainability'
     | '/notifications'
+    | '/ocr'
     | '/predictions'
     | '/profile'
     | '/reports'
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/explainability'
     | '/notifications'
+    | '/ocr'
     | '/predictions'
     | '/profile'
     | '/reports'
@@ -349,6 +360,7 @@ export interface FileRouteTypes {
     | '/_shell/documents'
     | '/_shell/explainability'
     | '/_shell/notifications'
+    | '/_shell/ocr'
     | '/_shell/predictions'
     | '/_shell/profile'
     | '/_shell/reports'
@@ -469,6 +481,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof ShellNotificationsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/ocr': {
+      id: '/_shell/ocr'
+      path: '/ocr'
+      fullPath: '/ocr'
+      preLoaderRoute: typeof ShellOcrRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/predictions': {
@@ -629,6 +648,7 @@ interface ShellRouteChildren {
   ShellDocumentsRoute: typeof ShellDocumentsRoute
   ShellExplainabilityRoute: typeof ShellExplainabilityRoute
   ShellNotificationsRoute: typeof ShellNotificationsRoute
+  ShellOcrRoute: typeof ShellOcrRoute
   ShellPredictionsRoute: typeof ShellPredictionsRoute
   ShellProfileRoute: typeof ShellProfileRoute
   ShellReportsRoute: typeof ShellReportsRoute
@@ -646,6 +666,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellDocumentsRoute: ShellDocumentsRoute,
   ShellExplainabilityRoute: ShellExplainabilityRoute,
   ShellNotificationsRoute: ShellNotificationsRoute,
+  ShellOcrRoute: ShellOcrRoute,
   ShellPredictionsRoute: ShellPredictionsRoute,
   ShellProfileRoute: ShellProfileRoute,
   ShellReportsRoute: ShellReportsRoute,
