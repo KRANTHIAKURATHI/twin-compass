@@ -49,6 +49,7 @@ import { Route as PatientPortalUploadRouteImport } from './routes/_patient.porta
 import { Route as ResearchResearchDatasetsRouteImport } from './routes/_research.research.datasets'
 import { Route as ResearchResearchModelsRouteImport } from './routes/_research.research.models'
 import { Route as ResearchResearchTrainingRouteImport } from './routes/_research.research.training'
+import { Route as ResearchResearchVersionsRouteImport } from './routes/_research.research.versions'
 import { Route as ShellPatientsIndexRouteImport } from './routes/_shell.patients.index'
 import { Route as ShellPatientsPatientIdRouteImport } from './routes/_shell.patients.$patientId'
 import { Route as ShellPatientsNewRouteImport } from './routes/_shell.patients.new'
@@ -254,6 +255,12 @@ const ResearchResearchTrainingRoute =
     path: '/research/training',
     getParentRoute: () => ResearchRoute,
   } as any)
+const ResearchResearchVersionsRoute =
+  ResearchResearchVersionsRouteImport.update({
+    id: '/research/versions',
+    path: '/research/versions',
+    getParentRoute: () => ResearchRoute,
+  } as any)
 const ShellPatientsIndexRoute = ShellPatientsIndexRouteImport.update({
   id: '/patients/',
   path: '/patients/',
@@ -312,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/research/datasets': typeof ResearchResearchDatasetsRoute
   '/research/models': typeof ResearchResearchModelsRoute
   '/research/training': typeof ResearchResearchTrainingRoute
+  '/research/versions': typeof ResearchResearchVersionsRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
   '/patients/new': typeof ShellPatientsNewRoute
   '/portal/': typeof PatientPortalIndexRoute
@@ -354,6 +362,7 @@ export interface FileRoutesByTo {
   '/research/datasets': typeof ResearchResearchDatasetsRoute
   '/research/models': typeof ResearchResearchModelsRoute
   '/research/training': typeof ResearchResearchTrainingRoute
+  '/research/versions': typeof ResearchResearchVersionsRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
   '/patients/new': typeof ShellPatientsNewRoute
   '/portal': typeof PatientPortalIndexRoute
@@ -401,6 +410,7 @@ export interface FileRoutesById {
   '/_research/research/datasets': typeof ResearchResearchDatasetsRoute
   '/_research/research/models': typeof ResearchResearchModelsRoute
   '/_research/research/training': typeof ResearchResearchTrainingRoute
+  '/_research/research/versions': typeof ResearchResearchVersionsRoute
   '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
   '/_shell/patients/new': typeof ShellPatientsNewRoute
   '/_patient/portal/': typeof PatientPortalIndexRoute
@@ -445,6 +455,7 @@ export interface FileRouteTypes {
     | '/research/datasets'
     | '/research/models'
     | '/research/training'
+    | '/research/versions'
     | '/patients/$patientId'
     | '/patients/new'
     | '/portal/'
@@ -487,6 +498,7 @@ export interface FileRouteTypes {
     | '/research/datasets'
     | '/research/models'
     | '/research/training'
+    | '/research/versions'
     | '/patients/$patientId'
     | '/patients/new'
     | '/portal'
@@ -533,6 +545,7 @@ export interface FileRouteTypes {
     | '/_research/research/datasets'
     | '/_research/research/models'
     | '/_research/research/training'
+    | '/_research/research/versions'
     | '/_shell/patients/$patientId'
     | '/_shell/patients/new'
     | '/_patient/portal/'
@@ -834,6 +847,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResearchResearchTrainingRouteImport
       parentRoute: typeof ResearchRoute
     }
+    '/_research/research/versions': {
+      id: '/_research/research/versions'
+      path: '/research/versions'
+      fullPath: '/research/versions'
+      preLoaderRoute: typeof ResearchResearchVersionsRouteImport
+      parentRoute: typeof ResearchRoute
+    }
     '/_shell/patients/': {
       id: '/_shell/patients/'
       path: '/patients'
@@ -912,12 +932,14 @@ interface ResearchRouteChildren {
   ResearchResearchDatasetsRoute: typeof ResearchResearchDatasetsRoute
   ResearchResearchModelsRoute: typeof ResearchResearchModelsRoute
   ResearchResearchTrainingRoute: typeof ResearchResearchTrainingRoute
+  ResearchResearchVersionsRoute: typeof ResearchResearchVersionsRoute
 }
 
 const ResearchRouteChildren: ResearchRouteChildren = {
   ResearchResearchDatasetsRoute: ResearchResearchDatasetsRoute,
   ResearchResearchModelsRoute: ResearchResearchModelsRoute,
   ResearchResearchTrainingRoute: ResearchResearchTrainingRoute,
+  ResearchResearchVersionsRoute: ResearchResearchVersionsRoute,
 }
 
 const ResearchRouteWithChildren = ResearchRoute._addFileChildren(
