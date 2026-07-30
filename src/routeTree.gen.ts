@@ -9,14 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PatientRouteImport } from './routes/_patient'
 import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PatientLoginRouteImport } from './routes/patient-login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ShellIndexRouteImport } from './routes/_shell.index'
 import { Route as ShellAnalyticsRouteImport } from './routes/_shell.analytics'
 import { Route as ShellDigitalTwinsRouteImport } from './routes/_shell.digital-twins'
+import { Route as ShellDocumentsRouteImport } from './routes/_shell.documents'
 import { Route as ShellExplainabilityRouteImport } from './routes/_shell.explainability'
 import { Route as ShellNotificationsRouteImport } from './routes/_shell.notifications'
 import { Route as ShellPredictionsRouteImport } from './routes/_shell.predictions'
@@ -24,9 +27,22 @@ import { Route as ShellProfileRouteImport } from './routes/_shell.profile'
 import { Route as ShellReportsRouteImport } from './routes/_shell.reports'
 import { Route as ShellSettingsRouteImport } from './routes/_shell.settings'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
+import { Route as PatientPortalIndexRouteImport } from './routes/_patient.portal.index'
+import { Route as PatientPortalAppointmentsRouteImport } from './routes/_patient.portal.appointments'
+import { Route as PatientPortalNotificationsRouteImport } from './routes/_patient.portal.notifications'
+import { Route as PatientPortalProfileRouteImport } from './routes/_patient.portal.profile'
+import { Route as PatientPortalReportsRouteImport } from './routes/_patient.portal.reports'
+import { Route as PatientPortalTreatmentRouteImport } from './routes/_patient.portal.treatment'
+import { Route as PatientPortalUploadRouteImport } from './routes/_patient.portal.upload'
 import { Route as ShellPatientsIndexRouteImport } from './routes/_shell.patients.index'
 import { Route as ShellPatientsPatientIdRouteImport } from './routes/_shell.patients.$patientId'
+import { Route as ShellPatientsNewRouteImport } from './routes/_shell.patients.new'
+import { Route as ShellPatientsPatientIdEditRouteImport } from './routes/_shell.patients.$patientId.edit'
 
+const PatientRoute = PatientRouteImport.update({
+  id: '/_patient',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShellRoute = ShellRouteImport.update({
   id: '/_shell',
   getParentRoute: () => rootRouteImport,
@@ -39,6 +55,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatientLoginRoute = PatientLoginRouteImport.update({
+  id: '/patient-login',
+  path: '/patient-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -64,6 +85,11 @@ const ShellAnalyticsRoute = ShellAnalyticsRouteImport.update({
 const ShellDigitalTwinsRoute = ShellDigitalTwinsRouteImport.update({
   id: '/digital-twins',
   path: '/digital-twins',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellDocumentsRoute = ShellDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellExplainabilityRoute = ShellExplainabilityRouteImport.update({
@@ -101,6 +127,43 @@ const ShellSimulatorRoute = ShellSimulatorRouteImport.update({
   path: '/simulator',
   getParentRoute: () => ShellRoute,
 } as any)
+const PatientPortalIndexRoute = PatientPortalIndexRouteImport.update({
+  id: '/portal/',
+  path: '/portal/',
+  getParentRoute: () => PatientRoute,
+} as any)
+const PatientPortalAppointmentsRoute =
+  PatientPortalAppointmentsRouteImport.update({
+    id: '/portal/appointments',
+    path: '/portal/appointments',
+    getParentRoute: () => PatientRoute,
+  } as any)
+const PatientPortalNotificationsRoute =
+  PatientPortalNotificationsRouteImport.update({
+    id: '/portal/notifications',
+    path: '/portal/notifications',
+    getParentRoute: () => PatientRoute,
+  } as any)
+const PatientPortalProfileRoute = PatientPortalProfileRouteImport.update({
+  id: '/portal/profile',
+  path: '/portal/profile',
+  getParentRoute: () => PatientRoute,
+} as any)
+const PatientPortalReportsRoute = PatientPortalReportsRouteImport.update({
+  id: '/portal/reports',
+  path: '/portal/reports',
+  getParentRoute: () => PatientRoute,
+} as any)
+const PatientPortalTreatmentRoute = PatientPortalTreatmentRouteImport.update({
+  id: '/portal/treatment',
+  path: '/portal/treatment',
+  getParentRoute: () => PatientRoute,
+} as any)
+const PatientPortalUploadRoute = PatientPortalUploadRouteImport.update({
+  id: '/portal/upload',
+  path: '/portal/upload',
+  getParentRoute: () => PatientRoute,
+} as any)
 const ShellPatientsIndexRoute = ShellPatientsIndexRouteImport.update({
   id: '/patients/',
   path: '/patients/',
@@ -111,15 +174,28 @@ const ShellPatientsPatientIdRoute = ShellPatientsPatientIdRouteImport.update({
   path: '/patients/$patientId',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellPatientsNewRoute = ShellPatientsNewRouteImport.update({
+  id: '/patients/new',
+  path: '/patients/new',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellPatientsPatientIdEditRoute =
+  ShellPatientsPatientIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => ShellPatientsPatientIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof ShellIndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/patient-login': typeof PatientLoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof ShellAnalyticsRoute
   '/digital-twins': typeof ShellDigitalTwinsRoute
+  '/documents': typeof ShellDocumentsRoute
   '/explainability': typeof ShellExplainabilityRoute
   '/notifications': typeof ShellNotificationsRoute
   '/predictions': typeof ShellPredictionsRoute
@@ -127,16 +203,28 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ShellReportsRoute
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
-  '/patients/$patientId': typeof ShellPatientsPatientIdRoute
+  '/portal/appointments': typeof PatientPortalAppointmentsRoute
+  '/portal/notifications': typeof PatientPortalNotificationsRoute
+  '/portal/profile': typeof PatientPortalProfileRoute
+  '/portal/reports': typeof PatientPortalReportsRoute
+  '/portal/treatment': typeof PatientPortalTreatmentRoute
+  '/portal/upload': typeof PatientPortalUploadRoute
+  '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
+  '/patients/new': typeof ShellPatientsNewRoute
+  '/portal/': typeof PatientPortalIndexRoute
   '/patients/': typeof ShellPatientsIndexRoute
+  '/patients/$patientId/edit': typeof ShellPatientsPatientIdEditRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof ShellIndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/patient-login': typeof PatientLoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof ShellAnalyticsRoute
   '/digital-twins': typeof ShellDigitalTwinsRoute
+  '/documents': typeof ShellDocumentsRoute
   '/explainability': typeof ShellExplainabilityRoute
   '/notifications': typeof ShellNotificationsRoute
   '/predictions': typeof ShellPredictionsRoute
@@ -144,19 +232,30 @@ export interface FileRoutesByTo {
   '/reports': typeof ShellReportsRoute
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
-  '/': typeof ShellIndexRoute
-  '/patients/$patientId': typeof ShellPatientsPatientIdRoute
+  '/portal/appointments': typeof PatientPortalAppointmentsRoute
+  '/portal/notifications': typeof PatientPortalNotificationsRoute
+  '/portal/profile': typeof PatientPortalProfileRoute
+  '/portal/reports': typeof PatientPortalReportsRoute
+  '/portal/treatment': typeof PatientPortalTreatmentRoute
+  '/portal/upload': typeof PatientPortalUploadRoute
+  '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
+  '/patients/new': typeof ShellPatientsNewRoute
+  '/portal': typeof PatientPortalIndexRoute
   '/patients': typeof ShellPatientsIndexRoute
+  '/patients/$patientId/edit': typeof ShellPatientsPatientIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_patient': typeof PatientRouteWithChildren
   '/_shell': typeof ShellRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/patient-login': typeof PatientLoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_shell/analytics': typeof ShellAnalyticsRoute
   '/_shell/digital-twins': typeof ShellDigitalTwinsRoute
+  '/_shell/documents': typeof ShellDocumentsRoute
   '/_shell/explainability': typeof ShellExplainabilityRoute
   '/_shell/notifications': typeof ShellNotificationsRoute
   '/_shell/predictions': typeof ShellPredictionsRoute
@@ -165,8 +264,17 @@ export interface FileRoutesById {
   '/_shell/settings': typeof ShellSettingsRoute
   '/_shell/simulator': typeof ShellSimulatorRoute
   '/_shell/': typeof ShellIndexRoute
-  '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRoute
+  '/_patient/portal/appointments': typeof PatientPortalAppointmentsRoute
+  '/_patient/portal/notifications': typeof PatientPortalNotificationsRoute
+  '/_patient/portal/profile': typeof PatientPortalProfileRoute
+  '/_patient/portal/reports': typeof PatientPortalReportsRoute
+  '/_patient/portal/treatment': typeof PatientPortalTreatmentRoute
+  '/_patient/portal/upload': typeof PatientPortalUploadRoute
+  '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
+  '/_shell/patients/new': typeof ShellPatientsNewRoute
+  '/_patient/portal/': typeof PatientPortalIndexRoute
   '/_shell/patients/': typeof ShellPatientsIndexRoute
+  '/_shell/patients/$patientId/edit': typeof ShellPatientsPatientIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -174,10 +282,12 @@ export interface FileRouteTypes {
     | '/'
     | '/forgot-password'
     | '/login'
+    | '/patient-login'
     | '/register'
     | '/reset-password'
     | '/analytics'
     | '/digital-twins'
+    | '/documents'
     | '/explainability'
     | '/notifications'
     | '/predictions'
@@ -185,16 +295,28 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/simulator'
+    | '/portal/appointments'
+    | '/portal/notifications'
+    | '/portal/profile'
+    | '/portal/reports'
+    | '/portal/treatment'
+    | '/portal/upload'
     | '/patients/$patientId'
+    | '/patients/new'
+    | '/portal/'
     | '/patients/'
+    | '/patients/$patientId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/forgot-password'
     | '/login'
+    | '/patient-login'
     | '/register'
     | '/reset-password'
     | '/analytics'
     | '/digital-twins'
+    | '/documents'
     | '/explainability'
     | '/notifications'
     | '/predictions'
@@ -202,18 +324,29 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/simulator'
-    | '/'
+    | '/portal/appointments'
+    | '/portal/notifications'
+    | '/portal/profile'
+    | '/portal/reports'
+    | '/portal/treatment'
+    | '/portal/upload'
     | '/patients/$patientId'
+    | '/patients/new'
+    | '/portal'
     | '/patients'
+    | '/patients/$patientId/edit'
   id:
     | '__root__'
+    | '/_patient'
     | '/_shell'
     | '/forgot-password'
     | '/login'
+    | '/patient-login'
     | '/register'
     | '/reset-password'
     | '/_shell/analytics'
     | '/_shell/digital-twins'
+    | '/_shell/documents'
     | '/_shell/explainability'
     | '/_shell/notifications'
     | '/_shell/predictions'
@@ -222,20 +355,38 @@ export interface FileRouteTypes {
     | '/_shell/settings'
     | '/_shell/simulator'
     | '/_shell/'
+    | '/_patient/portal/appointments'
+    | '/_patient/portal/notifications'
+    | '/_patient/portal/profile'
+    | '/_patient/portal/reports'
+    | '/_patient/portal/treatment'
+    | '/_patient/portal/upload'
     | '/_shell/patients/$patientId'
+    | '/_shell/patients/new'
+    | '/_patient/portal/'
     | '/_shell/patients/'
+    | '/_shell/patients/$patientId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  PatientRoute: typeof PatientRouteWithChildren
   ShellRoute: typeof ShellRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  PatientLoginRoute: typeof PatientLoginRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_patient': {
+      id: '/_patient'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PatientRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_shell': {
       id: '/_shell'
       path: ''
@@ -255,6 +406,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/patient-login': {
+      id: '/patient-login'
+      path: '/patient-login'
+      fullPath: '/patient-login'
+      preLoaderRoute: typeof PatientLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -290,6 +448,13 @@ declare module '@tanstack/react-router' {
       path: '/digital-twins'
       fullPath: '/digital-twins'
       preLoaderRoute: typeof ShellDigitalTwinsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/documents': {
+      id: '/_shell/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof ShellDocumentsRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/explainability': {
@@ -341,6 +506,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellSimulatorRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_patient/portal/': {
+      id: '/_patient/portal/'
+      path: '/portal'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PatientPortalIndexRouteImport
+      parentRoute: typeof PatientRoute
+    }
+    '/_patient/portal/appointments': {
+      id: '/_patient/portal/appointments'
+      path: '/portal/appointments'
+      fullPath: '/portal/appointments'
+      preLoaderRoute: typeof PatientPortalAppointmentsRouteImport
+      parentRoute: typeof PatientRoute
+    }
+    '/_patient/portal/notifications': {
+      id: '/_patient/portal/notifications'
+      path: '/portal/notifications'
+      fullPath: '/portal/notifications'
+      preLoaderRoute: typeof PatientPortalNotificationsRouteImport
+      parentRoute: typeof PatientRoute
+    }
+    '/_patient/portal/profile': {
+      id: '/_patient/portal/profile'
+      path: '/portal/profile'
+      fullPath: '/portal/profile'
+      preLoaderRoute: typeof PatientPortalProfileRouteImport
+      parentRoute: typeof PatientRoute
+    }
+    '/_patient/portal/reports': {
+      id: '/_patient/portal/reports'
+      path: '/portal/reports'
+      fullPath: '/portal/reports'
+      preLoaderRoute: typeof PatientPortalReportsRouteImport
+      parentRoute: typeof PatientRoute
+    }
+    '/_patient/portal/treatment': {
+      id: '/_patient/portal/treatment'
+      path: '/portal/treatment'
+      fullPath: '/portal/treatment'
+      preLoaderRoute: typeof PatientPortalTreatmentRouteImport
+      parentRoute: typeof PatientRoute
+    }
+    '/_patient/portal/upload': {
+      id: '/_patient/portal/upload'
+      path: '/portal/upload'
+      fullPath: '/portal/upload'
+      preLoaderRoute: typeof PatientPortalUploadRouteImport
+      parentRoute: typeof PatientRoute
+    }
     '/_shell/patients/': {
       id: '/_shell/patients/'
       path: '/patients'
@@ -355,12 +569,64 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellPatientsPatientIdRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/patients/new': {
+      id: '/_shell/patients/new'
+      path: '/patients/new'
+      fullPath: '/patients/new'
+      preLoaderRoute: typeof ShellPatientsNewRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/patients/$patientId/edit': {
+      id: '/_shell/patients/$patientId/edit'
+      path: '/edit'
+      fullPath: '/patients/$patientId/edit'
+      preLoaderRoute: typeof ShellPatientsPatientIdEditRouteImport
+      parentRoute: typeof ShellPatientsPatientIdRoute
+    }
   }
 }
+
+interface PatientRouteChildren {
+  PatientPortalAppointmentsRoute: typeof PatientPortalAppointmentsRoute
+  PatientPortalNotificationsRoute: typeof PatientPortalNotificationsRoute
+  PatientPortalProfileRoute: typeof PatientPortalProfileRoute
+  PatientPortalReportsRoute: typeof PatientPortalReportsRoute
+  PatientPortalTreatmentRoute: typeof PatientPortalTreatmentRoute
+  PatientPortalUploadRoute: typeof PatientPortalUploadRoute
+  PatientPortalIndexRoute: typeof PatientPortalIndexRoute
+}
+
+const PatientRouteChildren: PatientRouteChildren = {
+  PatientPortalAppointmentsRoute: PatientPortalAppointmentsRoute,
+  PatientPortalNotificationsRoute: PatientPortalNotificationsRoute,
+  PatientPortalProfileRoute: PatientPortalProfileRoute,
+  PatientPortalReportsRoute: PatientPortalReportsRoute,
+  PatientPortalTreatmentRoute: PatientPortalTreatmentRoute,
+  PatientPortalUploadRoute: PatientPortalUploadRoute,
+  PatientPortalIndexRoute: PatientPortalIndexRoute,
+}
+
+const PatientRouteWithChildren =
+  PatientRoute._addFileChildren(PatientRouteChildren)
+
+interface ShellPatientsPatientIdRouteChildren {
+  ShellPatientsPatientIdEditRoute: typeof ShellPatientsPatientIdEditRoute
+}
+
+const ShellPatientsPatientIdRouteChildren: ShellPatientsPatientIdRouteChildren =
+  {
+    ShellPatientsPatientIdEditRoute: ShellPatientsPatientIdEditRoute,
+  }
+
+const ShellPatientsPatientIdRouteWithChildren =
+  ShellPatientsPatientIdRoute._addFileChildren(
+    ShellPatientsPatientIdRouteChildren,
+  )
 
 interface ShellRouteChildren {
   ShellAnalyticsRoute: typeof ShellAnalyticsRoute
   ShellDigitalTwinsRoute: typeof ShellDigitalTwinsRoute
+  ShellDocumentsRoute: typeof ShellDocumentsRoute
   ShellExplainabilityRoute: typeof ShellExplainabilityRoute
   ShellNotificationsRoute: typeof ShellNotificationsRoute
   ShellPredictionsRoute: typeof ShellPredictionsRoute
@@ -369,13 +635,15 @@ interface ShellRouteChildren {
   ShellSettingsRoute: typeof ShellSettingsRoute
   ShellSimulatorRoute: typeof ShellSimulatorRoute
   ShellIndexRoute: typeof ShellIndexRoute
-  ShellPatientsPatientIdRoute: typeof ShellPatientsPatientIdRoute
+  ShellPatientsPatientIdRoute: typeof ShellPatientsPatientIdRouteWithChildren
+  ShellPatientsNewRoute: typeof ShellPatientsNewRoute
   ShellPatientsIndexRoute: typeof ShellPatientsIndexRoute
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
   ShellAnalyticsRoute: ShellAnalyticsRoute,
   ShellDigitalTwinsRoute: ShellDigitalTwinsRoute,
+  ShellDocumentsRoute: ShellDocumentsRoute,
   ShellExplainabilityRoute: ShellExplainabilityRoute,
   ShellNotificationsRoute: ShellNotificationsRoute,
   ShellPredictionsRoute: ShellPredictionsRoute,
@@ -384,29 +652,22 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellSettingsRoute: ShellSettingsRoute,
   ShellSimulatorRoute: ShellSimulatorRoute,
   ShellIndexRoute: ShellIndexRoute,
-  ShellPatientsPatientIdRoute: ShellPatientsPatientIdRoute,
+  ShellPatientsPatientIdRoute: ShellPatientsPatientIdRouteWithChildren,
+  ShellPatientsNewRoute: ShellPatientsNewRoute,
   ShellPatientsIndexRoute: ShellPatientsIndexRoute,
 }
 
 const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  PatientRoute: PatientRouteWithChildren,
   ShellRoute: ShellRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  PatientLoginRoute: PatientLoginRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
