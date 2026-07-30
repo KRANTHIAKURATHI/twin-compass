@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as PatientRouteImport } from './routes/_patient'
+import { Route as ResearchRouteImport } from './routes/_research'
 import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
@@ -45,6 +46,7 @@ import { Route as PatientPortalProfileRouteImport } from './routes/_patient.port
 import { Route as PatientPortalReportsRouteImport } from './routes/_patient.portal.reports'
 import { Route as PatientPortalTreatmentRouteImport } from './routes/_patient.portal.treatment'
 import { Route as PatientPortalUploadRouteImport } from './routes/_patient.portal.upload'
+import { Route as ResearchResearchModelsRouteImport } from './routes/_research.research.models'
 import { Route as ShellPatientsIndexRouteImport } from './routes/_shell.patients.index'
 import { Route as ShellPatientsPatientIdRouteImport } from './routes/_shell.patients.$patientId'
 import { Route as ShellPatientsNewRouteImport } from './routes/_shell.patients.new'
@@ -56,6 +58,10 @@ const AdminRoute = AdminRouteImport.update({
 } as any)
 const PatientRoute = PatientRouteImport.update({
   id: '/_patient',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResearchRoute = ResearchRouteImport.update({
+  id: '/_research',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShellRoute = ShellRouteImport.update({
@@ -229,6 +235,11 @@ const PatientPortalUploadRoute = PatientPortalUploadRouteImport.update({
   path: '/portal/upload',
   getParentRoute: () => PatientRoute,
 } as any)
+const ResearchResearchModelsRoute = ResearchResearchModelsRouteImport.update({
+  id: '/research/models',
+  path: '/research/models',
+  getParentRoute: () => ResearchRoute,
+} as any)
 const ShellPatientsIndexRoute = ShellPatientsIndexRouteImport.update({
   id: '/patients/',
   path: '/patients/',
@@ -284,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/portal/reports': typeof PatientPortalReportsRoute
   '/portal/treatment': typeof PatientPortalTreatmentRoute
   '/portal/upload': typeof PatientPortalUploadRoute
+  '/research/models': typeof ResearchResearchModelsRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
   '/patients/new': typeof ShellPatientsNewRoute
   '/portal/': typeof PatientPortalIndexRoute
@@ -323,6 +335,7 @@ export interface FileRoutesByTo {
   '/portal/reports': typeof PatientPortalReportsRoute
   '/portal/treatment': typeof PatientPortalTreatmentRoute
   '/portal/upload': typeof PatientPortalUploadRoute
+  '/research/models': typeof ResearchResearchModelsRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
   '/patients/new': typeof ShellPatientsNewRoute
   '/portal': typeof PatientPortalIndexRoute
@@ -333,6 +346,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_admin': typeof AdminRouteWithChildren
   '/_patient': typeof PatientRouteWithChildren
+  '/_research': typeof ResearchRouteWithChildren
   '/_shell': typeof ShellRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -366,6 +380,7 @@ export interface FileRoutesById {
   '/_patient/portal/reports': typeof PatientPortalReportsRoute
   '/_patient/portal/treatment': typeof PatientPortalTreatmentRoute
   '/_patient/portal/upload': typeof PatientPortalUploadRoute
+  '/_research/research/models': typeof ResearchResearchModelsRoute
   '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
   '/_shell/patients/new': typeof ShellPatientsNewRoute
   '/_patient/portal/': typeof PatientPortalIndexRoute
@@ -407,6 +422,7 @@ export interface FileRouteTypes {
     | '/portal/reports'
     | '/portal/treatment'
     | '/portal/upload'
+    | '/research/models'
     | '/patients/$patientId'
     | '/patients/new'
     | '/portal/'
@@ -446,6 +462,7 @@ export interface FileRouteTypes {
     | '/portal/reports'
     | '/portal/treatment'
     | '/portal/upload'
+    | '/research/models'
     | '/patients/$patientId'
     | '/patients/new'
     | '/portal'
@@ -455,6 +472,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_admin'
     | '/_patient'
+    | '/_research'
     | '/_shell'
     | '/forgot-password'
     | '/login'
@@ -488,6 +506,7 @@ export interface FileRouteTypes {
     | '/_patient/portal/reports'
     | '/_patient/portal/treatment'
     | '/_patient/portal/upload'
+    | '/_research/research/models'
     | '/_shell/patients/$patientId'
     | '/_shell/patients/new'
     | '/_patient/portal/'
@@ -498,6 +517,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   PatientRoute: typeof PatientRouteWithChildren
+  ResearchRoute: typeof ResearchRouteWithChildren
   ShellRoute: typeof ShellRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
@@ -520,6 +540,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof PatientRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_research': {
+      id: '/_research'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof ResearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_shell': {
@@ -760,6 +787,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PatientPortalUploadRouteImport
       parentRoute: typeof PatientRoute
     }
+    '/_research/research/models': {
+      id: '/_research/research/models'
+      path: '/research/models'
+      fullPath: '/research/models'
+      preLoaderRoute: typeof ResearchResearchModelsRouteImport
+      parentRoute: typeof ResearchRoute
+    }
     '/_shell/patients/': {
       id: '/_shell/patients/'
       path: '/patients'
@@ -834,6 +868,18 @@ const PatientRouteChildren: PatientRouteChildren = {
 const PatientRouteWithChildren =
   PatientRoute._addFileChildren(PatientRouteChildren)
 
+interface ResearchRouteChildren {
+  ResearchResearchModelsRoute: typeof ResearchResearchModelsRoute
+}
+
+const ResearchRouteChildren: ResearchRouteChildren = {
+  ResearchResearchModelsRoute: ResearchResearchModelsRoute,
+}
+
+const ResearchRouteWithChildren = ResearchRoute._addFileChildren(
+  ResearchRouteChildren,
+)
+
 interface ShellPatientsPatientIdRouteChildren {
   ShellPatientsPatientIdEditRoute: typeof ShellPatientsPatientIdEditRoute
 }
@@ -895,6 +941,7 @@ const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   PatientRoute: PatientRouteWithChildren,
+  ResearchRoute: ResearchRouteWithChildren,
   ShellRoute: ShellRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
