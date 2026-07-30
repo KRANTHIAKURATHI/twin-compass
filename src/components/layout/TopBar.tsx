@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Bell, Search, HelpCircle } from "lucide-react";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -9,12 +9,21 @@ import { doctor, notifications } from "@/lib/mock-data";
 
 export function TopBar() {
   const unread = notifications.filter((n) => n.unread).length;
+  const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur-md sm:px-6">
       <SidebarTrigger className="min-h-9 min-w-9" aria-label="Toggle navigation" />
 
-      <div className="relative hidden max-w-sm flex-1 md:block">
+      <form
+        role="search"
+        className="relative hidden max-w-sm flex-1 md:block"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const q = new FormData(e.currentTarget).get("q") as string;
+          navigate({ to: "/search", search: { q: q ?? "" } });
+        }}
+      >
         <Search
           className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden="true"
@@ -23,13 +32,14 @@ export function TopBar() {
           type="search"
           aria-label="Search patients, twins and predictions"
           placeholder="Search patients, twins, predictions…"
+          name="q"
           className="pl-9"
         />
-      </div>
+      </form>
 
       <div className="ml-auto flex items-center gap-1.5">
         <Button variant="ghost" size="icon" className="min-h-10 min-w-10" aria-label="Help center" asChild>
-          <Link to="/settings">
+          <Link to="/help">
             <HelpCircle className="size-5" aria-hidden="true" />
           </Link>
         </Button>
