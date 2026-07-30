@@ -12,7 +12,16 @@ import {
   Settings,
   LogOut,
   Activity,
+  History,
+  FolderOpen,
+  ScanText,
+  Search,
+  HeartPulse,
+  ShieldCheck,
+  Microscope,
+  LifeBuoy,
 } from "lucide-react";
+
 
 import {
   Sidebar,
