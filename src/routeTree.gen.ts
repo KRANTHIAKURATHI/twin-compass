@@ -9,26 +9,88 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SplatRouteImport } from './routes/$'
+import { Route as AdminRouteImport } from './routes/_admin'
+import { Route as PatientRouteImport } from './routes/_patient'
+import { Route as ResearchRouteImport } from './routes/_research'
 import { Route as ShellRouteImport } from './routes/_shell'
+import { Route as ErrorRouteImport } from './routes/error'
+import { Route as ForbiddenRouteImport } from './routes/forbidden'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PatientLoginRouteImport } from './routes/patient-login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ShellIndexRouteImport } from './routes/_shell.index'
 import { Route as ShellAnalyticsRouteImport } from './routes/_shell.analytics'
 import { Route as ShellDigitalTwinsRouteImport } from './routes/_shell.digital-twins'
+import { Route as ShellDocumentsRouteImport } from './routes/_shell.documents'
 import { Route as ShellExplainabilityRouteImport } from './routes/_shell.explainability'
+import { Route as ShellHelpRouteImport } from './routes/_shell.help'
 import { Route as ShellNotificationsRouteImport } from './routes/_shell.notifications'
+import { Route as ShellOcrRouteImport } from './routes/_shell.ocr'
 import { Route as ShellPredictionsRouteImport } from './routes/_shell.predictions'
 import { Route as ShellProfileRouteImport } from './routes/_shell.profile'
 import { Route as ShellReportsRouteImport } from './routes/_shell.reports'
+import { Route as ShellSearchRouteImport } from './routes/_shell.search'
 import { Route as ShellSettingsRouteImport } from './routes/_shell.settings'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
+import { Route as ShellStatesRouteImport } from './routes/_shell.states'
+import { Route as ShellTimelineRouteImport } from './routes/_shell.timeline'
+import { Route as AdminAdminIndexRouteImport } from './routes/_admin.admin.index'
+import { Route as AdminAdminAuditRouteImport } from './routes/_admin.admin.audit'
+import { Route as AdminAdminDepartmentsRouteImport } from './routes/_admin.admin.departments'
+import { Route as AdminAdminDoctorsRouteImport } from './routes/_admin.admin.doctors'
+import { Route as AdminAdminHospitalsRouteImport } from './routes/_admin.admin.hospitals'
+import { Route as AdminAdminPermissionsRouteImport } from './routes/_admin.admin.permissions'
+import { Route as AdminAdminUsersRouteImport } from './routes/_admin.admin.users'
+import { Route as PatientPortalIndexRouteImport } from './routes/_patient.portal.index'
+import { Route as PatientPortalAppointmentsRouteImport } from './routes/_patient.portal.appointments'
+import { Route as PatientPortalNotificationsRouteImport } from './routes/_patient.portal.notifications'
+import { Route as PatientPortalProfileRouteImport } from './routes/_patient.portal.profile'
+import { Route as PatientPortalReportsRouteImport } from './routes/_patient.portal.reports'
+import { Route as PatientPortalTreatmentRouteImport } from './routes/_patient.portal.treatment'
+import { Route as PatientPortalUploadRouteImport } from './routes/_patient.portal.upload'
+import { Route as ResearchResearchIndexRouteImport } from './routes/_research.research.index'
+import { Route as ResearchResearchDatasetsRouteImport } from './routes/_research.research.datasets'
+import { Route as ResearchResearchModelsRouteImport } from './routes/_research.research.models'
+import { Route as ResearchResearchPerformanceRouteImport } from './routes/_research.research.performance'
+import { Route as ResearchResearchTrainingRouteImport } from './routes/_research.research.training'
+import { Route as ResearchResearchVersionsRouteImport } from './routes/_research.research.versions'
 import { Route as ShellPatientsIndexRouteImport } from './routes/_shell.patients.index'
 import { Route as ShellPatientsPatientIdRouteImport } from './routes/_shell.patients.$patientId'
+import { Route as ShellPatientsNewRouteImport } from './routes/_shell.patients.new'
+import { Route as ShellPatientsPatientIdEditRouteImport } from './routes/_shell.patients.$patientId.edit'
 
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/_admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatientRoute = PatientRouteImport.update({
+  id: '/_patient',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResearchRoute = ResearchRouteImport.update({
+  id: '/_research',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShellRoute = ShellRouteImport.update({
   id: '/_shell',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ErrorRoute = ErrorRouteImport.update({
+  id: '/error',
+  path: '/error',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForbiddenRoute = ForbiddenRouteImport.update({
+  id: '/forbidden',
+  path: '/forbidden',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -39,6 +101,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatientLoginRoute = PatientLoginRouteImport.update({
+  id: '/patient-login',
+  path: '/patient-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -66,14 +133,29 @@ const ShellDigitalTwinsRoute = ShellDigitalTwinsRouteImport.update({
   path: '/digital-twins',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellDocumentsRoute = ShellDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellExplainabilityRoute = ShellExplainabilityRouteImport.update({
   id: '/explainability',
   path: '/explainability',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellHelpRoute = ShellHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellNotificationsRoute = ShellNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellOcrRoute = ShellOcrRouteImport.update({
+  id: '/ocr',
+  path: '/ocr',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellPredictionsRoute = ShellPredictionsRouteImport.update({
@@ -91,6 +173,11 @@ const ShellReportsRoute = ShellReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellSearchRoute = ShellSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellSettingsRoute = ShellSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -101,6 +188,122 @@ const ShellSimulatorRoute = ShellSimulatorRouteImport.update({
   path: '/simulator',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellStatesRoute = ShellStatesRouteImport.update({
+  id: '/states',
+  path: '/states',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellTimelineRoute = ShellTimelineRouteImport.update({
+  id: '/timeline',
+  path: '/timeline',
+  getParentRoute: () => ShellRoute,
+} as any)
+const AdminAdminIndexRoute = AdminAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAdminAuditRoute = AdminAdminAuditRouteImport.update({
+  id: '/admin/audit',
+  path: '/admin/audit',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAdminDepartmentsRoute = AdminAdminDepartmentsRouteImport.update({
+  id: '/admin/departments',
+  path: '/admin/departments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAdminDoctorsRoute = AdminAdminDoctorsRouteImport.update({
+  id: '/admin/doctors',
+  path: '/admin/doctors',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAdminHospitalsRoute = AdminAdminHospitalsRouteImport.update({
+  id: '/admin/hospitals',
+  path: '/admin/hospitals',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAdminPermissionsRoute = AdminAdminPermissionsRouteImport.update({
+  id: '/admin/permissions',
+  path: '/admin/permissions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAdminUsersRoute = AdminAdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const PatientPortalIndexRoute = PatientPortalIndexRouteImport.update({
+  id: '/portal/',
+  path: '/portal/',
+  getParentRoute: () => PatientRoute,
+} as any)
+const PatientPortalAppointmentsRoute =
+  PatientPortalAppointmentsRouteImport.update({
+    id: '/portal/appointments',
+    path: '/portal/appointments',
+    getParentRoute: () => PatientRoute,
+  } as any)
+const PatientPortalNotificationsRoute =
+  PatientPortalNotificationsRouteImport.update({
+    id: '/portal/notifications',
+    path: '/portal/notifications',
+    getParentRoute: () => PatientRoute,
+  } as any)
+const PatientPortalProfileRoute = PatientPortalProfileRouteImport.update({
+  id: '/portal/profile',
+  path: '/portal/profile',
+  getParentRoute: () => PatientRoute,
+} as any)
+const PatientPortalReportsRoute = PatientPortalReportsRouteImport.update({
+  id: '/portal/reports',
+  path: '/portal/reports',
+  getParentRoute: () => PatientRoute,
+} as any)
+const PatientPortalTreatmentRoute = PatientPortalTreatmentRouteImport.update({
+  id: '/portal/treatment',
+  path: '/portal/treatment',
+  getParentRoute: () => PatientRoute,
+} as any)
+const PatientPortalUploadRoute = PatientPortalUploadRouteImport.update({
+  id: '/portal/upload',
+  path: '/portal/upload',
+  getParentRoute: () => PatientRoute,
+} as any)
+const ResearchResearchIndexRoute = ResearchResearchIndexRouteImport.update({
+  id: '/research/',
+  path: '/research/',
+  getParentRoute: () => ResearchRoute,
+} as any)
+const ResearchResearchDatasetsRoute =
+  ResearchResearchDatasetsRouteImport.update({
+    id: '/research/datasets',
+    path: '/research/datasets',
+    getParentRoute: () => ResearchRoute,
+  } as any)
+const ResearchResearchModelsRoute = ResearchResearchModelsRouteImport.update({
+  id: '/research/models',
+  path: '/research/models',
+  getParentRoute: () => ResearchRoute,
+} as any)
+const ResearchResearchPerformanceRoute =
+  ResearchResearchPerformanceRouteImport.update({
+    id: '/research/performance',
+    path: '/research/performance',
+    getParentRoute: () => ResearchRoute,
+  } as any)
+const ResearchResearchTrainingRoute =
+  ResearchResearchTrainingRouteImport.update({
+    id: '/research/training',
+    path: '/research/training',
+    getParentRoute: () => ResearchRoute,
+  } as any)
+const ResearchResearchVersionsRoute =
+  ResearchResearchVersionsRouteImport.update({
+    id: '/research/versions',
+    path: '/research/versions',
+    getParentRoute: () => ResearchRoute,
+  } as any)
 const ShellPatientsIndexRoute = ShellPatientsIndexRouteImport.update({
   id: '/patients/',
   path: '/patients/',
@@ -111,136 +314,394 @@ const ShellPatientsPatientIdRoute = ShellPatientsPatientIdRouteImport.update({
   path: '/patients/$patientId',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellPatientsNewRoute = ShellPatientsNewRouteImport.update({
+  id: '/patients/new',
+  path: '/patients/new',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellPatientsPatientIdEditRoute =
+  ShellPatientsPatientIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => ShellPatientsPatientIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
+  '/$': typeof SplatRoute
   '/': typeof ShellIndexRoute
+  '/error': typeof ErrorRoute
+  '/forbidden': typeof ForbiddenRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/patient-login': typeof PatientLoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof ShellAnalyticsRoute
   '/digital-twins': typeof ShellDigitalTwinsRoute
+  '/documents': typeof ShellDocumentsRoute
   '/explainability': typeof ShellExplainabilityRoute
+  '/help': typeof ShellHelpRoute
   '/notifications': typeof ShellNotificationsRoute
+  '/ocr': typeof ShellOcrRoute
   '/predictions': typeof ShellPredictionsRoute
   '/profile': typeof ShellProfileRoute
   '/reports': typeof ShellReportsRoute
+  '/search': typeof ShellSearchRoute
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
-  '/patients/$patientId': typeof ShellPatientsPatientIdRoute
+  '/states': typeof ShellStatesRoute
+  '/timeline': typeof ShellTimelineRoute
+  '/admin/audit': typeof AdminAdminAuditRoute
+  '/admin/departments': typeof AdminAdminDepartmentsRoute
+  '/admin/doctors': typeof AdminAdminDoctorsRoute
+  '/admin/hospitals': typeof AdminAdminHospitalsRoute
+  '/admin/permissions': typeof AdminAdminPermissionsRoute
+  '/admin/users': typeof AdminAdminUsersRoute
+  '/portal/appointments': typeof PatientPortalAppointmentsRoute
+  '/portal/notifications': typeof PatientPortalNotificationsRoute
+  '/portal/profile': typeof PatientPortalProfileRoute
+  '/portal/reports': typeof PatientPortalReportsRoute
+  '/portal/treatment': typeof PatientPortalTreatmentRoute
+  '/portal/upload': typeof PatientPortalUploadRoute
+  '/research/datasets': typeof ResearchResearchDatasetsRoute
+  '/research/models': typeof ResearchResearchModelsRoute
+  '/research/performance': typeof ResearchResearchPerformanceRoute
+  '/research/training': typeof ResearchResearchTrainingRoute
+  '/research/versions': typeof ResearchResearchVersionsRoute
+  '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
+  '/patients/new': typeof ShellPatientsNewRoute
+  '/admin/': typeof AdminAdminIndexRoute
+  '/portal/': typeof PatientPortalIndexRoute
+  '/research/': typeof ResearchResearchIndexRoute
   '/patients/': typeof ShellPatientsIndexRoute
+  '/patients/$patientId/edit': typeof ShellPatientsPatientIdEditRoute
 }
 export interface FileRoutesByTo {
+  '/$': typeof SplatRoute
+  '/': typeof ShellIndexRoute
+  '/error': typeof ErrorRoute
+  '/forbidden': typeof ForbiddenRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/patient-login': typeof PatientLoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof ShellAnalyticsRoute
   '/digital-twins': typeof ShellDigitalTwinsRoute
+  '/documents': typeof ShellDocumentsRoute
   '/explainability': typeof ShellExplainabilityRoute
+  '/help': typeof ShellHelpRoute
   '/notifications': typeof ShellNotificationsRoute
+  '/ocr': typeof ShellOcrRoute
   '/predictions': typeof ShellPredictionsRoute
   '/profile': typeof ShellProfileRoute
   '/reports': typeof ShellReportsRoute
+  '/search': typeof ShellSearchRoute
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
-  '/': typeof ShellIndexRoute
-  '/patients/$patientId': typeof ShellPatientsPatientIdRoute
+  '/states': typeof ShellStatesRoute
+  '/timeline': typeof ShellTimelineRoute
+  '/admin/audit': typeof AdminAdminAuditRoute
+  '/admin/departments': typeof AdminAdminDepartmentsRoute
+  '/admin/doctors': typeof AdminAdminDoctorsRoute
+  '/admin/hospitals': typeof AdminAdminHospitalsRoute
+  '/admin/permissions': typeof AdminAdminPermissionsRoute
+  '/admin/users': typeof AdminAdminUsersRoute
+  '/portal/appointments': typeof PatientPortalAppointmentsRoute
+  '/portal/notifications': typeof PatientPortalNotificationsRoute
+  '/portal/profile': typeof PatientPortalProfileRoute
+  '/portal/reports': typeof PatientPortalReportsRoute
+  '/portal/treatment': typeof PatientPortalTreatmentRoute
+  '/portal/upload': typeof PatientPortalUploadRoute
+  '/research/datasets': typeof ResearchResearchDatasetsRoute
+  '/research/models': typeof ResearchResearchModelsRoute
+  '/research/performance': typeof ResearchResearchPerformanceRoute
+  '/research/training': typeof ResearchResearchTrainingRoute
+  '/research/versions': typeof ResearchResearchVersionsRoute
+  '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
+  '/patients/new': typeof ShellPatientsNewRoute
+  '/admin': typeof AdminAdminIndexRoute
+  '/portal': typeof PatientPortalIndexRoute
+  '/research': typeof ResearchResearchIndexRoute
   '/patients': typeof ShellPatientsIndexRoute
+  '/patients/$patientId/edit': typeof ShellPatientsPatientIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/$': typeof SplatRoute
+  '/_admin': typeof AdminRouteWithChildren
+  '/_patient': typeof PatientRouteWithChildren
+  '/_research': typeof ResearchRouteWithChildren
   '/_shell': typeof ShellRouteWithChildren
+  '/error': typeof ErrorRoute
+  '/forbidden': typeof ForbiddenRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/patient-login': typeof PatientLoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_shell/analytics': typeof ShellAnalyticsRoute
   '/_shell/digital-twins': typeof ShellDigitalTwinsRoute
+  '/_shell/documents': typeof ShellDocumentsRoute
   '/_shell/explainability': typeof ShellExplainabilityRoute
+  '/_shell/help': typeof ShellHelpRoute
   '/_shell/notifications': typeof ShellNotificationsRoute
+  '/_shell/ocr': typeof ShellOcrRoute
   '/_shell/predictions': typeof ShellPredictionsRoute
   '/_shell/profile': typeof ShellProfileRoute
   '/_shell/reports': typeof ShellReportsRoute
+  '/_shell/search': typeof ShellSearchRoute
   '/_shell/settings': typeof ShellSettingsRoute
   '/_shell/simulator': typeof ShellSimulatorRoute
+  '/_shell/states': typeof ShellStatesRoute
+  '/_shell/timeline': typeof ShellTimelineRoute
   '/_shell/': typeof ShellIndexRoute
-  '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRoute
+  '/_admin/admin/audit': typeof AdminAdminAuditRoute
+  '/_admin/admin/departments': typeof AdminAdminDepartmentsRoute
+  '/_admin/admin/doctors': typeof AdminAdminDoctorsRoute
+  '/_admin/admin/hospitals': typeof AdminAdminHospitalsRoute
+  '/_admin/admin/permissions': typeof AdminAdminPermissionsRoute
+  '/_admin/admin/users': typeof AdminAdminUsersRoute
+  '/_patient/portal/appointments': typeof PatientPortalAppointmentsRoute
+  '/_patient/portal/notifications': typeof PatientPortalNotificationsRoute
+  '/_patient/portal/profile': typeof PatientPortalProfileRoute
+  '/_patient/portal/reports': typeof PatientPortalReportsRoute
+  '/_patient/portal/treatment': typeof PatientPortalTreatmentRoute
+  '/_patient/portal/upload': typeof PatientPortalUploadRoute
+  '/_research/research/datasets': typeof ResearchResearchDatasetsRoute
+  '/_research/research/models': typeof ResearchResearchModelsRoute
+  '/_research/research/performance': typeof ResearchResearchPerformanceRoute
+  '/_research/research/training': typeof ResearchResearchTrainingRoute
+  '/_research/research/versions': typeof ResearchResearchVersionsRoute
+  '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
+  '/_shell/patients/new': typeof ShellPatientsNewRoute
+  '/_admin/admin/': typeof AdminAdminIndexRoute
+  '/_patient/portal/': typeof PatientPortalIndexRoute
+  '/_research/research/': typeof ResearchResearchIndexRoute
   '/_shell/patients/': typeof ShellPatientsIndexRoute
+  '/_shell/patients/$patientId/edit': typeof ShellPatientsPatientIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/$'
     | '/'
+    | '/error'
+    | '/forbidden'
     | '/forgot-password'
     | '/login'
+    | '/patient-login'
     | '/register'
     | '/reset-password'
     | '/analytics'
     | '/digital-twins'
+    | '/documents'
     | '/explainability'
+    | '/help'
     | '/notifications'
+    | '/ocr'
     | '/predictions'
     | '/profile'
     | '/reports'
+    | '/search'
     | '/settings'
     | '/simulator'
+    | '/states'
+    | '/timeline'
+    | '/admin/audit'
+    | '/admin/departments'
+    | '/admin/doctors'
+    | '/admin/hospitals'
+    | '/admin/permissions'
+    | '/admin/users'
+    | '/portal/appointments'
+    | '/portal/notifications'
+    | '/portal/profile'
+    | '/portal/reports'
+    | '/portal/treatment'
+    | '/portal/upload'
+    | '/research/datasets'
+    | '/research/models'
+    | '/research/performance'
+    | '/research/training'
+    | '/research/versions'
     | '/patients/$patientId'
+    | '/patients/new'
+    | '/admin/'
+    | '/portal/'
+    | '/research/'
     | '/patients/'
+    | '/patients/$patientId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/$'
+    | '/'
+    | '/error'
+    | '/forbidden'
     | '/forgot-password'
     | '/login'
+    | '/patient-login'
     | '/register'
     | '/reset-password'
     | '/analytics'
     | '/digital-twins'
+    | '/documents'
     | '/explainability'
+    | '/help'
     | '/notifications'
+    | '/ocr'
     | '/predictions'
     | '/profile'
     | '/reports'
+    | '/search'
     | '/settings'
     | '/simulator'
-    | '/'
+    | '/states'
+    | '/timeline'
+    | '/admin/audit'
+    | '/admin/departments'
+    | '/admin/doctors'
+    | '/admin/hospitals'
+    | '/admin/permissions'
+    | '/admin/users'
+    | '/portal/appointments'
+    | '/portal/notifications'
+    | '/portal/profile'
+    | '/portal/reports'
+    | '/portal/treatment'
+    | '/portal/upload'
+    | '/research/datasets'
+    | '/research/models'
+    | '/research/performance'
+    | '/research/training'
+    | '/research/versions'
     | '/patients/$patientId'
+    | '/patients/new'
+    | '/admin'
+    | '/portal'
+    | '/research'
     | '/patients'
+    | '/patients/$patientId/edit'
   id:
     | '__root__'
+    | '/$'
+    | '/_admin'
+    | '/_patient'
+    | '/_research'
     | '/_shell'
+    | '/error'
+    | '/forbidden'
     | '/forgot-password'
     | '/login'
+    | '/patient-login'
     | '/register'
     | '/reset-password'
     | '/_shell/analytics'
     | '/_shell/digital-twins'
+    | '/_shell/documents'
     | '/_shell/explainability'
+    | '/_shell/help'
     | '/_shell/notifications'
+    | '/_shell/ocr'
     | '/_shell/predictions'
     | '/_shell/profile'
     | '/_shell/reports'
+    | '/_shell/search'
     | '/_shell/settings'
     | '/_shell/simulator'
+    | '/_shell/states'
+    | '/_shell/timeline'
     | '/_shell/'
+    | '/_admin/admin/audit'
+    | '/_admin/admin/departments'
+    | '/_admin/admin/doctors'
+    | '/_admin/admin/hospitals'
+    | '/_admin/admin/permissions'
+    | '/_admin/admin/users'
+    | '/_patient/portal/appointments'
+    | '/_patient/portal/notifications'
+    | '/_patient/portal/profile'
+    | '/_patient/portal/reports'
+    | '/_patient/portal/treatment'
+    | '/_patient/portal/upload'
+    | '/_research/research/datasets'
+    | '/_research/research/models'
+    | '/_research/research/performance'
+    | '/_research/research/training'
+    | '/_research/research/versions'
     | '/_shell/patients/$patientId'
+    | '/_shell/patients/new'
+    | '/_admin/admin/'
+    | '/_patient/portal/'
+    | '/_research/research/'
     | '/_shell/patients/'
+    | '/_shell/patients/$patientId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  SplatRoute: typeof SplatRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  PatientRoute: typeof PatientRouteWithChildren
+  ResearchRoute: typeof ResearchRouteWithChildren
   ShellRoute: typeof ShellRouteWithChildren
+  ErrorRoute: typeof ErrorRoute
+  ForbiddenRoute: typeof ForbiddenRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  PatientLoginRoute: typeof PatientLoginRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_admin': {
+      id: '/_admin'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_patient': {
+      id: '/_patient'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PatientRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_research': {
+      id: '/_research'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof ResearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_shell': {
       id: '/_shell'
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof ShellRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/error': {
+      id: '/error'
+      path: '/error'
+      fullPath: '/error'
+      preLoaderRoute: typeof ErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forbidden': {
+      id: '/forbidden'
+      path: '/forbidden'
+      fullPath: '/forbidden'
+      preLoaderRoute: typeof ForbiddenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -255,6 +716,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/patient-login': {
+      id: '/patient-login'
+      path: '/patient-login'
+      fullPath: '/patient-login'
+      preLoaderRoute: typeof PatientLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -292,6 +760,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellDigitalTwinsRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/documents': {
+      id: '/_shell/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof ShellDocumentsRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/explainability': {
       id: '/_shell/explainability'
       path: '/explainability'
@@ -299,11 +774,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellExplainabilityRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/help': {
+      id: '/_shell/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof ShellHelpRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/notifications': {
       id: '/_shell/notifications'
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof ShellNotificationsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/ocr': {
+      id: '/_shell/ocr'
+      path: '/ocr'
+      fullPath: '/ocr'
+      preLoaderRoute: typeof ShellOcrRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/predictions': {
@@ -327,6 +816,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellReportsRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/search': {
+      id: '/_shell/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof ShellSearchRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/settings': {
       id: '/_shell/settings'
       path: '/settings'
@@ -340,6 +836,160 @@ declare module '@tanstack/react-router' {
       fullPath: '/simulator'
       preLoaderRoute: typeof ShellSimulatorRouteImport
       parentRoute: typeof ShellRoute
+    }
+    '/_shell/states': {
+      id: '/_shell/states'
+      path: '/states'
+      fullPath: '/states'
+      preLoaderRoute: typeof ShellStatesRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/timeline': {
+      id: '/_shell/timeline'
+      path: '/timeline'
+      fullPath: '/timeline'
+      preLoaderRoute: typeof ShellTimelineRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_admin/admin/': {
+      id: '/_admin/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminAdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/admin/audit': {
+      id: '/_admin/admin/audit'
+      path: '/admin/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAdminAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/admin/departments': {
+      id: '/_admin/admin/departments'
+      path: '/admin/departments'
+      fullPath: '/admin/departments'
+      preLoaderRoute: typeof AdminAdminDepartmentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/admin/doctors': {
+      id: '/_admin/admin/doctors'
+      path: '/admin/doctors'
+      fullPath: '/admin/doctors'
+      preLoaderRoute: typeof AdminAdminDoctorsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/admin/hospitals': {
+      id: '/_admin/admin/hospitals'
+      path: '/admin/hospitals'
+      fullPath: '/admin/hospitals'
+      preLoaderRoute: typeof AdminAdminHospitalsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/admin/permissions': {
+      id: '/_admin/admin/permissions'
+      path: '/admin/permissions'
+      fullPath: '/admin/permissions'
+      preLoaderRoute: typeof AdminAdminPermissionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/admin/users': {
+      id: '/_admin/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminAdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_patient/portal/': {
+      id: '/_patient/portal/'
+      path: '/portal'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PatientPortalIndexRouteImport
+      parentRoute: typeof PatientRoute
+    }
+    '/_patient/portal/appointments': {
+      id: '/_patient/portal/appointments'
+      path: '/portal/appointments'
+      fullPath: '/portal/appointments'
+      preLoaderRoute: typeof PatientPortalAppointmentsRouteImport
+      parentRoute: typeof PatientRoute
+    }
+    '/_patient/portal/notifications': {
+      id: '/_patient/portal/notifications'
+      path: '/portal/notifications'
+      fullPath: '/portal/notifications'
+      preLoaderRoute: typeof PatientPortalNotificationsRouteImport
+      parentRoute: typeof PatientRoute
+    }
+    '/_patient/portal/profile': {
+      id: '/_patient/portal/profile'
+      path: '/portal/profile'
+      fullPath: '/portal/profile'
+      preLoaderRoute: typeof PatientPortalProfileRouteImport
+      parentRoute: typeof PatientRoute
+    }
+    '/_patient/portal/reports': {
+      id: '/_patient/portal/reports'
+      path: '/portal/reports'
+      fullPath: '/portal/reports'
+      preLoaderRoute: typeof PatientPortalReportsRouteImport
+      parentRoute: typeof PatientRoute
+    }
+    '/_patient/portal/treatment': {
+      id: '/_patient/portal/treatment'
+      path: '/portal/treatment'
+      fullPath: '/portal/treatment'
+      preLoaderRoute: typeof PatientPortalTreatmentRouteImport
+      parentRoute: typeof PatientRoute
+    }
+    '/_patient/portal/upload': {
+      id: '/_patient/portal/upload'
+      path: '/portal/upload'
+      fullPath: '/portal/upload'
+      preLoaderRoute: typeof PatientPortalUploadRouteImport
+      parentRoute: typeof PatientRoute
+    }
+    '/_research/research/': {
+      id: '/_research/research/'
+      path: '/research'
+      fullPath: '/research/'
+      preLoaderRoute: typeof ResearchResearchIndexRouteImport
+      parentRoute: typeof ResearchRoute
+    }
+    '/_research/research/datasets': {
+      id: '/_research/research/datasets'
+      path: '/research/datasets'
+      fullPath: '/research/datasets'
+      preLoaderRoute: typeof ResearchResearchDatasetsRouteImport
+      parentRoute: typeof ResearchRoute
+    }
+    '/_research/research/models': {
+      id: '/_research/research/models'
+      path: '/research/models'
+      fullPath: '/research/models'
+      preLoaderRoute: typeof ResearchResearchModelsRouteImport
+      parentRoute: typeof ResearchRoute
+    }
+    '/_research/research/performance': {
+      id: '/_research/research/performance'
+      path: '/research/performance'
+      fullPath: '/research/performance'
+      preLoaderRoute: typeof ResearchResearchPerformanceRouteImport
+      parentRoute: typeof ResearchRoute
+    }
+    '/_research/research/training': {
+      id: '/_research/research/training'
+      path: '/research/training'
+      fullPath: '/research/training'
+      preLoaderRoute: typeof ResearchResearchTrainingRouteImport
+      parentRoute: typeof ResearchRoute
+    }
+    '/_research/research/versions': {
+      id: '/_research/research/versions'
+      path: '/research/versions'
+      fullPath: '/research/versions'
+      preLoaderRoute: typeof ResearchResearchVersionsRouteImport
+      parentRoute: typeof ResearchRoute
     }
     '/_shell/patients/': {
       id: '/_shell/patients/'
@@ -355,58 +1005,164 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellPatientsPatientIdRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/patients/new': {
+      id: '/_shell/patients/new'
+      path: '/patients/new'
+      fullPath: '/patients/new'
+      preLoaderRoute: typeof ShellPatientsNewRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/patients/$patientId/edit': {
+      id: '/_shell/patients/$patientId/edit'
+      path: '/edit'
+      fullPath: '/patients/$patientId/edit'
+      preLoaderRoute: typeof ShellPatientsPatientIdEditRouteImport
+      parentRoute: typeof ShellPatientsPatientIdRoute
+    }
   }
 }
+
+interface AdminRouteChildren {
+  AdminAdminAuditRoute: typeof AdminAdminAuditRoute
+  AdminAdminDepartmentsRoute: typeof AdminAdminDepartmentsRoute
+  AdminAdminDoctorsRoute: typeof AdminAdminDoctorsRoute
+  AdminAdminHospitalsRoute: typeof AdminAdminHospitalsRoute
+  AdminAdminPermissionsRoute: typeof AdminAdminPermissionsRoute
+  AdminAdminUsersRoute: typeof AdminAdminUsersRoute
+  AdminAdminIndexRoute: typeof AdminAdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAdminAuditRoute: AdminAdminAuditRoute,
+  AdminAdminDepartmentsRoute: AdminAdminDepartmentsRoute,
+  AdminAdminDoctorsRoute: AdminAdminDoctorsRoute,
+  AdminAdminHospitalsRoute: AdminAdminHospitalsRoute,
+  AdminAdminPermissionsRoute: AdminAdminPermissionsRoute,
+  AdminAdminUsersRoute: AdminAdminUsersRoute,
+  AdminAdminIndexRoute: AdminAdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface PatientRouteChildren {
+  PatientPortalAppointmentsRoute: typeof PatientPortalAppointmentsRoute
+  PatientPortalNotificationsRoute: typeof PatientPortalNotificationsRoute
+  PatientPortalProfileRoute: typeof PatientPortalProfileRoute
+  PatientPortalReportsRoute: typeof PatientPortalReportsRoute
+  PatientPortalTreatmentRoute: typeof PatientPortalTreatmentRoute
+  PatientPortalUploadRoute: typeof PatientPortalUploadRoute
+  PatientPortalIndexRoute: typeof PatientPortalIndexRoute
+}
+
+const PatientRouteChildren: PatientRouteChildren = {
+  PatientPortalAppointmentsRoute: PatientPortalAppointmentsRoute,
+  PatientPortalNotificationsRoute: PatientPortalNotificationsRoute,
+  PatientPortalProfileRoute: PatientPortalProfileRoute,
+  PatientPortalReportsRoute: PatientPortalReportsRoute,
+  PatientPortalTreatmentRoute: PatientPortalTreatmentRoute,
+  PatientPortalUploadRoute: PatientPortalUploadRoute,
+  PatientPortalIndexRoute: PatientPortalIndexRoute,
+}
+
+const PatientRouteWithChildren =
+  PatientRoute._addFileChildren(PatientRouteChildren)
+
+interface ResearchRouteChildren {
+  ResearchResearchDatasetsRoute: typeof ResearchResearchDatasetsRoute
+  ResearchResearchModelsRoute: typeof ResearchResearchModelsRoute
+  ResearchResearchPerformanceRoute: typeof ResearchResearchPerformanceRoute
+  ResearchResearchTrainingRoute: typeof ResearchResearchTrainingRoute
+  ResearchResearchVersionsRoute: typeof ResearchResearchVersionsRoute
+  ResearchResearchIndexRoute: typeof ResearchResearchIndexRoute
+}
+
+const ResearchRouteChildren: ResearchRouteChildren = {
+  ResearchResearchDatasetsRoute: ResearchResearchDatasetsRoute,
+  ResearchResearchModelsRoute: ResearchResearchModelsRoute,
+  ResearchResearchPerformanceRoute: ResearchResearchPerformanceRoute,
+  ResearchResearchTrainingRoute: ResearchResearchTrainingRoute,
+  ResearchResearchVersionsRoute: ResearchResearchVersionsRoute,
+  ResearchResearchIndexRoute: ResearchResearchIndexRoute,
+}
+
+const ResearchRouteWithChildren = ResearchRoute._addFileChildren(
+  ResearchRouteChildren,
+)
+
+interface ShellPatientsPatientIdRouteChildren {
+  ShellPatientsPatientIdEditRoute: typeof ShellPatientsPatientIdEditRoute
+}
+
+const ShellPatientsPatientIdRouteChildren: ShellPatientsPatientIdRouteChildren =
+  {
+    ShellPatientsPatientIdEditRoute: ShellPatientsPatientIdEditRoute,
+  }
+
+const ShellPatientsPatientIdRouteWithChildren =
+  ShellPatientsPatientIdRoute._addFileChildren(
+    ShellPatientsPatientIdRouteChildren,
+  )
 
 interface ShellRouteChildren {
   ShellAnalyticsRoute: typeof ShellAnalyticsRoute
   ShellDigitalTwinsRoute: typeof ShellDigitalTwinsRoute
+  ShellDocumentsRoute: typeof ShellDocumentsRoute
   ShellExplainabilityRoute: typeof ShellExplainabilityRoute
+  ShellHelpRoute: typeof ShellHelpRoute
   ShellNotificationsRoute: typeof ShellNotificationsRoute
+  ShellOcrRoute: typeof ShellOcrRoute
   ShellPredictionsRoute: typeof ShellPredictionsRoute
   ShellProfileRoute: typeof ShellProfileRoute
   ShellReportsRoute: typeof ShellReportsRoute
+  ShellSearchRoute: typeof ShellSearchRoute
   ShellSettingsRoute: typeof ShellSettingsRoute
   ShellSimulatorRoute: typeof ShellSimulatorRoute
+  ShellStatesRoute: typeof ShellStatesRoute
+  ShellTimelineRoute: typeof ShellTimelineRoute
   ShellIndexRoute: typeof ShellIndexRoute
-  ShellPatientsPatientIdRoute: typeof ShellPatientsPatientIdRoute
+  ShellPatientsPatientIdRoute: typeof ShellPatientsPatientIdRouteWithChildren
+  ShellPatientsNewRoute: typeof ShellPatientsNewRoute
   ShellPatientsIndexRoute: typeof ShellPatientsIndexRoute
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
   ShellAnalyticsRoute: ShellAnalyticsRoute,
   ShellDigitalTwinsRoute: ShellDigitalTwinsRoute,
+  ShellDocumentsRoute: ShellDocumentsRoute,
   ShellExplainabilityRoute: ShellExplainabilityRoute,
+  ShellHelpRoute: ShellHelpRoute,
   ShellNotificationsRoute: ShellNotificationsRoute,
+  ShellOcrRoute: ShellOcrRoute,
   ShellPredictionsRoute: ShellPredictionsRoute,
   ShellProfileRoute: ShellProfileRoute,
   ShellReportsRoute: ShellReportsRoute,
+  ShellSearchRoute: ShellSearchRoute,
   ShellSettingsRoute: ShellSettingsRoute,
   ShellSimulatorRoute: ShellSimulatorRoute,
+  ShellStatesRoute: ShellStatesRoute,
+  ShellTimelineRoute: ShellTimelineRoute,
   ShellIndexRoute: ShellIndexRoute,
-  ShellPatientsPatientIdRoute: ShellPatientsPatientIdRoute,
+  ShellPatientsPatientIdRoute: ShellPatientsPatientIdRouteWithChildren,
+  ShellPatientsNewRoute: ShellPatientsNewRoute,
   ShellPatientsIndexRoute: ShellPatientsIndexRoute,
 }
 
 const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  SplatRoute: SplatRoute,
+  AdminRoute: AdminRouteWithChildren,
+  PatientRoute: PatientRouteWithChildren,
+  ResearchRoute: ResearchRouteWithChildren,
   ShellRoute: ShellRouteWithChildren,
+  ErrorRoute: ErrorRoute,
+  ForbiddenRoute: ForbiddenRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  PatientLoginRoute: PatientLoginRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

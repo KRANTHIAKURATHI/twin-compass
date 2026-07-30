@@ -5,7 +5,9 @@ import { ChevronRight } from "lucide-react";
 interface Crumb {
   label: string;
   to?: string;
+  params?: Record<string, string>;
 }
+
 
 export function PageHeader({
   title,
@@ -27,9 +29,10 @@ export function PageHeader({
               <span key={c.label} className="flex items-center gap-1">
                 {i > 0 && <ChevronRight className="size-3" aria-hidden="true" />}
                 {c.to ? (
-                  <Link to={c.to} className="transition-colors hover:text-foreground">
+                  <Link to={c.to} params={c.params as never} className="transition-colors hover:text-foreground">
                     {c.label}
                   </Link>
+
                 ) : (
                   <span aria-current="page">{c.label}</span>
                 )}

@@ -12,7 +12,16 @@ import {
   Settings,
   LogOut,
   Activity,
+  History,
+  FolderOpen,
+  ScanText,
+  Search,
+  HeartPulse,
+  ShieldCheck,
+  Microscope,
+  LifeBuoy,
 } from "lucide-react";
+
 
 import {
   Sidebar,
@@ -35,6 +44,13 @@ const clinical = [
   { title: "Treatment Simulator", url: "/simulator", icon: FlaskConical },
   { title: "Predictions", url: "/predictions", icon: Brain },
   { title: "Explainability", url: "/explainability", icon: Lightbulb },
+  { title: "Timeline", url: "/timeline", icon: History },
+];
+
+const documents = [
+  { title: "Document Center", url: "/documents", icon: FolderOpen },
+  { title: "OCR Verification", url: "/ocr", icon: ScanText },
+  { title: "Search", url: "/search", icon: Search },
 ];
 
 const insights = [
@@ -42,10 +58,18 @@ const insights = [
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
 ];
 
+const portals = [
+  { title: "Patient Portal", url: "/portal", icon: HeartPulse },
+  { title: "Admin Portal", url: "/admin/hospitals", icon: ShieldCheck },
+  { title: "Research Portal", url: "/research/models", icon: Microscope },
+];
+
 const account = [
   { title: "Profile", url: "/profile", icon: User },
   { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Help & About", url: "/help", icon: LifeBuoy },
 ];
+
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -92,8 +116,11 @@ export function AppSidebar() {
 
       <SidebarContent>
         {renderGroup("Clinical", clinical)}
+        {renderGroup("Documents", documents)}
         {renderGroup("Insights", insights)}
+        {renderGroup("Portals", portals)}
         {renderGroup("Account", account)}
+
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
