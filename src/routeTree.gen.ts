@@ -32,6 +32,7 @@ import { Route as ShellSearchRouteImport } from './routes/_shell.search'
 import { Route as ShellSettingsRouteImport } from './routes/_shell.settings'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
 import { Route as ShellTimelineRouteImport } from './routes/_shell.timeline'
+import { Route as AdminAdminDoctorsRouteImport } from './routes/_admin.admin.doctors'
 import { Route as AdminAdminHospitalsRouteImport } from './routes/_admin.admin.hospitals'
 import { Route as PatientPortalIndexRouteImport } from './routes/_patient.portal.index'
 import { Route as PatientPortalAppointmentsRouteImport } from './routes/_patient.portal.appointments'
@@ -157,6 +158,11 @@ const ShellTimelineRoute = ShellTimelineRouteImport.update({
   path: '/timeline',
   getParentRoute: () => ShellRoute,
 } as any)
+const AdminAdminDoctorsRoute = AdminAdminDoctorsRouteImport.update({
+  id: '/admin/doctors',
+  path: '/admin/doctors',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAdminHospitalsRoute = AdminAdminHospitalsRouteImport.update({
   id: '/admin/hospitals',
   path: '/admin/hospitals',
@@ -242,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/timeline': typeof ShellTimelineRoute
+  '/admin/doctors': typeof AdminAdminDoctorsRoute
   '/admin/hospitals': typeof AdminAdminHospitalsRoute
   '/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/portal/notifications': typeof PatientPortalNotificationsRoute
@@ -276,6 +283,7 @@ export interface FileRoutesByTo {
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/timeline': typeof ShellTimelineRoute
+  '/admin/doctors': typeof AdminAdminDoctorsRoute
   '/admin/hospitals': typeof AdminAdminHospitalsRoute
   '/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/portal/notifications': typeof PatientPortalNotificationsRoute
@@ -314,6 +322,7 @@ export interface FileRoutesById {
   '/_shell/simulator': typeof ShellSimulatorRoute
   '/_shell/timeline': typeof ShellTimelineRoute
   '/_shell/': typeof ShellIndexRoute
+  '/_admin/admin/doctors': typeof AdminAdminDoctorsRoute
   '/_admin/admin/hospitals': typeof AdminAdminHospitalsRoute
   '/_patient/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/_patient/portal/notifications': typeof PatientPortalNotificationsRoute
@@ -350,6 +359,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/simulator'
     | '/timeline'
+    | '/admin/doctors'
     | '/admin/hospitals'
     | '/portal/appointments'
     | '/portal/notifications'
@@ -384,6 +394,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/simulator'
     | '/timeline'
+    | '/admin/doctors'
     | '/admin/hospitals'
     | '/portal/appointments'
     | '/portal/notifications'
@@ -421,6 +432,7 @@ export interface FileRouteTypes {
     | '/_shell/simulator'
     | '/_shell/timeline'
     | '/_shell/'
+    | '/_admin/admin/doctors'
     | '/_admin/admin/hospitals'
     | '/_patient/portal/appointments'
     | '/_patient/portal/notifications'
@@ -609,6 +621,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellTimelineRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_admin/admin/doctors': {
+      id: '/_admin/admin/doctors'
+      path: '/admin/doctors'
+      fullPath: '/admin/doctors'
+      preLoaderRoute: typeof AdminAdminDoctorsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/admin/hospitals': {
       id: '/_admin/admin/hospitals'
       path: '/admin/hospitals'
@@ -697,10 +716,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAdminDoctorsRoute: typeof AdminAdminDoctorsRoute
   AdminAdminHospitalsRoute: typeof AdminAdminHospitalsRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAdminDoctorsRoute: AdminAdminDoctorsRoute,
   AdminAdminHospitalsRoute: AdminAdminHospitalsRoute,
 }
 
