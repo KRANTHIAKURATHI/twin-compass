@@ -11,6 +11,7 @@ import { patients } from "@/lib/mock-data";
 import { documents } from "@/lib/mock-extra";
 
 export const Route = createFileRoute("/_shell/search")({
+  validateSearch: (search: Record<string, unknown>) => ({ q: typeof search.q === "string" ? search.q : "" }),
   head: () => ({
     meta: [
       { title: "Search — OncoTwin" },
@@ -25,7 +26,8 @@ export const Route = createFileRoute("/_shell/search")({
 });
 
 function SearchPage() {
-  const [q, setQ] = useState("");
+  const { q: initialQ } = Route.useSearch();
+  const [q, setQ] = useState(initialQ);
   const term = q.trim().toLowerCase();
 
   const patientHits = term
