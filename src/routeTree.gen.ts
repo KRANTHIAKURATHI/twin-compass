@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as ShellIndexRouteImport } from './routes/_shell.index'
+import { Route as ShellAnalyticsRouteImport } from './routes/_shell.analytics'
 import { Route as ShellDigitalTwinsRouteImport } from './routes/_shell.digital-twins'
 import { Route as ShellExplainabilityRouteImport } from './routes/_shell.explainability'
 import { Route as ShellPredictionsRouteImport } from './routes/_shell.predictions'
+import { Route as ShellReportsRouteImport } from './routes/_shell.reports'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
 import { Route as ShellPatientsIndexRouteImport } from './routes/_shell.patients.index'
 import { Route as ShellPatientsPatientIdRouteImport } from './routes/_shell.patients.$patientId'
@@ -25,6 +27,11 @@ const ShellRoute = ShellRouteImport.update({
 const ShellIndexRoute = ShellIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAnalyticsRoute = ShellAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellDigitalTwinsRoute = ShellDigitalTwinsRouteImport.update({
@@ -40,6 +47,11 @@ const ShellExplainabilityRoute = ShellExplainabilityRouteImport.update({
 const ShellPredictionsRoute = ShellPredictionsRouteImport.update({
   id: '/predictions',
   path: '/predictions',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellReportsRoute = ShellReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellSimulatorRoute = ShellSimulatorRouteImport.update({
@@ -60,17 +72,21 @@ const ShellPatientsPatientIdRoute = ShellPatientsPatientIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof ShellIndexRoute
+  '/analytics': typeof ShellAnalyticsRoute
   '/digital-twins': typeof ShellDigitalTwinsRoute
   '/explainability': typeof ShellExplainabilityRoute
   '/predictions': typeof ShellPredictionsRoute
+  '/reports': typeof ShellReportsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRoute
   '/patients/': typeof ShellPatientsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/analytics': typeof ShellAnalyticsRoute
   '/digital-twins': typeof ShellDigitalTwinsRoute
   '/explainability': typeof ShellExplainabilityRoute
   '/predictions': typeof ShellPredictionsRoute
+  '/reports': typeof ShellReportsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/': typeof ShellIndexRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRoute
@@ -79,9 +95,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_shell': typeof ShellRouteWithChildren
+  '/_shell/analytics': typeof ShellAnalyticsRoute
   '/_shell/digital-twins': typeof ShellDigitalTwinsRoute
   '/_shell/explainability': typeof ShellExplainabilityRoute
   '/_shell/predictions': typeof ShellPredictionsRoute
+  '/_shell/reports': typeof ShellReportsRoute
   '/_shell/simulator': typeof ShellSimulatorRoute
   '/_shell/': typeof ShellIndexRoute
   '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRoute
@@ -91,17 +109,21 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/analytics'
     | '/digital-twins'
     | '/explainability'
     | '/predictions'
+    | '/reports'
     | '/simulator'
     | '/patients/$patientId'
     | '/patients/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/analytics'
     | '/digital-twins'
     | '/explainability'
     | '/predictions'
+    | '/reports'
     | '/simulator'
     | '/'
     | '/patients/$patientId'
@@ -109,9 +131,11 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_shell'
+    | '/_shell/analytics'
     | '/_shell/digital-twins'
     | '/_shell/explainability'
     | '/_shell/predictions'
+    | '/_shell/reports'
     | '/_shell/simulator'
     | '/_shell/'
     | '/_shell/patients/$patientId'
@@ -138,6 +162,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellIndexRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/analytics': {
+      id: '/_shell/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof ShellAnalyticsRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/digital-twins': {
       id: '/_shell/digital-twins'
       path: '/digital-twins'
@@ -157,6 +188,13 @@ declare module '@tanstack/react-router' {
       path: '/predictions'
       fullPath: '/predictions'
       preLoaderRoute: typeof ShellPredictionsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/reports': {
+      id: '/_shell/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ShellReportsRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/simulator': {
@@ -184,9 +222,11 @@ declare module '@tanstack/react-router' {
 }
 
 interface ShellRouteChildren {
+  ShellAnalyticsRoute: typeof ShellAnalyticsRoute
   ShellDigitalTwinsRoute: typeof ShellDigitalTwinsRoute
   ShellExplainabilityRoute: typeof ShellExplainabilityRoute
   ShellPredictionsRoute: typeof ShellPredictionsRoute
+  ShellReportsRoute: typeof ShellReportsRoute
   ShellSimulatorRoute: typeof ShellSimulatorRoute
   ShellIndexRoute: typeof ShellIndexRoute
   ShellPatientsPatientIdRoute: typeof ShellPatientsPatientIdRoute
@@ -194,9 +234,11 @@ interface ShellRouteChildren {
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
+  ShellAnalyticsRoute: ShellAnalyticsRoute,
   ShellDigitalTwinsRoute: ShellDigitalTwinsRoute,
   ShellExplainabilityRoute: ShellExplainabilityRoute,
   ShellPredictionsRoute: ShellPredictionsRoute,
+  ShellReportsRoute: ShellReportsRoute,
   ShellSimulatorRoute: ShellSimulatorRoute,
   ShellIndexRoute: ShellIndexRoute,
   ShellPatientsPatientIdRoute: ShellPatientsPatientIdRoute,
