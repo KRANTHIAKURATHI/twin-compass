@@ -142,7 +142,7 @@ function SimulatorPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">seed
                   <RiskChip level={s.risk} />
                   <StatusChip tone="primary">{s.confidence}% confidence</StatusChip>
                 </div>
