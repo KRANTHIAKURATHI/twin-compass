@@ -18,6 +18,7 @@ import { Route as ShellNotificationsRouteImport } from './routes/_shell.notifica
 import { Route as ShellPredictionsRouteImport } from './routes/_shell.predictions'
 import { Route as ShellProfileRouteImport } from './routes/_shell.profile'
 import { Route as ShellReportsRouteImport } from './routes/_shell.reports'
+import { Route as ShellSettingsRouteImport } from './routes/_shell.settings'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
 import { Route as ShellPatientsIndexRouteImport } from './routes/_shell.patients.index'
 import { Route as ShellPatientsPatientIdRouteImport } from './routes/_shell.patients.$patientId'
@@ -66,6 +67,11 @@ const ShellReportsRoute = ShellReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellSettingsRoute = ShellSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellSimulatorRoute = ShellSimulatorRouteImport.update({
   id: '/simulator',
   path: '/simulator',
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/predictions': typeof ShellPredictionsRoute
   '/profile': typeof ShellProfileRoute
   '/reports': typeof ShellReportsRoute
+  '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRoute
   '/patients/': typeof ShellPatientsIndexRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/predictions': typeof ShellPredictionsRoute
   '/profile': typeof ShellProfileRoute
   '/reports': typeof ShellReportsRoute
+  '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/': typeof ShellIndexRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/_shell/predictions': typeof ShellPredictionsRoute
   '/_shell/profile': typeof ShellProfileRoute
   '/_shell/reports': typeof ShellReportsRoute
+  '/_shell/settings': typeof ShellSettingsRoute
   '/_shell/simulator': typeof ShellSimulatorRoute
   '/_shell/': typeof ShellIndexRoute
   '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/predictions'
     | '/profile'
     | '/reports'
+    | '/settings'
     | '/simulator'
     | '/patients/$patientId'
     | '/patients/'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/predictions'
     | '/profile'
     | '/reports'
+    | '/settings'
     | '/simulator'
     | '/'
     | '/patients/$patientId'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/_shell/predictions'
     | '/_shell/profile'
     | '/_shell/reports'
+    | '/_shell/settings'
     | '/_shell/simulator'
     | '/_shell/'
     | '/_shell/patients/$patientId'
@@ -235,6 +247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellReportsRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/settings': {
+      id: '/_shell/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof ShellSettingsRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/simulator': {
       id: '/_shell/simulator'
       path: '/simulator'
@@ -267,6 +286,7 @@ interface ShellRouteChildren {
   ShellPredictionsRoute: typeof ShellPredictionsRoute
   ShellProfileRoute: typeof ShellProfileRoute
   ShellReportsRoute: typeof ShellReportsRoute
+  ShellSettingsRoute: typeof ShellSettingsRoute
   ShellSimulatorRoute: typeof ShellSimulatorRoute
   ShellIndexRoute: typeof ShellIndexRoute
   ShellPatientsPatientIdRoute: typeof ShellPatientsPatientIdRoute
@@ -281,6 +301,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellPredictionsRoute: ShellPredictionsRoute,
   ShellProfileRoute: ShellProfileRoute,
   ShellReportsRoute: ShellReportsRoute,
+  ShellSettingsRoute: ShellSettingsRoute,
   ShellSimulatorRoute: ShellSimulatorRoute,
   ShellIndexRoute: ShellIndexRoute,
   ShellPatientsPatientIdRoute: ShellPatientsPatientIdRoute,
