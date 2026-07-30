@@ -32,6 +32,7 @@ import { Route as ShellSearchRouteImport } from './routes/_shell.search'
 import { Route as ShellSettingsRouteImport } from './routes/_shell.settings'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
 import { Route as ShellTimelineRouteImport } from './routes/_shell.timeline'
+import { Route as AdminAdminDepartmentsRouteImport } from './routes/_admin.admin.departments'
 import { Route as AdminAdminDoctorsRouteImport } from './routes/_admin.admin.doctors'
 import { Route as AdminAdminHospitalsRouteImport } from './routes/_admin.admin.hospitals'
 import { Route as PatientPortalIndexRouteImport } from './routes/_patient.portal.index'
@@ -158,6 +159,11 @@ const ShellTimelineRoute = ShellTimelineRouteImport.update({
   path: '/timeline',
   getParentRoute: () => ShellRoute,
 } as any)
+const AdminAdminDepartmentsRoute = AdminAdminDepartmentsRouteImport.update({
+  id: '/admin/departments',
+  path: '/admin/departments',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAdminDoctorsRoute = AdminAdminDoctorsRouteImport.update({
   id: '/admin/doctors',
   path: '/admin/doctors',
@@ -248,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/timeline': typeof ShellTimelineRoute
+  '/admin/departments': typeof AdminAdminDepartmentsRoute
   '/admin/doctors': typeof AdminAdminDoctorsRoute
   '/admin/hospitals': typeof AdminAdminHospitalsRoute
   '/portal/appointments': typeof PatientPortalAppointmentsRoute
@@ -283,6 +290,7 @@ export interface FileRoutesByTo {
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/timeline': typeof ShellTimelineRoute
+  '/admin/departments': typeof AdminAdminDepartmentsRoute
   '/admin/doctors': typeof AdminAdminDoctorsRoute
   '/admin/hospitals': typeof AdminAdminHospitalsRoute
   '/portal/appointments': typeof PatientPortalAppointmentsRoute
@@ -322,6 +330,7 @@ export interface FileRoutesById {
   '/_shell/simulator': typeof ShellSimulatorRoute
   '/_shell/timeline': typeof ShellTimelineRoute
   '/_shell/': typeof ShellIndexRoute
+  '/_admin/admin/departments': typeof AdminAdminDepartmentsRoute
   '/_admin/admin/doctors': typeof AdminAdminDoctorsRoute
   '/_admin/admin/hospitals': typeof AdminAdminHospitalsRoute
   '/_patient/portal/appointments': typeof PatientPortalAppointmentsRoute
@@ -359,6 +368,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/simulator'
     | '/timeline'
+    | '/admin/departments'
     | '/admin/doctors'
     | '/admin/hospitals'
     | '/portal/appointments'
@@ -394,6 +404,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/simulator'
     | '/timeline'
+    | '/admin/departments'
     | '/admin/doctors'
     | '/admin/hospitals'
     | '/portal/appointments'
@@ -432,6 +443,7 @@ export interface FileRouteTypes {
     | '/_shell/simulator'
     | '/_shell/timeline'
     | '/_shell/'
+    | '/_admin/admin/departments'
     | '/_admin/admin/doctors'
     | '/_admin/admin/hospitals'
     | '/_patient/portal/appointments'
@@ -621,6 +633,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellTimelineRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_admin/admin/departments': {
+      id: '/_admin/admin/departments'
+      path: '/admin/departments'
+      fullPath: '/admin/departments'
+      preLoaderRoute: typeof AdminAdminDepartmentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/admin/doctors': {
       id: '/_admin/admin/doctors'
       path: '/admin/doctors'
@@ -716,11 +735,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAdminDepartmentsRoute: typeof AdminAdminDepartmentsRoute
   AdminAdminDoctorsRoute: typeof AdminAdminDoctorsRoute
   AdminAdminHospitalsRoute: typeof AdminAdminHospitalsRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAdminDepartmentsRoute: AdminAdminDepartmentsRoute,
   AdminAdminDoctorsRoute: AdminAdminDoctorsRoute,
   AdminAdminHospitalsRoute: AdminAdminHospitalsRoute,
 }
