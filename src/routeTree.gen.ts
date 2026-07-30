@@ -21,6 +21,7 @@ import { Route as ShellAnalyticsRouteImport } from './routes/_shell.analytics'
 import { Route as ShellDigitalTwinsRouteImport } from './routes/_shell.digital-twins'
 import { Route as ShellDocumentsRouteImport } from './routes/_shell.documents'
 import { Route as ShellExplainabilityRouteImport } from './routes/_shell.explainability'
+import { Route as ShellHelpRouteImport } from './routes/_shell.help'
 import { Route as ShellNotificationsRouteImport } from './routes/_shell.notifications'
 import { Route as ShellOcrRouteImport } from './routes/_shell.ocr'
 import { Route as ShellPredictionsRouteImport } from './routes/_shell.predictions'
@@ -98,6 +99,11 @@ const ShellDocumentsRoute = ShellDocumentsRouteImport.update({
 const ShellExplainabilityRoute = ShellExplainabilityRouteImport.update({
   id: '/explainability',
   path: '/explainability',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellHelpRoute = ShellHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellNotificationsRoute = ShellNotificationsRouteImport.update({
@@ -215,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/digital-twins': typeof ShellDigitalTwinsRoute
   '/documents': typeof ShellDocumentsRoute
   '/explainability': typeof ShellExplainabilityRoute
+  '/help': typeof ShellHelpRoute
   '/notifications': typeof ShellNotificationsRoute
   '/ocr': typeof ShellOcrRoute
   '/predictions': typeof ShellPredictionsRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/digital-twins': typeof ShellDigitalTwinsRoute
   '/documents': typeof ShellDocumentsRoute
   '/explainability': typeof ShellExplainabilityRoute
+  '/help': typeof ShellHelpRoute
   '/notifications': typeof ShellNotificationsRoute
   '/ocr': typeof ShellOcrRoute
   '/predictions': typeof ShellPredictionsRoute
@@ -281,6 +289,7 @@ export interface FileRoutesById {
   '/_shell/digital-twins': typeof ShellDigitalTwinsRoute
   '/_shell/documents': typeof ShellDocumentsRoute
   '/_shell/explainability': typeof ShellExplainabilityRoute
+  '/_shell/help': typeof ShellHelpRoute
   '/_shell/notifications': typeof ShellNotificationsRoute
   '/_shell/ocr': typeof ShellOcrRoute
   '/_shell/predictions': typeof ShellPredictionsRoute
@@ -316,6 +325,7 @@ export interface FileRouteTypes {
     | '/digital-twins'
     | '/documents'
     | '/explainability'
+    | '/help'
     | '/notifications'
     | '/ocr'
     | '/predictions'
@@ -348,6 +358,7 @@ export interface FileRouteTypes {
     | '/digital-twins'
     | '/documents'
     | '/explainability'
+    | '/help'
     | '/notifications'
     | '/ocr'
     | '/predictions'
@@ -381,6 +392,7 @@ export interface FileRouteTypes {
     | '/_shell/digital-twins'
     | '/_shell/documents'
     | '/_shell/explainability'
+    | '/_shell/help'
     | '/_shell/notifications'
     | '/_shell/ocr'
     | '/_shell/predictions'
@@ -498,6 +510,13 @@ declare module '@tanstack/react-router' {
       path: '/explainability'
       fullPath: '/explainability'
       preLoaderRoute: typeof ShellExplainabilityRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/help': {
+      id: '/_shell/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof ShellHelpRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/notifications': {
@@ -685,6 +704,7 @@ interface ShellRouteChildren {
   ShellDigitalTwinsRoute: typeof ShellDigitalTwinsRoute
   ShellDocumentsRoute: typeof ShellDocumentsRoute
   ShellExplainabilityRoute: typeof ShellExplainabilityRoute
+  ShellHelpRoute: typeof ShellHelpRoute
   ShellNotificationsRoute: typeof ShellNotificationsRoute
   ShellOcrRoute: typeof ShellOcrRoute
   ShellPredictionsRoute: typeof ShellPredictionsRoute
@@ -705,6 +725,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellDigitalTwinsRoute: ShellDigitalTwinsRoute,
   ShellDocumentsRoute: ShellDocumentsRoute,
   ShellExplainabilityRoute: ShellExplainabilityRoute,
+  ShellHelpRoute: ShellHelpRoute,
   ShellNotificationsRoute: ShellNotificationsRoute,
   ShellOcrRoute: ShellOcrRoute,
   ShellPredictionsRoute: ShellPredictionsRoute,
