@@ -59,9 +59,12 @@ function PatientProfile() {
         crumbs={[{ label: "Home", to: "/" }, { label: "Patients", to: "/patients" }, { label: p.name }]}
         actions={
           <>
-            <Button variant="outline">
-              <Pencil className="size-4" aria-hidden="true" /> Edit
+            <Button variant="outline" asChild>
+              <Link to="/patients/$patientId/edit" params={{ patientId: p.id }}>
+                <Pencil className="size-4" aria-hidden="true" /> Edit
+              </Link>
             </Button>
+
             <Button variant="outline" asChild>
               <Link to="/digital-twins">
                 <Boxes className="size-4" aria-hidden="true" /> Digital twin
