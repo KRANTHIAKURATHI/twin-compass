@@ -274,7 +274,43 @@ function PatientProfile() {
             </CardContent>
           </Card>
 
+          <Card className="overflow-hidden">
+            <CardHeader>
+              <CardTitle>Simulation history</CardTitle>
+              <CardDescription>Previous treatment simulations run for this patient</CardDescription>
+            </CardHeader>
+            <CardContent className="px-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Run</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Scenario</TableHead>
+                    <TableHead>Survival</TableHead>
+                    <TableHead>Response</TableHead>
+                    <TableHead>Model</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {simulationHistory.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="font-medium">{s.id}</TableCell>
+                      <TableCell className="text-muted-foreground">{s.date}</TableCell>
+                      <TableCell>{s.scenario}</TableCell>
+                      <TableCell>{s.survival}</TableCell>
+                      <TableCell>
+                        <StatusChip tone={s.response === "Likely responder" ? "success" : "warning"}>{s.response}</StatusChip>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{s.model}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
           <Card>
+
             <CardHeader>
               <CardTitle>Doctor notes</CardTitle>
             </CardHeader>
