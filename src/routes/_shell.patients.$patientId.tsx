@@ -1,16 +1,19 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { Activity, Boxes, Download, FileText, Pencil, Stethoscope } from "lucide-react";
+import { Activity, Boxes, Download, FileText, FlaskConical, Image as ImageIcon, Pencil, Stethoscope } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { RiskChip, StatusChip } from "@/components/common/StatusChip";
 import { Timeline } from "@/components/common/Timeline";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { patients, type Patient } from "@/lib/mock-data";
+import { imagingStudies, labResults, simulationHistory, treatmentPlan } from "@/lib/mock-extra";
+
 
 export const Route = createFileRoute("/_shell/patients/$patientId")({
   loader: ({ params }) => {
