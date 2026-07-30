@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as ShellIndexRouteImport } from './routes/_shell.index'
 import { Route as ShellPatientsIndexRouteImport } from './routes/_shell.patients.index'
+import { Route as ShellPatientsPatientIdRouteImport } from './routes/_shell.patients.$patientId'
 
 const ShellRoute = ShellRouteImport.update({
   id: '/_shell',
@@ -27,27 +28,40 @@ const ShellPatientsIndexRoute = ShellPatientsIndexRouteImport.update({
   path: '/patients/',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellPatientsPatientIdRoute = ShellPatientsPatientIdRouteImport.update({
+  id: '/patients/$patientId',
+  path: '/patients/$patientId',
+  getParentRoute: () => ShellRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof ShellIndexRoute
+  '/patients/$patientId': typeof ShellPatientsPatientIdRoute
   '/patients/': typeof ShellPatientsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof ShellIndexRoute
+  '/patients/$patientId': typeof ShellPatientsPatientIdRoute
   '/patients': typeof ShellPatientsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_shell': typeof ShellRouteWithChildren
   '/_shell/': typeof ShellIndexRoute
+  '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRoute
   '/_shell/patients/': typeof ShellPatientsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/patients/'
+  fullPaths: '/' | '/patients/$patientId' | '/patients/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/patients'
-  id: '__root__' | '/_shell' | '/_shell/' | '/_shell/patients/'
+  to: '/' | '/patients/$patientId' | '/patients'
+  id:
+    | '__root__'
+    | '/_shell'
+    | '/_shell/'
+    | '/_shell/patients/$patientId'
+    | '/_shell/patients/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,16 +91,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellPatientsIndexRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/patients/$patientId': {
+      id: '/_shell/patients/$patientId'
+      path: '/patients/$patientId'
+      fullPath: '/patients/$patientId'
+      preLoaderRoute: typeof ShellPatientsPatientIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
   }
 }
 
 interface ShellRouteChildren {
   ShellIndexRoute: typeof ShellIndexRoute
+  ShellPatientsPatientIdRoute: typeof ShellPatientsPatientIdRoute
   ShellPatientsIndexRoute: typeof ShellPatientsIndexRoute
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
   ShellIndexRoute: ShellIndexRoute,
+  ShellPatientsPatientIdRoute: ShellPatientsPatientIdRoute,
   ShellPatientsIndexRoute: ShellPatientsIndexRoute,
 }
 

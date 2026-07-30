@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { patients } from "@/lib/mock-data";
+import { patients, type Patient } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_shell/patients/$patientId")({
   loader: ({ params }) => {
@@ -46,7 +46,7 @@ function Field({ label, value }: { label: string; value: string | number }) {
 }
 
 function PatientProfile() {
-  const { patient: p } = Route.useLoaderData();
+  const { patient: p } = Route.useLoaderData() as { patient: Patient };
 
   return (
     <div className="mx-auto max-w-[1400px]">
