@@ -36,6 +36,7 @@ import { Route as AdminAdminAuditRouteImport } from './routes/_admin.admin.audit
 import { Route as AdminAdminDepartmentsRouteImport } from './routes/_admin.admin.departments'
 import { Route as AdminAdminDoctorsRouteImport } from './routes/_admin.admin.doctors'
 import { Route as AdminAdminHospitalsRouteImport } from './routes/_admin.admin.hospitals'
+import { Route as AdminAdminPermissionsRouteImport } from './routes/_admin.admin.permissions'
 import { Route as AdminAdminUsersRouteImport } from './routes/_admin.admin.users'
 import { Route as PatientPortalIndexRouteImport } from './routes/_patient.portal.index'
 import { Route as PatientPortalAppointmentsRouteImport } from './routes/_patient.portal.appointments'
@@ -181,6 +182,11 @@ const AdminAdminHospitalsRoute = AdminAdminHospitalsRouteImport.update({
   path: '/admin/hospitals',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAdminPermissionsRoute = AdminAdminPermissionsRouteImport.update({
+  id: '/admin/permissions',
+  path: '/admin/permissions',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAdminUsersRoute = AdminAdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -270,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/admin/departments': typeof AdminAdminDepartmentsRoute
   '/admin/doctors': typeof AdminAdminDoctorsRoute
   '/admin/hospitals': typeof AdminAdminHospitalsRoute
+  '/admin/permissions': typeof AdminAdminPermissionsRoute
   '/admin/users': typeof AdminAdminUsersRoute
   '/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/portal/notifications': typeof PatientPortalNotificationsRoute
@@ -308,6 +315,7 @@ export interface FileRoutesByTo {
   '/admin/departments': typeof AdminAdminDepartmentsRoute
   '/admin/doctors': typeof AdminAdminDoctorsRoute
   '/admin/hospitals': typeof AdminAdminHospitalsRoute
+  '/admin/permissions': typeof AdminAdminPermissionsRoute
   '/admin/users': typeof AdminAdminUsersRoute
   '/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/portal/notifications': typeof PatientPortalNotificationsRoute
@@ -350,6 +358,7 @@ export interface FileRoutesById {
   '/_admin/admin/departments': typeof AdminAdminDepartmentsRoute
   '/_admin/admin/doctors': typeof AdminAdminDoctorsRoute
   '/_admin/admin/hospitals': typeof AdminAdminHospitalsRoute
+  '/_admin/admin/permissions': typeof AdminAdminPermissionsRoute
   '/_admin/admin/users': typeof AdminAdminUsersRoute
   '/_patient/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/_patient/portal/notifications': typeof PatientPortalNotificationsRoute
@@ -390,6 +399,7 @@ export interface FileRouteTypes {
     | '/admin/departments'
     | '/admin/doctors'
     | '/admin/hospitals'
+    | '/admin/permissions'
     | '/admin/users'
     | '/portal/appointments'
     | '/portal/notifications'
@@ -428,6 +438,7 @@ export interface FileRouteTypes {
     | '/admin/departments'
     | '/admin/doctors'
     | '/admin/hospitals'
+    | '/admin/permissions'
     | '/admin/users'
     | '/portal/appointments'
     | '/portal/notifications'
@@ -469,6 +480,7 @@ export interface FileRouteTypes {
     | '/_admin/admin/departments'
     | '/_admin/admin/doctors'
     | '/_admin/admin/hospitals'
+    | '/_admin/admin/permissions'
     | '/_admin/admin/users'
     | '/_patient/portal/appointments'
     | '/_patient/portal/notifications'
@@ -685,6 +697,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminHospitalsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/admin/permissions': {
+      id: '/_admin/admin/permissions'
+      path: '/admin/permissions'
+      fullPath: '/admin/permissions'
+      preLoaderRoute: typeof AdminAdminPermissionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/admin/users': {
       id: '/_admin/admin/users'
       path: '/admin/users'
@@ -777,6 +796,7 @@ interface AdminRouteChildren {
   AdminAdminDepartmentsRoute: typeof AdminAdminDepartmentsRoute
   AdminAdminDoctorsRoute: typeof AdminAdminDoctorsRoute
   AdminAdminHospitalsRoute: typeof AdminAdminHospitalsRoute
+  AdminAdminPermissionsRoute: typeof AdminAdminPermissionsRoute
   AdminAdminUsersRoute: typeof AdminAdminUsersRoute
 }
 
@@ -785,6 +805,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAdminDepartmentsRoute: AdminAdminDepartmentsRoute,
   AdminAdminDoctorsRoute: AdminAdminDoctorsRoute,
   AdminAdminHospitalsRoute: AdminAdminHospitalsRoute,
+  AdminAdminPermissionsRoute: AdminAdminPermissionsRoute,
   AdminAdminUsersRoute: AdminAdminUsersRoute,
 }
 
