@@ -48,6 +48,7 @@ import { Route as PatientPortalTreatmentRouteImport } from './routes/_patient.po
 import { Route as PatientPortalUploadRouteImport } from './routes/_patient.portal.upload'
 import { Route as ResearchResearchDatasetsRouteImport } from './routes/_research.research.datasets'
 import { Route as ResearchResearchModelsRouteImport } from './routes/_research.research.models'
+import { Route as ResearchResearchPerformanceRouteImport } from './routes/_research.research.performance'
 import { Route as ResearchResearchTrainingRouteImport } from './routes/_research.research.training'
 import { Route as ResearchResearchVersionsRouteImport } from './routes/_research.research.versions'
 import { Route as ShellPatientsIndexRouteImport } from './routes/_shell.patients.index'
@@ -249,6 +250,12 @@ const ResearchResearchModelsRoute = ResearchResearchModelsRouteImport.update({
   path: '/research/models',
   getParentRoute: () => ResearchRoute,
 } as any)
+const ResearchResearchPerformanceRoute =
+  ResearchResearchPerformanceRouteImport.update({
+    id: '/research/performance',
+    path: '/research/performance',
+    getParentRoute: () => ResearchRoute,
+  } as any)
 const ResearchResearchTrainingRoute =
   ResearchResearchTrainingRouteImport.update({
     id: '/research/training',
@@ -318,6 +325,7 @@ export interface FileRoutesByFullPath {
   '/portal/upload': typeof PatientPortalUploadRoute
   '/research/datasets': typeof ResearchResearchDatasetsRoute
   '/research/models': typeof ResearchResearchModelsRoute
+  '/research/performance': typeof ResearchResearchPerformanceRoute
   '/research/training': typeof ResearchResearchTrainingRoute
   '/research/versions': typeof ResearchResearchVersionsRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
@@ -361,6 +369,7 @@ export interface FileRoutesByTo {
   '/portal/upload': typeof PatientPortalUploadRoute
   '/research/datasets': typeof ResearchResearchDatasetsRoute
   '/research/models': typeof ResearchResearchModelsRoute
+  '/research/performance': typeof ResearchResearchPerformanceRoute
   '/research/training': typeof ResearchResearchTrainingRoute
   '/research/versions': typeof ResearchResearchVersionsRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
@@ -409,6 +418,7 @@ export interface FileRoutesById {
   '/_patient/portal/upload': typeof PatientPortalUploadRoute
   '/_research/research/datasets': typeof ResearchResearchDatasetsRoute
   '/_research/research/models': typeof ResearchResearchModelsRoute
+  '/_research/research/performance': typeof ResearchResearchPerformanceRoute
   '/_research/research/training': typeof ResearchResearchTrainingRoute
   '/_research/research/versions': typeof ResearchResearchVersionsRoute
   '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
@@ -454,6 +464,7 @@ export interface FileRouteTypes {
     | '/portal/upload'
     | '/research/datasets'
     | '/research/models'
+    | '/research/performance'
     | '/research/training'
     | '/research/versions'
     | '/patients/$patientId'
@@ -497,6 +508,7 @@ export interface FileRouteTypes {
     | '/portal/upload'
     | '/research/datasets'
     | '/research/models'
+    | '/research/performance'
     | '/research/training'
     | '/research/versions'
     | '/patients/$patientId'
@@ -544,6 +556,7 @@ export interface FileRouteTypes {
     | '/_patient/portal/upload'
     | '/_research/research/datasets'
     | '/_research/research/models'
+    | '/_research/research/performance'
     | '/_research/research/training'
     | '/_research/research/versions'
     | '/_shell/patients/$patientId'
@@ -840,6 +853,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResearchResearchModelsRouteImport
       parentRoute: typeof ResearchRoute
     }
+    '/_research/research/performance': {
+      id: '/_research/research/performance'
+      path: '/research/performance'
+      fullPath: '/research/performance'
+      preLoaderRoute: typeof ResearchResearchPerformanceRouteImport
+      parentRoute: typeof ResearchRoute
+    }
     '/_research/research/training': {
       id: '/_research/research/training'
       path: '/research/training'
@@ -931,6 +951,7 @@ const PatientRouteWithChildren =
 interface ResearchRouteChildren {
   ResearchResearchDatasetsRoute: typeof ResearchResearchDatasetsRoute
   ResearchResearchModelsRoute: typeof ResearchResearchModelsRoute
+  ResearchResearchPerformanceRoute: typeof ResearchResearchPerformanceRoute
   ResearchResearchTrainingRoute: typeof ResearchResearchTrainingRoute
   ResearchResearchVersionsRoute: typeof ResearchResearchVersionsRoute
 }
@@ -938,6 +959,7 @@ interface ResearchRouteChildren {
 const ResearchRouteChildren: ResearchRouteChildren = {
   ResearchResearchDatasetsRoute: ResearchResearchDatasetsRoute,
   ResearchResearchModelsRoute: ResearchResearchModelsRoute,
+  ResearchResearchPerformanceRoute: ResearchResearchPerformanceRoute,
   ResearchResearchTrainingRoute: ResearchResearchTrainingRoute,
   ResearchResearchVersionsRoute: ResearchResearchVersionsRoute,
 }
