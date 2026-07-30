@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SplatRouteImport } from './routes/$'
 import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as PatientRouteImport } from './routes/_patient'
 import { Route as ResearchRouteImport } from './routes/_research'
@@ -58,6 +59,11 @@ import { Route as ShellPatientsPatientIdRouteImport } from './routes/_shell.pati
 import { Route as ShellPatientsNewRouteImport } from './routes/_shell.patients.new'
 import { Route as ShellPatientsPatientIdEditRouteImport } from './routes/_shell.patients.$patientId.edit'
 
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/_admin',
   getParentRoute: () => rootRouteImport,
@@ -303,6 +309,7 @@ const ShellPatientsPatientIdEditRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
+  '/$': typeof SplatRoute
   '/': typeof ShellIndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -349,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/patients/$patientId/edit': typeof ShellPatientsPatientIdEditRoute
 }
 export interface FileRoutesByTo {
+  '/$': typeof SplatRoute
   '/': typeof ShellIndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -396,6 +404,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/$': typeof SplatRoute
   '/_admin': typeof AdminRouteWithChildren
   '/_patient': typeof PatientRouteWithChildren
   '/_research': typeof ResearchRouteWithChildren
@@ -448,6 +457,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/$'
     | '/'
     | '/forgot-password'
     | '/login'
@@ -494,6 +504,7 @@ export interface FileRouteTypes {
     | '/patients/$patientId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/$'
     | '/'
     | '/forgot-password'
     | '/login'
@@ -540,6 +551,7 @@ export interface FileRouteTypes {
     | '/patients/$patientId/edit'
   id:
     | '__root__'
+    | '/$'
     | '/_admin'
     | '/_patient'
     | '/_research'
@@ -591,6 +603,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  SplatRoute: typeof SplatRoute
   AdminRoute: typeof AdminRouteWithChildren
   PatientRoute: typeof PatientRouteWithChildren
   ResearchRoute: typeof ResearchRouteWithChildren
@@ -604,6 +617,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_admin': {
       id: '/_admin'
       path: ''
@@ -1069,6 +1089,7 @@ const ShellRouteChildren: ShellRouteChildren = {
 const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  SplatRoute: SplatRoute,
   AdminRoute: AdminRouteWithChildren,
   PatientRoute: PatientRouteWithChildren,
   ResearchRoute: ResearchRouteWithChildren,
