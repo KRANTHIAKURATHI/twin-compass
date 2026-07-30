@@ -9,61 +9,394 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShellRouteImport } from './routes/_shell'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ShellIndexRouteImport } from './routes/_shell.index'
+import { Route as ShellAnalyticsRouteImport } from './routes/_shell.analytics'
+import { Route as ShellDigitalTwinsRouteImport } from './routes/_shell.digital-twins'
+import { Route as ShellExplainabilityRouteImport } from './routes/_shell.explainability'
+import { Route as ShellNotificationsRouteImport } from './routes/_shell.notifications'
+import { Route as ShellPredictionsRouteImport } from './routes/_shell.predictions'
+import { Route as ShellProfileRouteImport } from './routes/_shell.profile'
+import { Route as ShellReportsRouteImport } from './routes/_shell.reports'
+import { Route as ShellSettingsRouteImport } from './routes/_shell.settings'
+import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
+import { Route as ShellPatientsIndexRouteImport } from './routes/_shell.patients.index'
+import { Route as ShellPatientsPatientIdRouteImport } from './routes/_shell.patients.$patientId'
 
-const IndexRoute = IndexRouteImport.update({
+const ShellRoute = ShellRouteImport.update({
+  id: '/_shell',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShellIndexRoute = ShellIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAnalyticsRoute = ShellAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellDigitalTwinsRoute = ShellDigitalTwinsRouteImport.update({
+  id: '/digital-twins',
+  path: '/digital-twins',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellExplainabilityRoute = ShellExplainabilityRouteImport.update({
+  id: '/explainability',
+  path: '/explainability',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellNotificationsRoute = ShellNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellPredictionsRoute = ShellPredictionsRouteImport.update({
+  id: '/predictions',
+  path: '/predictions',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellProfileRoute = ShellProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellReportsRoute = ShellReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellSettingsRoute = ShellSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellSimulatorRoute = ShellSimulatorRouteImport.update({
+  id: '/simulator',
+  path: '/simulator',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellPatientsIndexRoute = ShellPatientsIndexRouteImport.update({
+  id: '/patients/',
+  path: '/patients/',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellPatientsPatientIdRoute = ShellPatientsPatientIdRouteImport.update({
+  id: '/patients/$patientId',
+  path: '/patients/$patientId',
+  getParentRoute: () => ShellRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof ShellIndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/analytics': typeof ShellAnalyticsRoute
+  '/digital-twins': typeof ShellDigitalTwinsRoute
+  '/explainability': typeof ShellExplainabilityRoute
+  '/notifications': typeof ShellNotificationsRoute
+  '/predictions': typeof ShellPredictionsRoute
+  '/profile': typeof ShellProfileRoute
+  '/reports': typeof ShellReportsRoute
+  '/settings': typeof ShellSettingsRoute
+  '/simulator': typeof ShellSimulatorRoute
+  '/patients/$patientId': typeof ShellPatientsPatientIdRoute
+  '/patients/': typeof ShellPatientsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/analytics': typeof ShellAnalyticsRoute
+  '/digital-twins': typeof ShellDigitalTwinsRoute
+  '/explainability': typeof ShellExplainabilityRoute
+  '/notifications': typeof ShellNotificationsRoute
+  '/predictions': typeof ShellPredictionsRoute
+  '/profile': typeof ShellProfileRoute
+  '/reports': typeof ShellReportsRoute
+  '/settings': typeof ShellSettingsRoute
+  '/simulator': typeof ShellSimulatorRoute
+  '/': typeof ShellIndexRoute
+  '/patients/$patientId': typeof ShellPatientsPatientIdRoute
+  '/patients': typeof ShellPatientsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_shell': typeof ShellRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/_shell/analytics': typeof ShellAnalyticsRoute
+  '/_shell/digital-twins': typeof ShellDigitalTwinsRoute
+  '/_shell/explainability': typeof ShellExplainabilityRoute
+  '/_shell/notifications': typeof ShellNotificationsRoute
+  '/_shell/predictions': typeof ShellPredictionsRoute
+  '/_shell/profile': typeof ShellProfileRoute
+  '/_shell/reports': typeof ShellReportsRoute
+  '/_shell/settings': typeof ShellSettingsRoute
+  '/_shell/simulator': typeof ShellSimulatorRoute
+  '/_shell/': typeof ShellIndexRoute
+  '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRoute
+  '/_shell/patients/': typeof ShellPatientsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/register'
+    | '/reset-password'
+    | '/analytics'
+    | '/digital-twins'
+    | '/explainability'
+    | '/notifications'
+    | '/predictions'
+    | '/profile'
+    | '/reports'
+    | '/settings'
+    | '/simulator'
+    | '/patients/$patientId'
+    | '/patients/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/forgot-password'
+    | '/login'
+    | '/register'
+    | '/reset-password'
+    | '/analytics'
+    | '/digital-twins'
+    | '/explainability'
+    | '/notifications'
+    | '/predictions'
+    | '/profile'
+    | '/reports'
+    | '/settings'
+    | '/simulator'
+    | '/'
+    | '/patients/$patientId'
+    | '/patients'
+  id:
+    | '__root__'
+    | '/_shell'
+    | '/forgot-password'
+    | '/login'
+    | '/register'
+    | '/reset-password'
+    | '/_shell/analytics'
+    | '/_shell/digital-twins'
+    | '/_shell/explainability'
+    | '/_shell/notifications'
+    | '/_shell/predictions'
+    | '/_shell/profile'
+    | '/_shell/reports'
+    | '/_shell/settings'
+    | '/_shell/simulator'
+    | '/_shell/'
+    | '/_shell/patients/$patientId'
+    | '/_shell/patients/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  ShellRoute: typeof ShellRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_shell': {
+      id: '/_shell'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof ShellRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_shell/': {
+      id: '/_shell/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof ShellIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/analytics': {
+      id: '/_shell/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof ShellAnalyticsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/digital-twins': {
+      id: '/_shell/digital-twins'
+      path: '/digital-twins'
+      fullPath: '/digital-twins'
+      preLoaderRoute: typeof ShellDigitalTwinsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/explainability': {
+      id: '/_shell/explainability'
+      path: '/explainability'
+      fullPath: '/explainability'
+      preLoaderRoute: typeof ShellExplainabilityRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/notifications': {
+      id: '/_shell/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof ShellNotificationsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/predictions': {
+      id: '/_shell/predictions'
+      path: '/predictions'
+      fullPath: '/predictions'
+      preLoaderRoute: typeof ShellPredictionsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/profile': {
+      id: '/_shell/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ShellProfileRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/reports': {
+      id: '/_shell/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ShellReportsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/settings': {
+      id: '/_shell/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof ShellSettingsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/simulator': {
+      id: '/_shell/simulator'
+      path: '/simulator'
+      fullPath: '/simulator'
+      preLoaderRoute: typeof ShellSimulatorRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/patients/': {
+      id: '/_shell/patients/'
+      path: '/patients'
+      fullPath: '/patients/'
+      preLoaderRoute: typeof ShellPatientsIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/patients/$patientId': {
+      id: '/_shell/patients/$patientId'
+      path: '/patients/$patientId'
+      fullPath: '/patients/$patientId'
+      preLoaderRoute: typeof ShellPatientsPatientIdRouteImport
+      parentRoute: typeof ShellRoute
     }
   }
 }
 
+interface ShellRouteChildren {
+  ShellAnalyticsRoute: typeof ShellAnalyticsRoute
+  ShellDigitalTwinsRoute: typeof ShellDigitalTwinsRoute
+  ShellExplainabilityRoute: typeof ShellExplainabilityRoute
+  ShellNotificationsRoute: typeof ShellNotificationsRoute
+  ShellPredictionsRoute: typeof ShellPredictionsRoute
+  ShellProfileRoute: typeof ShellProfileRoute
+  ShellReportsRoute: typeof ShellReportsRoute
+  ShellSettingsRoute: typeof ShellSettingsRoute
+  ShellSimulatorRoute: typeof ShellSimulatorRoute
+  ShellIndexRoute: typeof ShellIndexRoute
+  ShellPatientsPatientIdRoute: typeof ShellPatientsPatientIdRoute
+  ShellPatientsIndexRoute: typeof ShellPatientsIndexRoute
+}
+
+const ShellRouteChildren: ShellRouteChildren = {
+  ShellAnalyticsRoute: ShellAnalyticsRoute,
+  ShellDigitalTwinsRoute: ShellDigitalTwinsRoute,
+  ShellExplainabilityRoute: ShellExplainabilityRoute,
+  ShellNotificationsRoute: ShellNotificationsRoute,
+  ShellPredictionsRoute: ShellPredictionsRoute,
+  ShellProfileRoute: ShellProfileRoute,
+  ShellReportsRoute: ShellReportsRoute,
+  ShellSettingsRoute: ShellSettingsRoute,
+  ShellSimulatorRoute: ShellSimulatorRoute,
+  ShellIndexRoute: ShellIndexRoute,
+  ShellPatientsPatientIdRoute: ShellPatientsPatientIdRoute,
+  ShellPatientsIndexRoute: ShellPatientsIndexRoute,
+}
+
+const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  ShellRoute: ShellRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
