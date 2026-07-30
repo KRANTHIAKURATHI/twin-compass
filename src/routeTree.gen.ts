@@ -35,6 +35,7 @@ import { Route as ShellReportsRouteImport } from './routes/_shell.reports'
 import { Route as ShellSearchRouteImport } from './routes/_shell.search'
 import { Route as ShellSettingsRouteImport } from './routes/_shell.settings'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
+import { Route as ShellStatesRouteImport } from './routes/_shell.states'
 import { Route as ShellTimelineRouteImport } from './routes/_shell.timeline'
 import { Route as AdminAdminIndexRouteImport } from './routes/_admin.admin.index'
 import { Route as AdminAdminAuditRouteImport } from './routes/_admin.admin.audit'
@@ -185,6 +186,11 @@ const ShellSettingsRoute = ShellSettingsRouteImport.update({
 const ShellSimulatorRoute = ShellSimulatorRouteImport.update({
   id: '/simulator',
   path: '/simulator',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellStatesRoute = ShellStatesRouteImport.update({
+  id: '/states',
+  path: '/states',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellTimelineRoute = ShellTimelineRouteImport.update({
@@ -343,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof ShellSearchRoute
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
+  '/states': typeof ShellStatesRoute
   '/timeline': typeof ShellTimelineRoute
   '/admin/audit': typeof AdminAdminAuditRoute
   '/admin/departments': typeof AdminAdminDepartmentsRoute
@@ -392,6 +399,7 @@ export interface FileRoutesByTo {
   '/search': typeof ShellSearchRoute
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
+  '/states': typeof ShellStatesRoute
   '/timeline': typeof ShellTimelineRoute
   '/admin/audit': typeof AdminAdminAuditRoute
   '/admin/departments': typeof AdminAdminDepartmentsRoute
@@ -445,6 +453,7 @@ export interface FileRoutesById {
   '/_shell/search': typeof ShellSearchRoute
   '/_shell/settings': typeof ShellSettingsRoute
   '/_shell/simulator': typeof ShellSimulatorRoute
+  '/_shell/states': typeof ShellStatesRoute
   '/_shell/timeline': typeof ShellTimelineRoute
   '/_shell/': typeof ShellIndexRoute
   '/_admin/admin/audit': typeof AdminAdminAuditRoute
@@ -497,6 +506,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/simulator'
+    | '/states'
     | '/timeline'
     | '/admin/audit'
     | '/admin/departments'
@@ -546,6 +556,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/simulator'
+    | '/states'
     | '/timeline'
     | '/admin/audit'
     | '/admin/departments'
@@ -598,6 +609,7 @@ export interface FileRouteTypes {
     | '/_shell/search'
     | '/_shell/settings'
     | '/_shell/simulator'
+    | '/_shell/states'
     | '/_shell/timeline'
     | '/_shell/'
     | '/_admin/admin/audit'
@@ -823,6 +835,13 @@ declare module '@tanstack/react-router' {
       path: '/simulator'
       fullPath: '/simulator'
       preLoaderRoute: typeof ShellSimulatorRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/states': {
+      id: '/_shell/states'
+      path: '/states'
+      fullPath: '/states'
+      preLoaderRoute: typeof ShellStatesRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/timeline': {
@@ -1098,6 +1117,7 @@ interface ShellRouteChildren {
   ShellSearchRoute: typeof ShellSearchRoute
   ShellSettingsRoute: typeof ShellSettingsRoute
   ShellSimulatorRoute: typeof ShellSimulatorRoute
+  ShellStatesRoute: typeof ShellStatesRoute
   ShellTimelineRoute: typeof ShellTimelineRoute
   ShellIndexRoute: typeof ShellIndexRoute
   ShellPatientsPatientIdRoute: typeof ShellPatientsPatientIdRouteWithChildren
@@ -1119,6 +1139,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellSearchRoute: ShellSearchRoute,
   ShellSettingsRoute: ShellSettingsRoute,
   ShellSimulatorRoute: ShellSimulatorRoute,
+  ShellStatesRoute: ShellStatesRoute,
   ShellTimelineRoute: ShellTimelineRoute,
   ShellIndexRoute: ShellIndexRoute,
   ShellPatientsPatientIdRoute: ShellPatientsPatientIdRouteWithChildren,

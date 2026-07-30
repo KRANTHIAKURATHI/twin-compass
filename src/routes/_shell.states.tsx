@@ -68,9 +68,9 @@ function StatesPage() {
         </Card>
 
         {[
-          { icon: FileQuestion, title: "404 — Page not found", desc: "The requested route does not exist.", to: "/404-preview" as const },
-          { icon: ServerCrash, title: "500 — Server error", desc: "An unexpected failure occurred.", to: "/error" as const },
-          { icon: Lock, title: "403 — Permission denied", desc: "Role lacks the required capability.", to: "/forbidden" as const },
+          { icon: FileQuestion, title: "404 — Page not found", desc: "The requested route does not exist.", href: "/this-page-does-not-exist" },
+          { icon: ServerCrash, title: "500 — Server error", desc: "An unexpected failure occurred.", href: "/error" },
+          { icon: Lock, title: "403 — Permission denied", desc: "Role lacks the required capability.", href: "/forbidden" },
         ].map((s) => (
           <Card key={s.title}>
             <CardHeader>
@@ -82,7 +82,7 @@ function StatesPage() {
                 <s.icon className="size-5" aria-hidden="true" />
               </span>
               <Button variant="outline" asChild>
-                <Link to={s.to}>Preview page</Link>
+                <a href={s.href}>Preview page</a>
               </Button>
             </CardContent>
           </Card>
