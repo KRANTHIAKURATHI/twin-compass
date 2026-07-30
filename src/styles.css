@@ -191,8 +191,10 @@
   h3,
   h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.015em;
+    letter-spacing: normal;
+    word-spacing: 0.02em;
   }
+
 
   :focus-visible {
     outline: 2px solid var(--color-ring);
