@@ -14,7 +14,9 @@ import { Route as ShellIndexRouteImport } from './routes/_shell.index'
 import { Route as ShellAnalyticsRouteImport } from './routes/_shell.analytics'
 import { Route as ShellDigitalTwinsRouteImport } from './routes/_shell.digital-twins'
 import { Route as ShellExplainabilityRouteImport } from './routes/_shell.explainability'
+import { Route as ShellNotificationsRouteImport } from './routes/_shell.notifications'
 import { Route as ShellPredictionsRouteImport } from './routes/_shell.predictions'
+import { Route as ShellProfileRouteImport } from './routes/_shell.profile'
 import { Route as ShellReportsRouteImport } from './routes/_shell.reports'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
 import { Route as ShellPatientsIndexRouteImport } from './routes/_shell.patients.index'
@@ -44,9 +46,19 @@ const ShellExplainabilityRoute = ShellExplainabilityRouteImport.update({
   path: '/explainability',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellNotificationsRoute = ShellNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellPredictionsRoute = ShellPredictionsRouteImport.update({
   id: '/predictions',
   path: '/predictions',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellProfileRoute = ShellProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellReportsRoute = ShellReportsRouteImport.update({
@@ -75,7 +87,9 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof ShellAnalyticsRoute
   '/digital-twins': typeof ShellDigitalTwinsRoute
   '/explainability': typeof ShellExplainabilityRoute
+  '/notifications': typeof ShellNotificationsRoute
   '/predictions': typeof ShellPredictionsRoute
+  '/profile': typeof ShellProfileRoute
   '/reports': typeof ShellReportsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRoute
@@ -85,7 +99,9 @@ export interface FileRoutesByTo {
   '/analytics': typeof ShellAnalyticsRoute
   '/digital-twins': typeof ShellDigitalTwinsRoute
   '/explainability': typeof ShellExplainabilityRoute
+  '/notifications': typeof ShellNotificationsRoute
   '/predictions': typeof ShellPredictionsRoute
+  '/profile': typeof ShellProfileRoute
   '/reports': typeof ShellReportsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/': typeof ShellIndexRoute
@@ -98,7 +114,9 @@ export interface FileRoutesById {
   '/_shell/analytics': typeof ShellAnalyticsRoute
   '/_shell/digital-twins': typeof ShellDigitalTwinsRoute
   '/_shell/explainability': typeof ShellExplainabilityRoute
+  '/_shell/notifications': typeof ShellNotificationsRoute
   '/_shell/predictions': typeof ShellPredictionsRoute
+  '/_shell/profile': typeof ShellProfileRoute
   '/_shell/reports': typeof ShellReportsRoute
   '/_shell/simulator': typeof ShellSimulatorRoute
   '/_shell/': typeof ShellIndexRoute
@@ -112,7 +130,9 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/digital-twins'
     | '/explainability'
+    | '/notifications'
     | '/predictions'
+    | '/profile'
     | '/reports'
     | '/simulator'
     | '/patients/$patientId'
@@ -122,7 +142,9 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/digital-twins'
     | '/explainability'
+    | '/notifications'
     | '/predictions'
+    | '/profile'
     | '/reports'
     | '/simulator'
     | '/'
@@ -134,7 +156,9 @@ export interface FileRouteTypes {
     | '/_shell/analytics'
     | '/_shell/digital-twins'
     | '/_shell/explainability'
+    | '/_shell/notifications'
     | '/_shell/predictions'
+    | '/_shell/profile'
     | '/_shell/reports'
     | '/_shell/simulator'
     | '/_shell/'
@@ -183,11 +207,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellExplainabilityRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/notifications': {
+      id: '/_shell/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof ShellNotificationsRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/predictions': {
       id: '/_shell/predictions'
       path: '/predictions'
       fullPath: '/predictions'
       preLoaderRoute: typeof ShellPredictionsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/profile': {
+      id: '/_shell/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ShellProfileRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/reports': {
@@ -225,7 +263,9 @@ interface ShellRouteChildren {
   ShellAnalyticsRoute: typeof ShellAnalyticsRoute
   ShellDigitalTwinsRoute: typeof ShellDigitalTwinsRoute
   ShellExplainabilityRoute: typeof ShellExplainabilityRoute
+  ShellNotificationsRoute: typeof ShellNotificationsRoute
   ShellPredictionsRoute: typeof ShellPredictionsRoute
+  ShellProfileRoute: typeof ShellProfileRoute
   ShellReportsRoute: typeof ShellReportsRoute
   ShellSimulatorRoute: typeof ShellSimulatorRoute
   ShellIndexRoute: typeof ShellIndexRoute
@@ -237,7 +277,9 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellAnalyticsRoute: ShellAnalyticsRoute,
   ShellDigitalTwinsRoute: ShellDigitalTwinsRoute,
   ShellExplainabilityRoute: ShellExplainabilityRoute,
+  ShellNotificationsRoute: ShellNotificationsRoute,
   ShellPredictionsRoute: ShellPredictionsRoute,
+  ShellProfileRoute: ShellProfileRoute,
   ShellReportsRoute: ShellReportsRoute,
   ShellSimulatorRoute: ShellSimulatorRoute,
   ShellIndexRoute: ShellIndexRoute,
