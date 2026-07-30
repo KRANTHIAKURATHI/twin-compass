@@ -32,6 +32,7 @@ import { Route as ShellSearchRouteImport } from './routes/_shell.search'
 import { Route as ShellSettingsRouteImport } from './routes/_shell.settings'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
 import { Route as ShellTimelineRouteImport } from './routes/_shell.timeline'
+import { Route as AdminAdminAuditRouteImport } from './routes/_admin.admin.audit'
 import { Route as AdminAdminDepartmentsRouteImport } from './routes/_admin.admin.departments'
 import { Route as AdminAdminDoctorsRouteImport } from './routes/_admin.admin.doctors'
 import { Route as AdminAdminHospitalsRouteImport } from './routes/_admin.admin.hospitals'
@@ -160,6 +161,11 @@ const ShellTimelineRoute = ShellTimelineRouteImport.update({
   path: '/timeline',
   getParentRoute: () => ShellRoute,
 } as any)
+const AdminAdminAuditRoute = AdminAdminAuditRouteImport.update({
+  id: '/admin/audit',
+  path: '/admin/audit',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAdminDepartmentsRoute = AdminAdminDepartmentsRouteImport.update({
   id: '/admin/departments',
   path: '/admin/departments',
@@ -260,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/timeline': typeof ShellTimelineRoute
+  '/admin/audit': typeof AdminAdminAuditRoute
   '/admin/departments': typeof AdminAdminDepartmentsRoute
   '/admin/doctors': typeof AdminAdminDoctorsRoute
   '/admin/hospitals': typeof AdminAdminHospitalsRoute
@@ -297,6 +304,7 @@ export interface FileRoutesByTo {
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
   '/timeline': typeof ShellTimelineRoute
+  '/admin/audit': typeof AdminAdminAuditRoute
   '/admin/departments': typeof AdminAdminDepartmentsRoute
   '/admin/doctors': typeof AdminAdminDoctorsRoute
   '/admin/hospitals': typeof AdminAdminHospitalsRoute
@@ -338,6 +346,7 @@ export interface FileRoutesById {
   '/_shell/simulator': typeof ShellSimulatorRoute
   '/_shell/timeline': typeof ShellTimelineRoute
   '/_shell/': typeof ShellIndexRoute
+  '/_admin/admin/audit': typeof AdminAdminAuditRoute
   '/_admin/admin/departments': typeof AdminAdminDepartmentsRoute
   '/_admin/admin/doctors': typeof AdminAdminDoctorsRoute
   '/_admin/admin/hospitals': typeof AdminAdminHospitalsRoute
@@ -377,6 +386,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/simulator'
     | '/timeline'
+    | '/admin/audit'
     | '/admin/departments'
     | '/admin/doctors'
     | '/admin/hospitals'
@@ -414,6 +424,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/simulator'
     | '/timeline'
+    | '/admin/audit'
     | '/admin/departments'
     | '/admin/doctors'
     | '/admin/hospitals'
@@ -454,6 +465,7 @@ export interface FileRouteTypes {
     | '/_shell/simulator'
     | '/_shell/timeline'
     | '/_shell/'
+    | '/_admin/admin/audit'
     | '/_admin/admin/departments'
     | '/_admin/admin/doctors'
     | '/_admin/admin/hospitals'
@@ -645,6 +657,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellTimelineRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_admin/admin/audit': {
+      id: '/_admin/admin/audit'
+      path: '/admin/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAdminAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/admin/departments': {
       id: '/_admin/admin/departments'
       path: '/admin/departments'
@@ -754,6 +773,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAdminAuditRoute: typeof AdminAdminAuditRoute
   AdminAdminDepartmentsRoute: typeof AdminAdminDepartmentsRoute
   AdminAdminDoctorsRoute: typeof AdminAdminDoctorsRoute
   AdminAdminHospitalsRoute: typeof AdminAdminHospitalsRoute
@@ -761,6 +781,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAdminAuditRoute: AdminAdminAuditRoute,
   AdminAdminDepartmentsRoute: AdminAdminDepartmentsRoute,
   AdminAdminDoctorsRoute: AdminAdminDoctorsRoute,
   AdminAdminHospitalsRoute: AdminAdminHospitalsRoute,
