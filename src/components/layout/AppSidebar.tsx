@@ -116,8 +116,11 @@ export function AppSidebar() {
 
       <SidebarContent>
         {renderGroup("Clinical", clinical)}
+        {renderGroup("Documents", documents)}
         {renderGroup("Insights", insights)}
+        {renderGroup("Portals", portals)}
         {renderGroup("Account", account)}
+
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
