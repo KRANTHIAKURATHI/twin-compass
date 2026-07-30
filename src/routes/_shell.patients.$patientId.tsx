@@ -135,6 +135,110 @@ function PatientProfile() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Clinical history</CardTitle>
+              <CardDescription>Comorbidities, prior interventions and family history</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {p.history.map((h) => (
+                  <li key={h} className="flex gap-2 rounded-xl border border-border p-3 text-sm">
+                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                    {h}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card className="overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FlaskConical className="size-4 text-primary" aria-hidden="true" /> Lab results
+              </CardTitle>
+              <CardDescription>Most recent panels with reference ranges</CardDescription>
+            </CardHeader>
+            <CardContent className="px-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Panel</TableHead>
+                    <TableHead>Marker</TableHead>
+                    <TableHead>Value</TableHead>
+                    <TableHead>Reference</TableHead>
+                    <TableHead>Flag</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {labResults.map((l) => (
+                    <TableRow key={l.date + l.marker}>
+                      <TableCell className="text-muted-foreground">{l.date}</TableCell>
+                      <TableCell>{l.panel}</TableCell>
+                      <TableCell className="font-medium">{l.marker}</TableCell>
+                      <TableCell>
+                        {l.value} {l.unit}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{l.range}</TableCell>
+                      <TableCell>
+                        <StatusChip tone={l.flag === "normal" ? "success" : l.flag === "high" ? "risk" : "warning"}>
+                          {l.flag}
+                        </StatusChip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ImageIcon className="size-4 text-primary" aria-hidden="true" /> Imaging
+              </CardTitle>
+              <CardDescription>MRI, CT, PET and mammography studies</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {imagingStudies.map((s) => (
+                <div key={s.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3">
+                  <StatusChip tone="primary">{s.modality}</StatusChip>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">{s.finding}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {s.region} · {s.date} · {s.radiologist}
+                    </p>
+                  </div>
+                  <StatusChip tone="success">{s.status}</StatusChip>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Treatment</CardTitle>
+              <CardDescription>Active regimen and adherence</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <Field label="Regimen" value={treatmentPlan.regimen} />
+                <Field label="Cycle" value={`${treatmentPlan.cycle} of ${treatmentPlan.totalCycles}`} />
+                <Field label="Started" value={treatmentPlan.startedOn} />
+                <Field label="Next dose" value={treatmentPlan.nextDose} />
+              </dl>
+              <div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Adherence</span>
+                  <span className="font-semibold">{treatmentPlan.adherence}%</span>
+                </div>
+                <Progress value={treatmentPlan.adherence} className="mt-2 h-2" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+
+            <CardHeader>
               <CardTitle>Timelines</CardTitle>
             </CardHeader>
             <CardContent>
