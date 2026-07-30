@@ -35,6 +35,7 @@ import { Route as ShellTimelineRouteImport } from './routes/_shell.timeline'
 import { Route as AdminAdminDepartmentsRouteImport } from './routes/_admin.admin.departments'
 import { Route as AdminAdminDoctorsRouteImport } from './routes/_admin.admin.doctors'
 import { Route as AdminAdminHospitalsRouteImport } from './routes/_admin.admin.hospitals'
+import { Route as AdminAdminUsersRouteImport } from './routes/_admin.admin.users'
 import { Route as PatientPortalIndexRouteImport } from './routes/_patient.portal.index'
 import { Route as PatientPortalAppointmentsRouteImport } from './routes/_patient.portal.appointments'
 import { Route as PatientPortalNotificationsRouteImport } from './routes/_patient.portal.notifications'
@@ -174,6 +175,11 @@ const AdminAdminHospitalsRoute = AdminAdminHospitalsRouteImport.update({
   path: '/admin/hospitals',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAdminUsersRoute = AdminAdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => AdminRoute,
+} as any)
 const PatientPortalIndexRoute = PatientPortalIndexRouteImport.update({
   id: '/portal/',
   path: '/portal/',
@@ -257,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/admin/departments': typeof AdminAdminDepartmentsRoute
   '/admin/doctors': typeof AdminAdminDoctorsRoute
   '/admin/hospitals': typeof AdminAdminHospitalsRoute
+  '/admin/users': typeof AdminAdminUsersRoute
   '/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/portal/notifications': typeof PatientPortalNotificationsRoute
   '/portal/profile': typeof PatientPortalProfileRoute
@@ -293,6 +300,7 @@ export interface FileRoutesByTo {
   '/admin/departments': typeof AdminAdminDepartmentsRoute
   '/admin/doctors': typeof AdminAdminDoctorsRoute
   '/admin/hospitals': typeof AdminAdminHospitalsRoute
+  '/admin/users': typeof AdminAdminUsersRoute
   '/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/portal/notifications': typeof PatientPortalNotificationsRoute
   '/portal/profile': typeof PatientPortalProfileRoute
@@ -333,6 +341,7 @@ export interface FileRoutesById {
   '/_admin/admin/departments': typeof AdminAdminDepartmentsRoute
   '/_admin/admin/doctors': typeof AdminAdminDoctorsRoute
   '/_admin/admin/hospitals': typeof AdminAdminHospitalsRoute
+  '/_admin/admin/users': typeof AdminAdminUsersRoute
   '/_patient/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/_patient/portal/notifications': typeof PatientPortalNotificationsRoute
   '/_patient/portal/profile': typeof PatientPortalProfileRoute
@@ -371,6 +380,7 @@ export interface FileRouteTypes {
     | '/admin/departments'
     | '/admin/doctors'
     | '/admin/hospitals'
+    | '/admin/users'
     | '/portal/appointments'
     | '/portal/notifications'
     | '/portal/profile'
@@ -407,6 +417,7 @@ export interface FileRouteTypes {
     | '/admin/departments'
     | '/admin/doctors'
     | '/admin/hospitals'
+    | '/admin/users'
     | '/portal/appointments'
     | '/portal/notifications'
     | '/portal/profile'
@@ -446,6 +457,7 @@ export interface FileRouteTypes {
     | '/_admin/admin/departments'
     | '/_admin/admin/doctors'
     | '/_admin/admin/hospitals'
+    | '/_admin/admin/users'
     | '/_patient/portal/appointments'
     | '/_patient/portal/notifications'
     | '/_patient/portal/profile'
@@ -654,6 +666,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminHospitalsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/admin/users': {
+      id: '/_admin/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminAdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_patient/portal/': {
       id: '/_patient/portal/'
       path: '/portal'
@@ -738,12 +757,14 @@ interface AdminRouteChildren {
   AdminAdminDepartmentsRoute: typeof AdminAdminDepartmentsRoute
   AdminAdminDoctorsRoute: typeof AdminAdminDoctorsRoute
   AdminAdminHospitalsRoute: typeof AdminAdminHospitalsRoute
+  AdminAdminUsersRoute: typeof AdminAdminUsersRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAdminDepartmentsRoute: AdminAdminDepartmentsRoute,
   AdminAdminDoctorsRoute: AdminAdminDoctorsRoute,
   AdminAdminHospitalsRoute: AdminAdminHospitalsRoute,
+  AdminAdminUsersRoute: AdminAdminUsersRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
