@@ -15,6 +15,7 @@ import { Route as PatientRouteImport } from './routes/_patient'
 import { Route as ResearchRouteImport } from './routes/_research'
 import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as ErrorRouteImport } from './routes/error'
+import { Route as ForbiddenRouteImport } from './routes/forbidden'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PatientLoginRouteImport } from './routes/patient-login'
@@ -84,6 +85,11 @@ const ShellRoute = ShellRouteImport.update({
 const ErrorRoute = ErrorRouteImport.update({
   id: '/error',
   path: '/error',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForbiddenRoute = ForbiddenRouteImport.update({
+  id: '/forbidden',
+  path: '/forbidden',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -318,6 +324,7 @@ export interface FileRoutesByFullPath {
   '/$': typeof SplatRoute
   '/': typeof ShellIndexRoute
   '/error': typeof ErrorRoute
+  '/forbidden': typeof ForbiddenRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/patient-login': typeof PatientLoginRoute
@@ -366,6 +373,7 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/': typeof ShellIndexRoute
   '/error': typeof ErrorRoute
+  '/forbidden': typeof ForbiddenRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/patient-login': typeof PatientLoginRoute
@@ -418,6 +426,7 @@ export interface FileRoutesById {
   '/_research': typeof ResearchRouteWithChildren
   '/_shell': typeof ShellRouteWithChildren
   '/error': typeof ErrorRoute
+  '/forbidden': typeof ForbiddenRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/patient-login': typeof PatientLoginRoute
@@ -469,6 +478,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/'
     | '/error'
+    | '/forbidden'
     | '/forgot-password'
     | '/login'
     | '/patient-login'
@@ -517,6 +527,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/'
     | '/error'
+    | '/forbidden'
     | '/forgot-password'
     | '/login'
     | '/patient-login'
@@ -568,6 +579,7 @@ export interface FileRouteTypes {
     | '/_research'
     | '/_shell'
     | '/error'
+    | '/forbidden'
     | '/forgot-password'
     | '/login'
     | '/patient-login'
@@ -621,6 +633,7 @@ export interface RootRouteChildren {
   ResearchRoute: typeof ResearchRouteWithChildren
   ShellRoute: typeof ShellRouteWithChildren
   ErrorRoute: typeof ErrorRoute
+  ForbiddenRoute: typeof ForbiddenRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   PatientLoginRoute: typeof PatientLoginRoute
@@ -670,6 +683,13 @@ declare module '@tanstack/react-router' {
       path: '/error'
       fullPath: '/error'
       preLoaderRoute: typeof ErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forbidden': {
+      id: '/forbidden'
+      path: '/forbidden'
+      fullPath: '/forbidden'
+      preLoaderRoute: typeof ForbiddenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -1115,6 +1135,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResearchRoute: ResearchRouteWithChildren,
   ShellRoute: ShellRouteWithChildren,
   ErrorRoute: ErrorRoute,
+  ForbiddenRoute: ForbiddenRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   PatientLoginRoute: PatientLoginRoute,
