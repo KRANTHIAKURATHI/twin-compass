@@ -28,6 +28,7 @@ import { Route as ShellProfileRouteImport } from './routes/_shell.profile'
 import { Route as ShellReportsRouteImport } from './routes/_shell.reports'
 import { Route as ShellSettingsRouteImport } from './routes/_shell.settings'
 import { Route as ShellSimulatorRouteImport } from './routes/_shell.simulator'
+import { Route as ShellTimelineRouteImport } from './routes/_shell.timeline'
 import { Route as PatientPortalIndexRouteImport } from './routes/_patient.portal.index'
 import { Route as PatientPortalAppointmentsRouteImport } from './routes/_patient.portal.appointments'
 import { Route as PatientPortalNotificationsRouteImport } from './routes/_patient.portal.notifications'
@@ -133,6 +134,11 @@ const ShellSimulatorRoute = ShellSimulatorRouteImport.update({
   path: '/simulator',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellTimelineRoute = ShellTimelineRouteImport.update({
+  id: '/timeline',
+  path: '/timeline',
+  getParentRoute: () => ShellRoute,
+} as any)
 const PatientPortalIndexRoute = PatientPortalIndexRouteImport.update({
   id: '/portal/',
   path: '/portal/',
@@ -210,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ShellReportsRoute
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
+  '/timeline': typeof ShellTimelineRoute
   '/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/portal/notifications': typeof PatientPortalNotificationsRoute
   '/portal/profile': typeof PatientPortalProfileRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ShellReportsRoute
   '/settings': typeof ShellSettingsRoute
   '/simulator': typeof ShellSimulatorRoute
+  '/timeline': typeof ShellTimelineRoute
   '/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/portal/notifications': typeof PatientPortalNotificationsRoute
   '/portal/profile': typeof PatientPortalProfileRoute
@@ -272,6 +280,7 @@ export interface FileRoutesById {
   '/_shell/reports': typeof ShellReportsRoute
   '/_shell/settings': typeof ShellSettingsRoute
   '/_shell/simulator': typeof ShellSimulatorRoute
+  '/_shell/timeline': typeof ShellTimelineRoute
   '/_shell/': typeof ShellIndexRoute
   '/_patient/portal/appointments': typeof PatientPortalAppointmentsRoute
   '/_patient/portal/notifications': typeof PatientPortalNotificationsRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/simulator'
+    | '/timeline'
     | '/portal/appointments'
     | '/portal/notifications'
     | '/portal/profile'
@@ -335,6 +345,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/simulator'
+    | '/timeline'
     | '/portal/appointments'
     | '/portal/notifications'
     | '/portal/profile'
@@ -366,6 +377,7 @@ export interface FileRouteTypes {
     | '/_shell/reports'
     | '/_shell/settings'
     | '/_shell/simulator'
+    | '/_shell/timeline'
     | '/_shell/'
     | '/_patient/portal/appointments'
     | '/_patient/portal/notifications'
@@ -525,6 +537,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellSimulatorRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/timeline': {
+      id: '/_shell/timeline'
+      path: '/timeline'
+      fullPath: '/timeline'
+      preLoaderRoute: typeof ShellTimelineRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_patient/portal/': {
       id: '/_patient/portal/'
       path: '/portal'
@@ -654,6 +673,7 @@ interface ShellRouteChildren {
   ShellReportsRoute: typeof ShellReportsRoute
   ShellSettingsRoute: typeof ShellSettingsRoute
   ShellSimulatorRoute: typeof ShellSimulatorRoute
+  ShellTimelineRoute: typeof ShellTimelineRoute
   ShellIndexRoute: typeof ShellIndexRoute
   ShellPatientsPatientIdRoute: typeof ShellPatientsPatientIdRouteWithChildren
   ShellPatientsNewRoute: typeof ShellPatientsNewRoute
@@ -672,6 +692,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellReportsRoute: ShellReportsRoute,
   ShellSettingsRoute: ShellSettingsRoute,
   ShellSimulatorRoute: ShellSimulatorRoute,
+  ShellTimelineRoute: ShellTimelineRoute,
   ShellIndexRoute: ShellIndexRoute,
   ShellPatientsPatientIdRoute: ShellPatientsPatientIdRouteWithChildren,
   ShellPatientsNewRoute: ShellPatientsNewRoute,
