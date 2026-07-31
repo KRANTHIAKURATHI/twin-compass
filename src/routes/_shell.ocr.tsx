@@ -78,22 +78,25 @@ function OcrPage() {
             {steps.map((s, i) => (
               <li key={s.key} className="flex items-center gap-3">
                 <span
-                  className={`flex size-7 items-center justify-center rounded-full text-xs font-semibold ${
+                  className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold leading-none ${
                     i <= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {i < index ? <CheckCircle2 className="size-4" aria-hidden="true" /> : i + 1}
                 </span>
-                <span className={i <= index ? "text-sm font-medium" : "text-sm text-muted-foreground"}>{s.label}</span>
-                {i < steps.length - 1 && <span className="hidden h-px w-8 bg-border sm:block" aria-hidden="true" />}
+                <span className={i <= index ? "text-sm font-medium leading-none" : "text-sm leading-none text-muted-foreground"}>
+                  {s.label}
+                </span>
+                {i < steps.length - 1 && <span className="hidden h-px w-8 shrink-0 bg-border sm:block" aria-hidden="true" />}
               </li>
             ))}
           </ol>
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+      <div className="grid items-stretch gap-4 lg:grid-cols-2">
+        <Card className="h-full">
+
           <CardHeader>
             <CardTitle>Source document</CardTitle>
             <CardDescription>PDF upload and preview</CardDescription>
