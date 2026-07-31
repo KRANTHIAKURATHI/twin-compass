@@ -41,19 +41,19 @@ function PatientNotifications() {
         {patientNotifications.map((n) => {
           const unread = n.unread && !read.includes(n.id);
           return (
-            <Card key={n.id} className={unread ? "border-primary/30 bg-primary-soft/30" : undefined}>
-              <CardContent className="flex gap-3">
+            <Card key={n.id} className={unread ? "border-primary/30 bg-primary-soft/30" : "border-transparent"}>
+              <CardContent className="flex items-start gap-3">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
                   <Bell className="size-4" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-medium">{n.title}</p>
                     {unread && <StatusChip tone="primary">New</StatusChip>}
                   </div>
-                  <p className="text-sm text-muted-foreground">{n.body}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{n.time}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{n.body}</p>
                 </div>
+                <span className="shrink-0 pt-0.5 text-xs text-muted-foreground">{n.time}</span>
               </CardContent>
             </Card>
           );
