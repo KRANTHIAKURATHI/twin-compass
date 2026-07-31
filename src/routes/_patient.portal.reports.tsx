@@ -42,24 +42,30 @@ function MyReports() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {rows.map((d) => (
-            <Card key={d.id}>
-              <CardContent className="flex items-center gap-3">
+            <Card key={d.id} className="h-full">
+              <CardContent className="flex h-full items-center gap-3">
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
                   <FileText className="size-5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{d.name}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="truncate text-xs text-muted-foreground">
                     {d.category} · {d.date} · {d.size} · v{d.version}
                   </p>
                 </div>
-                <StatusChip tone={d.status === "Verified" ? "success" : d.status === "Pending OCR" ? "warning" : "risk"}>{d.status}</StatusChip>
-                <Button variant="ghost" size="icon" aria-label={`Preview ${d.name}`}>
-                  <Eye className="size-4" aria-hidden="true" />
-                </Button>
-                <Button variant="ghost" size="icon" aria-label={`Download ${d.name}`}>
-                  <Download className="size-4" aria-hidden="true" />
-                </Button>
+                <div className="ml-auto flex shrink-0 items-center gap-1">
+                  <span className="hidden w-[104px] justify-end sm:flex">
+                    <StatusChip tone={d.status === "Verified" ? "success" : d.status === "Pending OCR" ? "warning" : "risk"}>
+                      {d.status}
+                    </StatusChip>
+                  </span>
+                  <Button variant="ghost" size="icon" aria-label={`Preview ${d.name}`}>
+                    <Eye className="size-4" aria-hidden="true" />
+                  </Button>
+                  <Button variant="ghost" size="icon" aria-label={`Download ${d.name}`}>
+                    <Download className="size-4" aria-hidden="true" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

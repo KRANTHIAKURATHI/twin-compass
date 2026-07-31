@@ -97,27 +97,27 @@ function DocumentCenter() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {rows.map((d) => (
-            <Card key={d.id} className="hover-lift">
-              <CardContent className="space-y-3">
+            <Card key={d.id} className="hover-lift flex h-full flex-col">
+              <CardContent className="flex flex-1 flex-col gap-3">
                 <div className="flex items-start gap-3">
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
                     <FileText className="size-5" aria-hidden="true" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{d.name}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="truncate text-xs text-muted-foreground">
                       {d.patient} · {d.date} · {d.size}
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex min-h-7 flex-wrap items-center gap-2">
                   <StatusChip tone="neutral">{d.category}</StatusChip>
                   <StatusChip tone={d.status === "Verified" ? "success" : d.status === "Pending OCR" ? "primary" : "warning"}>
                     {d.status}
                   </StatusChip>
                   <StatusChip tone="neutral">v{d.version}</StatusChip>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="mt-auto flex items-center gap-2">
                   <Button size="sm" variant="outline" onClick={() => setPreview(d)}>
                     <Eye className="size-4" aria-hidden="true" /> Preview
                   </Button>
@@ -127,6 +127,7 @@ function DocumentCenter() {
                   <Button
                     size="sm"
                     variant="ghost"
+                    className="ml-auto px-2"
                     onClick={() => toast.success("Download started", { description: "TODO: wire GET /api/documents/{id}/file" })}
                   >
                     <Download className="size-4" aria-hidden="true" />
