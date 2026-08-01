@@ -134,7 +134,8 @@ function OcrPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-full">
+        <Card className="flex h-full flex-col">
+
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="size-4 text-primary" aria-hidden="true" /> AI-extracted fields
