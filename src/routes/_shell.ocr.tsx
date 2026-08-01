@@ -141,10 +141,13 @@ function OcrPage() {
             </CardTitle>
             <CardDescription>Low-confidence fields are highlighted for review</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="flex flex-1 flex-col space-y-3">
             {step === "upload" && (
-              <p className="py-10 text-center text-sm text-muted-foreground">Upload a document to begin extraction.</p>
+              <p className="flex flex-1 items-center justify-center py-10 text-center text-sm text-muted-foreground">
+                Upload a document to begin extraction.
+              </p>
             )}
+
 
             {step === "extracting" && (
               <div className="space-y-3">
