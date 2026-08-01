@@ -134,17 +134,21 @@ function OcrPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-full">
+        <Card className="flex h-full flex-col">
+
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="size-4 text-primary" aria-hidden="true" /> AI-extracted fields
             </CardTitle>
             <CardDescription>Low-confidence fields are highlighted for review</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="flex flex-1 flex-col space-y-3">
             {step === "upload" && (
-              <p className="py-10 text-center text-sm text-muted-foreground">Upload a document to begin extraction.</p>
+              <p className="flex flex-1 items-center justify-center py-10 text-center text-sm text-muted-foreground">
+                Upload a document to begin extraction.
+              </p>
             )}
+
 
             {step === "extracting" && (
               <div className="space-y-3">
