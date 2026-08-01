@@ -98,7 +98,7 @@ function DocumentCenter() {
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {rows.map((d) => (
             <Card key={d.id} className="hover-lift flex h-full flex-col">
-              <CardContent className="flex flex-1 flex-col gap-3">
+              <CardContent className="flex flex-1 flex-col gap-4 px-5 pb-5 pt-6">
                 <div className="flex items-start gap-3">
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
                     <FileText className="size-5" aria-hidden="true" />
@@ -117,7 +117,7 @@ function DocumentCenter() {
                   </StatusChip>
                   <StatusChip tone="neutral">v{d.version}</StatusChip>
                 </div>
-                <div className="mt-auto flex flex-wrap items-center gap-2">
+                <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
                   <Button size="sm" variant="outline" onClick={() => setPreview(d)}>
                     <Eye className="size-4" aria-hidden="true" /> Preview
                   </Button>
