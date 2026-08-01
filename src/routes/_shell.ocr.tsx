@@ -73,7 +73,7 @@ function OcrPage() {
       />
 
       <Card className="mb-4">
-        <CardContent>
+        <CardContent className="pb-4 pt-6">
           <ol className="flex flex-wrap items-center gap-x-3 gap-y-2">
             {steps.map((s, i) => (
               <li key={s.key} className="flex items-center gap-3">
