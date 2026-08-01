@@ -36,7 +36,7 @@ function NotFoundPage() {
           </Link>
         </Button>
         <Button variant="outline" asChild>
-          <Link to="/search">
+          <Link to="/search" search={{ q: "" }}>
             <Search className="size-4" aria-hidden="true" /> Search
           </Link>
         </Button>
