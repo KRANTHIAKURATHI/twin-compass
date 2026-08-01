@@ -117,7 +117,7 @@ function DocumentCenter() {
                   </StatusChip>
                   <StatusChip tone="neutral">v{d.version}</StatusChip>
                 </div>
-                <div className="mt-auto flex items-center gap-2">
+                <div className="mt-auto flex flex-wrap items-center gap-2">
                   <Button size="sm" variant="outline" onClick={() => setPreview(d)}>
                     <Eye className="size-4" aria-hidden="true" /> Preview
                   </Button>
@@ -127,13 +127,12 @@ function DocumentCenter() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="ml-auto px-2"
                     onClick={() => toast.success("Download started", { description: "TODO: wire GET /api/documents/{id}/file" })}
                   >
-                    <Download className="size-4" aria-hidden="true" />
-                    <span className="sr-only">Download {d.name}</span>
+                    <Download className="size-4" aria-hidden="true" /> Download
                   </Button>
                 </div>
+
               </CardContent>
             </Card>
           ))}
