@@ -54,11 +54,12 @@ function MyReports() {
                   </p>
                 </div>
                 <div className="ml-auto flex shrink-0 items-center gap-1">
-                  <span className="hidden w-[104px] justify-end sm:flex">
+                  <span className="hidden w-[112px] justify-start sm:flex">
                     <StatusChip tone={d.status === "Verified" ? "success" : d.status === "Pending OCR" ? "warning" : "risk"}>
                       {d.status}
                     </StatusChip>
                   </span>
+
                   <Button variant="ghost" size="icon" aria-label={`Preview ${d.name}`}>
                     <Eye className="size-4" aria-hidden="true" />
                   </Button>
