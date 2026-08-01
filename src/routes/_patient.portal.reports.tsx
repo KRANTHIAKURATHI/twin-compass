@@ -43,12 +43,12 @@ function MyReports() {
         <div className="grid gap-3 md:grid-cols-2">
           {rows.map((d) => (
             <Card key={d.id} className="h-full">
-              <CardContent className="flex h-full items-center gap-3">
+              <CardContent className="flex h-full items-center gap-4 py-5">
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
                   <FileText className="size-5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{d.name}</p>
+                  <p className="truncate text-sm font-medium leading-tight">{d.name}</p>
                   <p className="truncate text-xs text-muted-foreground">
                     {d.category} · {d.date} · {d.size} · v{d.version}
                   </p>
