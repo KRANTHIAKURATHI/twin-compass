@@ -95,7 +95,8 @@ function PatientsPage() {
                 className="grid gap-4 sm:grid-cols-2"
                 onSubmit={async (e) => {
                   e.preventDefault();
-                  await patientService.create({});
+                  const form = new FormData(e.currentTarget);
+                  await patientService.create({ name: String(form.get("name") ?? "") });
                   setCreateOpen(false);
                   toast.success("Patient created", { description: "TODO: wire POST /api/patients" });
                 }}

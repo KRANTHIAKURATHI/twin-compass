@@ -288,7 +288,7 @@ export const ocrService: OcrService = {
   extract: (documentId) =>
     withFallback(
       () => apiRequest(endpoints.ocr.extract(documentId), { method: "POST" }),
-      () => ({ documentId, status: "complete" as const, fields: fx.ocrFieldFixtures }),
+      () => ({ documentId, fields: fx.ocrFieldFixtures, model: "ocr-clinical-v3", extractedAt: new Date().toISOString() }),
       1200,
     ),
   fields: (documentId) =>

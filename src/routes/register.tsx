@@ -43,8 +43,13 @@ function RegisterPage() {
         className="grid gap-4 sm:grid-cols-2"
         onSubmit={async (e) => {
           e.preventDefault();
+          const form = new FormData(e.currentTarget);
           setLoading(true);
-          await authService.register("demo");
+          await authService.register({
+            name: String(form.get("name") ?? ""),
+            email: String(form.get("email") ?? ""),
+            password: String(form.get("password") ?? ""),
+          });
           setLoading(false);
           toast.success("Account created", { description: "TODO: wire Supabase signUp" });
           navigate({ to: "/" });

@@ -43,8 +43,12 @@ function PatientLogin() {
         className="space-y-4"
         onSubmit={async (e) => {
           e.preventDefault();
+          const form = new FormData(e.currentTarget);
           setLoading(true);
-          await authService.login("patient");
+          await authService.login({
+            email: String(form.get("email") ?? ""),
+            password: String(form.get("password") ?? ""),
+          });
           setLoading(false);
           toast.success("Signed in", { description: "TODO: wire patient auth" });
           navigate({ to: "/portal" });

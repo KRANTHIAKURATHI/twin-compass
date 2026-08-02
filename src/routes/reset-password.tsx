@@ -38,8 +38,12 @@ function ResetPasswordPage() {
         className="space-y-4"
         onSubmit={async (e) => {
           e.preventDefault();
+          const form = new FormData(e.currentTarget);
           setLoading(true);
-          await authService.resetPassword();
+          await authService.resetPassword({
+            token: String(form.get("token") ?? ""),
+            password: String(form.get("password") ?? ""),
+          });
           setLoading(false);
           toast.success("Password updated", { description: "TODO: wire Supabase updateUser" });
           navigate({ to: "/login" });
