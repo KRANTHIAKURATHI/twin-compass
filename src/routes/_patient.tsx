@@ -2,6 +2,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { Activity, Bell, CalendarDays, FileText, HeartPulse, LayoutDashboard, Upload, User } from "lucide-react";
 
 import { PortalShell } from "@/components/layout/PortalShell";
+import { RequireRole } from "@/components/auth/RequireRole";
 
 export const Route = createFileRoute("/_patient")({
   component: PatientLayout,
@@ -20,7 +21,9 @@ const nav = [
 function PatientLayout() {
   return (
     <PortalShell brand="OncoTwin" tagline="Patient Portal" icon={Activity} nav={nav}>
-      <Outlet />
+      <RequireRole roles={["patient"]}>
+        <Outlet />
+      </RequireRole>
     </PortalShell>
   );
 }
