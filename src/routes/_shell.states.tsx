@@ -3,6 +3,8 @@ import { FileQuestion, Inbox, Lock, ServerCrash, TriangleAlert } from "lucide-re
 import { Link } from "@tanstack/react-router";
 
 import { EmptyState } from "@/components/common/EmptyState";
+import { StateNotice, type SystemState } from "@/components/common/StateNotice";
+
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +23,16 @@ export const Route = createFileRoute("/_shell/states")({
   }),
   component: StatesPage,
 });
+
+const systemStates: SystemState[] = [
+  "low-confidence",
+  "model-updating",
+  "twin-recalculating",
+  "simulation-running",
+  "waiting-verification",
+  "prediction-unavailable",
+];
+
 
 function StatesPage() {
   return (
@@ -103,7 +115,86 @@ function StatesPage() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">Clinical system states</CardTitle>
+            <CardDescription>Model, twin and simulation lifecycle notices shown inline across modules</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {systemStates.map((s) => (
+              <StateNotice key={s} state={s} />
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Table loading skeleton</CardTitle>
+            <CardDescription>Row placeholders keep column widths stable</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="h-9 w-9 shrink-0 rounded-xl" />
+                <Skeleton className="h-4 flex-1 rounded" />
+                <Skeleton className="h-4 w-16 rounded" />
+                <Skeleton className="h-4 w-20 rounded" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Chart loading skeleton</CardTitle>
+            <CardDescription>Used while prediction and confidence charts resolve</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Skeleton className="h-5 w-40 rounded" />
+            <Skeleton className="h-48 w-full rounded-xl" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Inline error state</CardTitle>
+            <CardDescription>A module failed to load but the page is still usable</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-start gap-3 rounded-xl border border-risk/40 bg-risk-soft/60 p-4">
+              <ServerCrash className="mt-0.5 size-5 shrink-0 text-risk" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">Couldn't load predictions</p>
+                <p className="text-sm text-muted-foreground">The prediction service did not respond. Try again in a moment.</p>
+              </div>
+              <Button size="sm" variant="outline">
+                Retry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Empty — no simulations</CardTitle>
+            <CardDescription>Module-specific empty state with a primary action</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <EmptyState
+              icon={Inbox}
+              title="No simulations for this twin"
+              description="Run the treatment simulator to compare regimens side by side."
+              action={
+                <Button asChild>
+                  <Link to="/simulator">Open simulator</Link>
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 }
+

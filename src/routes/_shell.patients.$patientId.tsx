@@ -13,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { patients, type Patient } from "@/lib/mock-data";
 import { imagingStudies, labResults, simulationHistory, treatmentPlan } from "@/lib/mock-extra";
+import { systemTimelineEvents } from "@/lib/mock-lifecycle";
+
 
 
 export const Route = createFileRoute("/_shell/patients/$patientId")({
@@ -243,17 +245,24 @@ function PatientProfile() {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="disease">
-                <TabsList>
+                <TabsList className="flex-wrap">
                   <TabsTrigger value="disease">Disease timeline</TabsTrigger>
                   <TabsTrigger value="treatment">Treatment timeline</TabsTrigger>
+                  <TabsTrigger value="system">Twin & simulations</TabsTrigger>
                   <TabsTrigger value="reports">Uploaded reports</TabsTrigger>
                 </TabsList>
                 <TabsContent value="disease" className="pt-5">
-                  <Timeline items={p.timeline} />
+                  <Timeline
+                    items={[...p.timeline, ...systemTimelineEvents].sort((a, b) => (a.date < b.date ? 1 : -1))}
+                  />
                 </TabsContent>
                 <TabsContent value="treatment" className="pt-5">
                   <Timeline items={p.timeline.filter((t) => t.kind === "treatment" || t.kind === "note")} />
                 </TabsContent>
+                <TabsContent value="system" className="pt-5">
+                  <Timeline items={systemTimelineEvents} />
+                </TabsContent>
+
                 <TabsContent value="reports" className="space-y-2 pt-5">
                   {p.reports.map((r) => (
                     <div key={r.name} className="flex items-center gap-3 rounded-xl border border-border p-3">
