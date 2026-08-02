@@ -228,7 +228,15 @@ function ReportsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                    No reports match this filter yet.
+                  </TableCell>
+                </TableRow>
+              )}
               {filtered.map((r) => (
+
                 <TableRow key={r.id}>
                   <TableCell className="font-medium">{r.title}</TableCell>
                   <TableCell>{r.patient}</TableCell>
