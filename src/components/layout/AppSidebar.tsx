@@ -39,7 +39,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-import { useRole, roleLabels, ROLES, type Role } from "@/lib/roles";
+import { roleLabels, ROLES, type Role } from "@/lib/roles";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface NavItem {
   title: string;
@@ -90,7 +91,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const [role, setRole] = useRole();
+  const { role, setRole } = useAuth();
 
   const isActive = (url: string) => (url === "/" ? pathname === "/" : pathname.startsWith(url));
 
