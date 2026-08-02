@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, Gauge, Target } from "lucide-react";
-import { performanceTrend } from "@/lib/mock-extra";
+import { performanceTrend } from "@/services/data";
 
 export const Route = createFileRoute("/_research/research/performance")({
   head: () => ({

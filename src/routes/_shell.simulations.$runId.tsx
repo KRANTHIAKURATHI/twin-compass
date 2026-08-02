@@ -6,8 +6,8 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { StatusChip } from "@/components/common/StatusChip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { scenarios } from "@/lib/mock-data";
-import { simulationRuns, type SimulationRun } from "@/lib/mock-lifecycle";
+import { scenarios } from "@/services/data";
+import { simulationRuns, type SimulationRun } from "@/services/data";
 
 export const Route = createFileRoute("/_shell/simulations/$runId")({
   loader: ({ params }) => {

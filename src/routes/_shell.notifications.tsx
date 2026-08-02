@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { notifications as seed } from "@/lib/mock-data";
+import { notifications as seed } from "@/services/data";
 
 export const Route = createFileRoute("/_shell/notifications")({
   head: () => ({

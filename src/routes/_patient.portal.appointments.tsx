@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { StatusChip } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { appointments } from "@/lib/mock-extra";
+import { appointments } from "@/services/data";
 
 export const Route = createFileRoute("/_patient/portal/appointments")({
   head: () => ({

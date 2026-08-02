@@ -9,7 +9,7 @@ import { Timeline } from "@/components/common/Timeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { patients } from "@/lib/mock-data";
+import { patients } from "@/services/data";
 
 export const Route = createFileRoute("/_shell/timeline")({
   head: () => ({

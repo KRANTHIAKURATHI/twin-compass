@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
-import { departments } from "@/lib/mock-extra";
+import { departments } from "@/services/data";
 
 export const Route = createFileRoute("/_admin/admin/departments")({
   head: () => ({

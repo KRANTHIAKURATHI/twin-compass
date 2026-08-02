@@ -5,7 +5,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { doctor, notifications } from "@/lib/mock-data";
+import { doctor, notifications } from "@/services/data";
 
 export function TopBar() {
   const unread = notifications.filter((n) => n.unread).length;

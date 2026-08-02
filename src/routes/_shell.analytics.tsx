@@ -24,7 +24,7 @@ import {
   stageDistribution,
   survivalCurve,
   treatmentComparison,
-} from "@/lib/mock-data";
+} from "@/services/data";
 
 export const Route = createFileRoute("/_shell/analytics")({
   head: () => ({

@@ -10,8 +10,8 @@ import { Timeline } from "@/components/common/Timeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { patients, progressionForecast } from "@/lib/mock-data";
-import { appointments, treatmentPlan } from "@/lib/mock-extra";
+import { patients, progressionForecast } from "@/services/data";
+import { appointments, treatmentPlan } from "@/services/data";
 
 export const Route = createFileRoute("/_patient/portal/")({
   head: () => ({

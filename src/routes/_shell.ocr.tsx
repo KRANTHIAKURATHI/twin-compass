@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StateNotice } from "@/components/common/StateNotice";
 import { cn } from "@/lib/utils";
-import { ocrFields } from "@/lib/mock-extra";
+import { ocrFields } from "@/services/data";
 
 
 export const Route = createFileRoute("/_shell/ocr")({

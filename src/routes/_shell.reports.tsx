@@ -13,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { patients, scenarios } from "@/lib/mock-data";
-import { downloadHistory, reportVersions, savedReports } from "@/lib/mock-lifecycle";
+import { patients, scenarios } from "@/services/data";
+import { downloadHistory, reportVersions, savedReports } from "@/services/data";
 import { reportService } from "@/services";
 
 

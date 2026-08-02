@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { doctor } from "@/lib/mock-data";
+import { doctor } from "@/services/data";
 
 export const Route = createFileRoute("/_shell/profile")({
   head: () => ({

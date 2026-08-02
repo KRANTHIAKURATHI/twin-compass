@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { patients, type Patient, type PatientStatus } from "@/lib/mock-data";
+import { patients, type Patient, type PatientStatus } from "@/services/data";
 import { patientService } from "@/services";
 
 export const Route = createFileRoute("/_shell/patients/")({

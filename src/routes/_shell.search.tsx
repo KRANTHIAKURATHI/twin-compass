@@ -8,8 +8,8 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { RiskChip, StatusChip } from "@/components/common/StatusChip";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { patients } from "@/lib/mock-data";
-import { documents } from "@/lib/mock-extra";
+import { patients } from "@/services/data";
+import { documents } from "@/services/data";
 
 export const Route = createFileRoute("/_shell/search")({
   validateSearch: (search: Record<string, unknown>) => ({ q: typeof search.q === "string" ? search.q : "" }),

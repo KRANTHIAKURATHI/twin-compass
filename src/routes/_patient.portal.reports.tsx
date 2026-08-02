@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { documents } from "@/lib/mock-extra";
+import { documents } from "@/services/data";
 
 export const Route = createFileRoute("/_patient/portal/reports")({
   head: () => ({

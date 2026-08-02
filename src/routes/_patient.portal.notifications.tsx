@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { StatusChip } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { patientNotifications } from "@/lib/mock-extra";
+import { patientNotifications } from "@/services/data";
 
 export const Route = createFileRoute("/_patient/portal/notifications")({
   head: () => ({

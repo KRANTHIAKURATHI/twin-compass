@@ -12,9 +12,9 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { patients, type Patient } from "@/lib/mock-data";
-import { imagingStudies, labResults, simulationHistory, treatmentPlan } from "@/lib/mock-extra";
-import { systemTimelineEvents } from "@/lib/mock-lifecycle";
+import { patients, type Patient } from "@/services/data";
+import { imagingStudies, labResults, simulationHistory, treatmentPlan } from "@/services/data";
+import { systemTimelineEvents } from "@/services/data";
 
 
 
