@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Check, Minus, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,7 +20,8 @@ export const Route = createFileRoute("/_admin/admin/permissions")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: PermissionsPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(PermissionsPage, { variant: "list" }),
 });
 
 const roles = ["doctor", "patient", "technician", "admin"] as const;

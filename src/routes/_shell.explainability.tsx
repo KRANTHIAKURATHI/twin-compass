@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Lightbulb, Minus, Plus } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -18,7 +19,8 @@ export const Route = createFileRoute("/_shell/explainability")({
       { property: "og:description", content: "Feature importance, influencing factors and risk breakdown behind each AI prediction." },
     ],
   }),
-  component: ExplainabilityPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(ExplainabilityPage, { variant: "chart" }),
 });
 
 const axis = { stroke: "var(--color-muted-foreground)", fontSize: 12 };

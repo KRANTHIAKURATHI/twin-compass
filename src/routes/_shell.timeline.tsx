@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
 
+import { CalendarClock } from "lucide-react";
+import { EmptyState } from "@/components/common/EmptyState";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Timeline } from "@/components/common/Timeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +22,8 @@ export const Route = createFileRoute("/_shell/timeline")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: TimelinePage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(TimelinePage, { variant: "list" }),
 });
 
 const kinds = ["all", "diagnosis", "treatment", "scan", "note"] as const;
@@ -73,8 +77,17 @@ function TimelinePage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Timeline items={items} />
+          {items.length === 0 ? (
+            <EmptyState
+              icon={CalendarClock}
+              title="No events in this view"
+              description="This patient has no recorded events of that type yet. Choose another filter."
+            />
+          ) : (
+            <Timeline items={items} />
+          )}
         </CardContent>
+
       </Card>
     </div>
   );

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Activity, BookOpen, LifeBuoy, Mail, ShieldCheck, Sparkles } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
@@ -22,7 +23,8 @@ export const Route = createFileRoute("/_shell/help")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: HelpPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(HelpPage, { variant: "list" }),
 });
 
 const faqs = [

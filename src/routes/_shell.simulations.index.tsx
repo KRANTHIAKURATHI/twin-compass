@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { FlaskConical } from "lucide-react";
 
 import { EmptyState } from "@/components/common/EmptyState";
@@ -20,7 +21,8 @@ export const Route = createFileRoute("/_shell/simulations/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: SimulationsPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(SimulationsPage, { variant: "list" }),
 });
 
 function SimulationsPage() {

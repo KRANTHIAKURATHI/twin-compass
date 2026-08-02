@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
 import { Bell, BellOff, Boxes, Brain, FlaskConical, ServerCog, UserPlus } from "lucide-react";
 
@@ -19,7 +20,8 @@ export const Route = createFileRoute("/_shell/notifications")({
       { property: "og:description", content: "Alerts for new patients, completed predictions, twin updates and system events." },
     ],
   }),
-  component: NotificationsPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(NotificationsPage, { variant: "list" }),
 });
 
 const typeMeta = {

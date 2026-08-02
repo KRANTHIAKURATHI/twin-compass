@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { PageHeader } from "@/components/common/PageHeader";
 import { PatientForm } from "@/components/patients/PatientForm";
 
@@ -14,7 +15,8 @@ export const Route = createFileRoute("/_shell/patients/new")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: AddPatientPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(AddPatientPage, { variant: "detail" }),
 });
 
 function AddPatientPage() {

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,7 +19,8 @@ export const Route = createFileRoute("/_admin/admin/audit")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: AuditPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(AuditPage, { variant: "table" }),
 });
 
 type Row = (typeof auditLogs)[number];

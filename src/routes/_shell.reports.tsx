@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, FileSpreadsheet, FileText, Printer } from "lucide-react";
 import { toast } from "sonner";
@@ -26,7 +27,8 @@ export const Route = createFileRoute("/_shell/reports")({
       { property: "og:description", content: "Generate patient, digital twin, prediction and treatment comparison reports." },
     ],
   }),
-  component: ReportsPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(ReportsPage, { variant: "list" }),
 });
 
 function ReportsPage() {
@@ -226,7 +228,15 @@ function ReportsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                    No reports match this filter yet.
+                  </TableCell>
+                </TableRow>
+              )}
               {filtered.map((r) => (
+
                 <TableRow key={r.id}>
                   <TableCell className="font-medium">{r.title}</TableCell>
                   <TableCell>{r.patient}</TableCell>

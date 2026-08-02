@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { PageHeader } from "@/components/common/PageHeader";
 import { PatientForm } from "@/components/patients/PatientForm";
 import { patients, type Patient } from "@/lib/mock-data";
@@ -27,7 +28,8 @@ export const Route = createFileRoute("/_shell/patients/$patientId/edit")({
       ],
     };
   },
-  component: EditPatientPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(EditPatientPage, { variant: "detail" }),
 });
 
 function EditPatientPage() {

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Mail, Phone, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,7 +23,8 @@ export const Route = createFileRoute("/_patient/portal/profile")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: PatientProfilePage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(PatientProfilePage, { variant: "detail" }),
 });
 
 const me = patients[0];

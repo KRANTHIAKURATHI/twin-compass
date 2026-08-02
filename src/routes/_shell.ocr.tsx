@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
 import { CheckCircle2, FileText, RefreshCw, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -26,7 +27,8 @@ export const Route = createFileRoute("/_shell/ocr")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: OcrPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(OcrPage, { variant: "detail" }),
 });
 
 type Step = "upload" | "extracting" | "verify" | "approved";

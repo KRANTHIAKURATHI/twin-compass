@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, Eye, FileText, Search } from "lucide-react";
 
@@ -21,7 +22,8 @@ export const Route = createFileRoute("/_patient/portal/reports")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: MyReports,
+  errorComponent: RouteErrorState,
+  component: withPageStates(MyReports, { variant: "list" }),
 });
 
 function MyReports() {

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Building2, Mail, Phone, ShieldCheck, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,7 +21,8 @@ export const Route = createFileRoute("/_shell/profile")({
       { property: "og:description", content: "Manage your clinician profile, hospital details, specialization and password." },
     ],
   }),
-  component: ProfilePage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(ProfilePage, { variant: "detail" }),
 });
 
 function ProfilePage() {

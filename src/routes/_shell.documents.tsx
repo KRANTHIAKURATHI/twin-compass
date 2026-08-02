@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Download, Eye, FileText, History, Search, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -33,7 +34,8 @@ export const Route = createFileRoute("/_shell/documents")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: DocumentCenter,
+  errorComponent: RouteErrorState,
+  component: withPageStates(DocumentCenter, { variant: "list" }),
 });
 
 const categories = ["All", "MRI", "CT", "PET", "Biopsy", "Blood"] as const;

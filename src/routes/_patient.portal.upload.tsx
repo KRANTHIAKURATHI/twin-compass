@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
 import { CheckCircle2, FileUp, Loader2, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
@@ -23,7 +24,8 @@ export const Route = createFileRoute("/_patient/portal/upload")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: UploadReports,
+  errorComponent: RouteErrorState,
+  component: withPageStates(UploadReports, { variant: "list" }),
 });
 
 function UploadReports() {
