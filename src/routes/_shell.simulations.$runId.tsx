@@ -88,11 +88,12 @@ function SimulationDetail() {
             </TableHeader>
             <TableBody>
               {rows.map((s) => (
-                <TableRow key={s.id} className={s.name === run.selected ? "bg-primary-soft/40" : undefined}>
+                <TableRow key={s.id} className={s.name === selectedName ? "bg-primary-soft/40" : undefined}>
                   <TableCell className="font-medium">
                     <span className="inline-flex items-center gap-2">
                       {s.name}
-                      {s.name === run.selected && (
+                      {s.name === selectedName && (
+
                         <span className="inline-flex items-center gap-1 text-xs text-primary">
                           <CheckCircle2 className="size-3.5" aria-hidden="true" /> Selected
                         </span>
