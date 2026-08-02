@@ -2,6 +2,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { Building2, ScrollText, ShieldCheck, Stethoscope, Users, Network } from "lucide-react";
 
 import { PortalShell } from "@/components/layout/PortalShell";
+import { RequireRole } from "@/components/auth/RequireRole";
 
 export const Route = createFileRoute("/_admin")({
   component: AdminLayout,
@@ -19,7 +20,9 @@ const nav = [
 function AdminLayout() {
   return (
     <PortalShell brand="OncoTwin" tagline="Admin Portal" icon={ShieldCheck} nav={nav}>
-      <Outlet />
+      <RequireRole roles={["admin"]}>
+        <Outlet />
+      </RequireRole>
     </PortalShell>
   );
 }

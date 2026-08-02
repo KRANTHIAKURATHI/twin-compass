@@ -8,7 +8,7 @@ import { StatusChip } from "@/components/common/StatusChip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { featureImportance } from "@/lib/mock-data";
+import { featureImportance } from "@/services/data";
 
 export const Route = createFileRoute("/_shell/explainability")({
   head: () => ({

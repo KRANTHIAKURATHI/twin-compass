@@ -7,7 +7,7 @@ import { StatusChip } from "@/components/common/StatusChip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { treatmentPlan } from "@/lib/mock-extra";
+import { treatmentPlan } from "@/services/data";
 
 export const Route = createFileRoute("/_patient/portal/treatment")({
   head: () => ({

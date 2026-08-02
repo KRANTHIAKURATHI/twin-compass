@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
 import { StatusChip } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
-import { doctorsDirectory } from "@/lib/mock-extra";
+import { doctorsDirectory } from "@/services/data";
 
 export const Route = createFileRoute("/_admin/admin/doctors")({
   head: () => ({

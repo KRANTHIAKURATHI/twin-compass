@@ -43,8 +43,12 @@ function PatientLogin() {
         className="space-y-4"
         onSubmit={async (e) => {
           e.preventDefault();
+          const form = new FormData(e.currentTarget);
           setLoading(true);
-          await authService.login("patient");
+          await authService.login({
+            email: String(form.get("email") ?? ""),
+            password: String(form.get("password") ?? ""),
+          });
           setLoading(false);
           toast.success("Signed in", { description: "TODO: wire patient auth" });
           navigate({ to: "/portal" });
@@ -52,11 +56,11 @@ function PatientLogin() {
       >
         <div className="grid gap-2">
           <Label htmlFor="pemail">Email</Label>
-          <Input id="pemail" type="email" autoComplete="email" placeholder="amelia.hart@mail.health" required />
+          <Input id="pemail" name="email" type="email" autoComplete="email" placeholder="amelia.hart@mail.health" required />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="ppassword">Password</Label>
-          <Input id="ppassword" type="password" autoComplete="current-password" placeholder="••••••••" required />
+          <Input id="ppassword" name="password" type="password" autoComplete="current-password" placeholder="••••••••" required />
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}

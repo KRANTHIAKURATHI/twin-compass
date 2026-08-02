@@ -7,7 +7,7 @@ import { Column, DataTablePage } from "@/components/common/DataTablePage";
 import { StatCard } from "@/components/common/StatCard";
 import { StatusChip } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
-import { hospitals } from "@/lib/mock-extra";
+import { hospitals } from "@/services/data";
 
 export const Route = createFileRoute("/_admin/admin/hospitals")({
   head: () => ({

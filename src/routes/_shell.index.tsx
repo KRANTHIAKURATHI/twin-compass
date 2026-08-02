@@ -44,7 +44,7 @@ import {
   stageDistribution,
   treatmentComparison,
   notifications,
-} from "@/lib/mock-data";
+} from "@/services/data";
 
 export const Route = createFileRoute("/_shell/")({
   head: () => ({

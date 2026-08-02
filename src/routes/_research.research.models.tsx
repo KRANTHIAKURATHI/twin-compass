@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
 import { StatusChip } from "@/components/common/StatusChip";
-import { models } from "@/lib/mock-extra";
+import { models } from "@/services/data";
 
 export const Route = createFileRoute("/_research/research/models")({
   head: () => ({

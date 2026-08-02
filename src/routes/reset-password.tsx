@@ -38,8 +38,12 @@ function ResetPasswordPage() {
         className="space-y-4"
         onSubmit={async (e) => {
           e.preventDefault();
+          const form = new FormData(e.currentTarget);
           setLoading(true);
-          await authService.resetPassword();
+          await authService.resetPassword({
+            token: String(form.get("token") ?? ""),
+            password: String(form.get("password") ?? ""),
+          });
           setLoading(false);
           toast.success("Password updated", { description: "TODO: wire Supabase updateUser" });
           navigate({ to: "/login" });
@@ -47,7 +51,7 @@ function ResetPasswordPage() {
       >
         <div className="grid gap-2">
           <Label htmlFor="rp-password">New password</Label>
-          <Input id="rp-password" type="password" autoComplete="new-password" placeholder="••••••••" required />
+          <Input id="rp-password" name="password" type="password" autoComplete="new-password" placeholder="••••••••" required />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="rp-confirm">Confirm new password</Label>

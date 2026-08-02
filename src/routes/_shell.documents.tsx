@@ -19,8 +19,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Timeline } from "@/components/common/Timeline";
-import { documents } from "@/lib/mock-extra";
-import { documentLinks, documentTimeline } from "@/lib/mock-lifecycle";
+import { documents } from "@/services/data";
+import { documentLinks, documentTimeline } from "@/services/data";
 
 
 export const Route = createFileRoute("/_shell/documents")({

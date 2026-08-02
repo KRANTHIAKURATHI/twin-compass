@@ -43,8 +43,13 @@ function RegisterPage() {
         className="grid gap-4 sm:grid-cols-2"
         onSubmit={async (e) => {
           e.preventDefault();
+          const form = new FormData(e.currentTarget);
           setLoading(true);
-          await authService.register("demo");
+          await authService.register({
+            name: String(form.get("name") ?? ""),
+            email: String(form.get("email") ?? ""),
+            password: String(form.get("password") ?? ""),
+          });
           setLoading(false);
           toast.success("Account created", { description: "TODO: wire Supabase signUp" });
           navigate({ to: "/" });
@@ -52,11 +57,11 @@ function RegisterPage() {
       >
         <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor="r-name">Doctor name</Label>
-          <Input id="r-name" placeholder="Dr. Sarah Whitmore" autoComplete="name" required />
+          <Input id="r-name" name="name" placeholder="Dr. Sarah Whitmore" autoComplete="name" required />
         </div>
         <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor="r-email">Work email</Label>
-          <Input id="r-email" type="email" autoComplete="email" placeholder="name@hospital.health" required />
+          <Input id="r-email" name="email" type="email" autoComplete="email" placeholder="name@hospital.health" required />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="r-hospital">Hospital</Label>
@@ -82,7 +87,7 @@ function RegisterPage() {
         </div>
         <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor="r-password">Password</Label>
-          <Input id="r-password" type="password" autoComplete="new-password" placeholder="••••••••" required />
+          <Input id="r-password" name="password" type="password" autoComplete="new-password" placeholder="••••••••" required />
         </div>
         <div className="flex items-start gap-2 sm:col-span-2">
           <Checkbox id="r-terms" className="mt-0.5" required />

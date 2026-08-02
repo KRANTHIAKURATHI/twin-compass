@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { patients, type Patient, type PatientStatus } from "@/lib/mock-data";
+import { patients, type Patient, type PatientStatus } from "@/services/data";
 import { patientService } from "@/services";
 
 export const Route = createFileRoute("/_shell/patients/")({
@@ -95,22 +95,23 @@ function PatientsPage() {
                 className="grid gap-4 sm:grid-cols-2"
                 onSubmit={async (e) => {
                   e.preventDefault();
-                  await patientService.create({});
+                  const form = new FormData(e.currentTarget);
+                  await patientService.create({ name: String(form.get("name") ?? "") });
                   setCreateOpen(false);
                   toast.success("Patient created", { description: "TODO: wire POST /api/patients" });
                 }}
               >
                 <div className="grid gap-2 sm:col-span-2">
                   <Label htmlFor="p-name">Full name</Label>
-                  <Input id="p-name" placeholder="Jane Doe" required />
+                  <Input id="p-name" name="name" placeholder="Jane Doe" required />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="p-age">Age</Label>
-                  <Input id="p-age" type="number" min={18} max={110} placeholder="52" required />
+                  <Input id="p-age" name="age" type="number" min={18} max={110} placeholder="52" required />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="p-tumor">Tumor size (mm)</Label>
-                  <Input id="p-tumor" type="number" min={1} placeholder="22" />
+                  <Input id="p-tumor" name="tumorSize" type="number" min={1} placeholder="22" />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="p-stage">Cancer stage</Label>

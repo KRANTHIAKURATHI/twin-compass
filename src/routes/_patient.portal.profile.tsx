@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { patients } from "@/lib/mock-data";
+import { patients } from "@/services/data";
 
 export const Route = createFileRoute("/_patient/portal/profile")({
   head: () => ({

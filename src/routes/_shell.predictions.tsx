@@ -12,8 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { patients, progressionForecast, survivalCurve, type RiskLevel } from "@/lib/mock-data";
-import { confidenceTrend, predictionHistory, twinVersions } from "@/lib/mock-lifecycle";
+import { patients, progressionForecast, survivalCurve, type RiskLevel } from "@/services/data";
+import { confidenceTrend, predictionHistory, twinVersions } from "@/services/data";
 
 
 export const Route = createFileRoute("/_shell/predictions")({

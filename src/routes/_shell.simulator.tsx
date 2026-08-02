@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { patients, scenarios } from "@/lib/mock-data";
+import { patients, scenarios } from "@/services/data";
 import { simulationService } from "@/services";
 
 

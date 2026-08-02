@@ -17,8 +17,8 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { patients, progressionForecast } from "@/lib/mock-data";
-import { twinVersions, twinSnapshots } from "@/lib/mock-lifecycle";
+import { patients, progressionForecast } from "@/services/data";
+import { twinVersions, twinSnapshots } from "@/services/data";
 import { twinService } from "@/services";
 
 
