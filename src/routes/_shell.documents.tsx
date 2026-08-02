@@ -17,7 +17,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Timeline } from "@/components/common/Timeline";
 import { documents } from "@/lib/mock-extra";
+import { documentLinks, documentTimeline } from "@/lib/mock-lifecycle";
+
 
 export const Route = createFileRoute("/_shell/documents")({
   head: () => ({
@@ -147,10 +150,27 @@ function DocumentCenter() {
               {preview?.category} · {preview?.patient} · {preview?.date}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex h-80 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface text-center">
+          <div className="flex h-72 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface text-center">
             <FileText className="size-10 text-muted-foreground" aria-hidden="true" />
             <p className="mt-3 text-sm font-medium">PDF preview placeholder</p>
             <p className="text-xs text-muted-foreground">TODO: render document via GET /api/documents/{"{id}"}/preview</p>
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Linked records</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="outline" asChild>
+                <Link to="/patients">Patient {preview?.patient}</Link>
+              </Button>
+              <Button size="sm" variant="outline" asChild>
+                <Link to="/digital-twins">Twin {documentLinks.twinVersion}</Link>
+              </Button>
+              <Button size="sm" variant="outline" asChild>
+                <Link to="/predictions">Prediction {documentLinks.prediction}</Link>
+              </Button>
+              <Button size="sm" variant="outline" asChild>
+                <Link to="/reports">Report {documentLinks.report}</Link>
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -174,6 +194,11 @@ function DocumentCenter() {
               </li>
             ))}
           </ul>
+          <div>
+            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Document timeline</p>
+            <Timeline items={documentTimeline} />
+          </div>
+
         </DialogContent>
       </Dialog>
     </div>

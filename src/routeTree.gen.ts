@@ -60,6 +60,8 @@ import { Route as ResearchResearchVersionsRouteImport } from './routes/_research
 import { Route as ShellPatientsIndexRouteImport } from './routes/_shell.patients.index'
 import { Route as ShellPatientsPatientIdRouteImport } from './routes/_shell.patients.$patientId'
 import { Route as ShellPatientsNewRouteImport } from './routes/_shell.patients.new'
+import { Route as ShellSimulationsIndexRouteImport } from './routes/_shell.simulations.index'
+import { Route as ShellSimulationsRunIdRouteImport } from './routes/_shell.simulations.$runId'
 import { Route as ShellPatientsPatientIdEditRouteImport } from './routes/_shell.patients.$patientId.edit'
 
 const SplatRoute = SplatRouteImport.update({
@@ -319,6 +321,16 @@ const ShellPatientsNewRoute = ShellPatientsNewRouteImport.update({
   path: '/patients/new',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellSimulationsIndexRoute = ShellSimulationsIndexRouteImport.update({
+  id: '/simulations/',
+  path: '/simulations/',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellSimulationsRunIdRoute = ShellSimulationsRunIdRouteImport.update({
+  id: '/simulations/$runId',
+  path: '/simulations/$runId',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellPatientsPatientIdEditRoute =
   ShellPatientsPatientIdEditRouteImport.update({
     id: '/edit',
@@ -370,10 +382,12 @@ export interface FileRoutesByFullPath {
   '/research/versions': typeof ResearchResearchVersionsRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
   '/patients/new': typeof ShellPatientsNewRoute
+  '/simulations/$runId': typeof ShellSimulationsRunIdRoute
   '/admin/': typeof AdminAdminIndexRoute
   '/portal/': typeof PatientPortalIndexRoute
   '/research/': typeof ResearchResearchIndexRoute
   '/patients/': typeof ShellPatientsIndexRoute
+  '/simulations/': typeof ShellSimulationsIndexRoute
   '/patients/$patientId/edit': typeof ShellPatientsPatientIdEditRoute
 }
 export interface FileRoutesByTo {
@@ -420,10 +434,12 @@ export interface FileRoutesByTo {
   '/research/versions': typeof ResearchResearchVersionsRoute
   '/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
   '/patients/new': typeof ShellPatientsNewRoute
+  '/simulations/$runId': typeof ShellSimulationsRunIdRoute
   '/admin': typeof AdminAdminIndexRoute
   '/portal': typeof PatientPortalIndexRoute
   '/research': typeof ResearchResearchIndexRoute
   '/patients': typeof ShellPatientsIndexRoute
+  '/simulations': typeof ShellSimulationsIndexRoute
   '/patients/$patientId/edit': typeof ShellPatientsPatientIdEditRoute
 }
 export interface FileRoutesById {
@@ -475,10 +491,12 @@ export interface FileRoutesById {
   '/_research/research/versions': typeof ResearchResearchVersionsRoute
   '/_shell/patients/$patientId': typeof ShellPatientsPatientIdRouteWithChildren
   '/_shell/patients/new': typeof ShellPatientsNewRoute
+  '/_shell/simulations/$runId': typeof ShellSimulationsRunIdRoute
   '/_admin/admin/': typeof AdminAdminIndexRoute
   '/_patient/portal/': typeof PatientPortalIndexRoute
   '/_research/research/': typeof ResearchResearchIndexRoute
   '/_shell/patients/': typeof ShellPatientsIndexRoute
+  '/_shell/simulations/': typeof ShellSimulationsIndexRoute
   '/_shell/patients/$patientId/edit': typeof ShellPatientsPatientIdEditRoute
 }
 export interface FileRouteTypes {
@@ -527,10 +545,12 @@ export interface FileRouteTypes {
     | '/research/versions'
     | '/patients/$patientId'
     | '/patients/new'
+    | '/simulations/$runId'
     | '/admin/'
     | '/portal/'
     | '/research/'
     | '/patients/'
+    | '/simulations/'
     | '/patients/$patientId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -577,10 +597,12 @@ export interface FileRouteTypes {
     | '/research/versions'
     | '/patients/$patientId'
     | '/patients/new'
+    | '/simulations/$runId'
     | '/admin'
     | '/portal'
     | '/research'
     | '/patients'
+    | '/simulations'
     | '/patients/$patientId/edit'
   id:
     | '__root__'
@@ -631,10 +653,12 @@ export interface FileRouteTypes {
     | '/_research/research/versions'
     | '/_shell/patients/$patientId'
     | '/_shell/patients/new'
+    | '/_shell/simulations/$runId'
     | '/_admin/admin/'
     | '/_patient/portal/'
     | '/_research/research/'
     | '/_shell/patients/'
+    | '/_shell/simulations/'
     | '/_shell/patients/$patientId/edit'
   fileRoutesById: FileRoutesById
 }
@@ -1012,6 +1036,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellPatientsNewRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/simulations/': {
+      id: '/_shell/simulations/'
+      path: '/simulations'
+      fullPath: '/simulations/'
+      preLoaderRoute: typeof ShellSimulationsIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/simulations/$runId': {
+      id: '/_shell/simulations/$runId'
+      path: '/simulations/$runId'
+      fullPath: '/simulations/$runId'
+      preLoaderRoute: typeof ShellSimulationsRunIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/patients/$patientId/edit': {
       id: '/_shell/patients/$patientId/edit'
       path: '/edit'
@@ -1122,7 +1160,9 @@ interface ShellRouteChildren {
   ShellIndexRoute: typeof ShellIndexRoute
   ShellPatientsPatientIdRoute: typeof ShellPatientsPatientIdRouteWithChildren
   ShellPatientsNewRoute: typeof ShellPatientsNewRoute
+  ShellSimulationsRunIdRoute: typeof ShellSimulationsRunIdRoute
   ShellPatientsIndexRoute: typeof ShellPatientsIndexRoute
+  ShellSimulationsIndexRoute: typeof ShellSimulationsIndexRoute
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
@@ -1144,7 +1184,9 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellIndexRoute: ShellIndexRoute,
   ShellPatientsPatientIdRoute: ShellPatientsPatientIdRouteWithChildren,
   ShellPatientsNewRoute: ShellPatientsNewRoute,
+  ShellSimulationsRunIdRoute: ShellSimulationsRunIdRoute,
   ShellPatientsIndexRoute: ShellPatientsIndexRoute,
+  ShellSimulationsIndexRoute: ShellSimulationsIndexRoute,
 }
 
 const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)

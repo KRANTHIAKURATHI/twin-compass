@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, FileSpreadsheet, FileText, Printer } from "lucide-react";
 import { toast } from "sonner";
@@ -7,10 +8,14 @@ import { RiskChip, StatusChip } from "@/components/common/StatusChip";
 import { Timeline } from "@/components/common/Timeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { patients, scenarios } from "@/lib/mock-data";
+import { downloadHistory, reportVersions, savedReports } from "@/lib/mock-lifecycle";
 import { reportService } from "@/services";
+
 
 export const Route = createFileRoute("/_shell/reports")({
   head: () => ({
@@ -25,7 +30,11 @@ export const Route = createFileRoute("/_shell/reports")({
 });
 
 function ReportsPage() {
-  const p = patients[0];
+  const [patientId, setPatientId] = useState(patients[0].id);
+  const [filter, setFilter] = useState<string>("All");
+  const p = patients.find((x) => x.id === patientId)!;
+
+  const filtered = savedReports.filter((r) => filter === "All" || r.type === filter);
 
   const exportAs = async (format: "pdf" | "csv") => {
     await reportService.export(format);
@@ -40,6 +49,18 @@ function ReportsPage() {
         crumbs={[{ label: "Home", to: "/" }, { label: "Reports" }]}
         actions={
           <>
+            <Select value={patientId} onValueChange={setPatientId}>
+              <SelectTrigger className="w-[220px]" aria-label="Select patient for report">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {patients.slice(0, 12).map((x) => (
+                  <SelectItem key={x.id} value={x.id}>
+                    {x.name} · {x.id}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button variant="outline" onClick={() => exportAs("pdf")}>
               <FileText className="size-4" aria-hidden="true" /> PDF
             </Button>
@@ -52,6 +73,7 @@ function ReportsPage() {
           </>
         }
       />
+
 
       <Card className="p-8">
         <header className="flex items-start justify-between gap-4">
@@ -173,6 +195,101 @@ function ReportsPage() {
           </div>
         </section>
       </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle className="text-base">Report history</CardTitle>
+          <CardDescription>Previously generated reports, their versions and download counts</CardDescription>
+          <div className="pt-3">
+            <Tabs value={filter} onValueChange={setFilter}>
+              <TabsList className="flex-wrap">
+                {["All", "Clinical summary", "Tumor board packet", "Model audit", "Cohort summary"].map((t) => (
+                  <TabsTrigger key={t} value={t}>
+                    {t}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Report</TableHead>
+                <TableHead>Patient</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Version</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Downloads</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="font-medium">{r.title}</TableCell>
+                  <TableCell>{r.patient}</TableCell>
+                  <TableCell>{r.type}</TableCell>
+                  <TableCell>{r.created}</TableCell>
+                  <TableCell>v{r.version}</TableCell>
+                  <TableCell>
+                    <StatusChip tone={r.status === "Final" ? "success" : r.status === "Draft" ? "warning" : "neutral"}>
+                      {r.status}
+                    </StatusChip>
+                  </TableCell>
+                  <TableCell className="text-right">{r.downloads}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Version history</CardTitle>
+            <CardDescription>Revisions of the current clinical summary</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {reportVersions.map((v) => (
+              <div key={v.version} className="flex gap-3 rounded-xl border border-border p-3">
+                <StatusChip tone={v.version === reportVersions[0].version ? "success" : "neutral"}>v{v.version}</StatusChip>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{v.note}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {v.author} · {v.date}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Download history</CardTitle>
+            <CardDescription>Who exported what, and when</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {downloadHistory.map((d) => (
+              <div key={d.id} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">
+                    {d.report} · {d.format}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {d.by} · {d.at}
+                  </p>
+                </div>
+                <Download className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
 
       <Card className="mt-4">
         <CardHeader>
