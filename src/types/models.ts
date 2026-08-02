@@ -164,9 +164,10 @@ export interface TwinVersion {
 
 export interface TwinSnapshot {
   id: ID;
-  label: string;
-  date: ISODate;
-  note: string;
+  version: string;
+  takenAt: ISODate;
+  trigger: string;
+  size: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -192,8 +193,8 @@ export interface ConfidencePoint {
 
 export interface FeatureImportance {
   feature: string;
-  impact: number;
-  direction?: string;
+  weight: number;
+  direction: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -203,13 +204,15 @@ export interface FeatureImportance {
 export interface Scenario {
   id: ID;
   name: string;
-  description: string;
-  survival: number;
-  recurrence: number;
-  response: number;
-  toxicity: number;
-  duration: string;
-  trajectory: { month: number; volume: number }[];
+  regimen: string;
+  predictedResponse: number;
+  tumorChange: number;
+  risk: RiskLevel;
+  confidence: number;
+  survival5y: number;
+  sideEffectRisk: number;
+  recoveryWeeks: number;
+  recommended: boolean;
 }
 
 export interface ScenarioDraft {

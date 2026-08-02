@@ -54,11 +54,11 @@ export const scenarioFixtures = raw.scenarios as Scenario[];
 export const labResultFixtures = extra.labResults as unknown as LabResult[];
 export const imagingFixtures = extra.imagingStudies as ImagingStudy[];
 export const progressionForecastFixtures = raw.progressionForecast as MetricPoint[];
-export const featureImportanceFixtures = raw.featureImportance as unknown as FeatureImportance[];
+export const featureImportanceFixtures = raw.featureImportance as FeatureImportance[];
 
 /* Twin / prediction / simulation --------------------------------------- */
 export const twinVersionFixtures = lifecycle.twinVersions as TwinVersion[];
-export const twinSnapshotFixtures = lifecycle.twinSnapshots as unknown as TwinSnapshot[];
+export const twinSnapshotFixtures = lifecycle.twinSnapshots as TwinSnapshot[];
 export const predictionHistoryFixtures = lifecycle.predictionHistory as PredictionRun[];
 export const confidenceTrendFixtures = lifecycle.confidenceTrend as ConfidencePoint[];
 export const simulationRunFixtures = lifecycle.simulationRuns as SimulationRun[];
