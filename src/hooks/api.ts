@@ -60,15 +60,15 @@ export function useApiMutation<TVars, TData = MutationResult>(
   return useMutation<TData, Error, TVars>({
     mutationFn: fn,
     ...rest,
-    onSuccess: (data, vars, ctx) => {
+    onSuccess: (data, vars, ...args) => {
       invalidate?.forEach((key) => queryClient.invalidateQueries({ queryKey: key as unknown[] }));
       const msg = typeof successMessage === "function" ? successMessage(data, vars) : successMessage;
       if (msg) toast.success(msg);
-      rest.onSuccess?.(data, vars, ctx);
+      (rest.onSuccess as ((...a: unknown[]) => void) | undefined)?.(data, vars, ...args);
     },
-    onError: (error, vars, ctx) => {
+    onError: (error, vars, ...args) => {
       toast.error(errorMessage ?? error.message ?? "Something went wrong");
-      rest.onError?.(error, vars, ctx);
+      (rest.onError as ((...a: unknown[]) => void) | undefined)?.(error, vars, ...args);
     },
   });
 }
