@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import {
   Bar,
   BarChart,
@@ -34,7 +35,8 @@ export const Route = createFileRoute("/_shell/analytics")({
       { property: "og:description", content: "Cohort analytics: age and stage distribution, treatment frequency, risk and survival trends." },
     ],
   }),
-  component: AnalyticsPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(AnalyticsPage, { variant: "cards" }),
 });
 
 const axis = { stroke: "var(--color-muted-foreground)", fontSize: 12 };

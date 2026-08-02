@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { PageHeader } from "@/components/common/PageHeader";
@@ -18,7 +19,8 @@ export const Route = createFileRoute("/_research/research/performance")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: PerformancePage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(PerformancePage, { variant: "cards" }),
 });
 
 const axis = { stroke: "var(--color-muted-foreground)", fontSize: 12 };

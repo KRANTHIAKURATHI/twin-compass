@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Pill, ShieldAlert, Syringe } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
@@ -19,7 +20,8 @@ export const Route = createFileRoute("/_patient/portal/treatment")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: MyTreatment,
+  errorComponent: RouteErrorState,
+  component: withPageStates(MyTreatment, { variant: "list" }),
 });
 
 function MyTreatment() {

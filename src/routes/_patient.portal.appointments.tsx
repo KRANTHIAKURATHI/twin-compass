@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { CalendarDays, Clock, MapPin, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,7 +20,8 @@ export const Route = createFileRoute("/_patient/portal/appointments")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: MyAppointments,
+  errorComponent: RouteErrorState,
+  component: withPageStates(MyAppointments, { variant: "list" }),
 });
 
 function Row({ a }: { a: (typeof appointments)[number] }) {

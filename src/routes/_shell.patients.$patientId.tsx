@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Activity, Boxes, Download, FileText, FlaskConical, Image as ImageIcon, Pencil, Stethoscope } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
@@ -38,7 +39,8 @@ export const Route = createFileRoute("/_shell/patients/$patientId")({
       ],
     };
   },
-  component: PatientProfile,
+  errorComponent: RouteErrorState,
+  component: withPageStates(PatientProfile, { variant: "detail" }),
 });
 
 function Field({ label, value }: { label: string; value: string | number }) {

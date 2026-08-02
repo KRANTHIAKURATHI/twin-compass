@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
 import { departments } from "@/lib/mock-extra";
 
@@ -14,7 +15,8 @@ export const Route = createFileRoute("/_admin/admin/departments")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: DepartmentsPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(DepartmentsPage, { variant: "table" }),
 });
 
 type Row = (typeof departments)[number];

@@ -1,4 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { CheckCircle2 } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
@@ -31,7 +32,8 @@ export const Route = createFileRoute("/_shell/simulations/$runId")({
       ],
     };
   },
-  component: SimulationDetail,
+  errorComponent: RouteErrorState,
+  component: withPageStates(SimulationDetail, { variant: "detail" }),
 });
 
 function SimulationDetail() {

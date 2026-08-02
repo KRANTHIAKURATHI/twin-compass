@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpDown, Filter, Plus, Search, Trash2, Pencil, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -33,7 +34,8 @@ export const Route = createFileRoute("/_shell/patients/")({
       { property: "og:description", content: "Search, filter and manage breast cancer patients, biomarkers and treatment status." },
     ],
   }),
-  component: PatientsPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(PatientsPage, { variant: "list" }),
 });
 
 const statusTone: Record<PatientStatus, ChipTone> = {

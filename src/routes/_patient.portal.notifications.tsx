@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Bell, Check } from "lucide-react";
 import { useState } from "react";
 
@@ -19,7 +20,8 @@ export const Route = createFileRoute("/_patient/portal/notifications")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: PatientNotifications,
+  errorComponent: RouteErrorState,
+  component: withPageStates(PatientNotifications, { variant: "list" }),
 });
 
 function PatientNotifications() {

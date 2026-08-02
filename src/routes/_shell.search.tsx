@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, Search as SearchIcon, User, Boxes } from "lucide-react";
 
@@ -22,7 +23,8 @@ export const Route = createFileRoute("/_shell/search")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: SearchPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(SearchPage, { variant: "list" }),
 });
 
 function SearchPage() {

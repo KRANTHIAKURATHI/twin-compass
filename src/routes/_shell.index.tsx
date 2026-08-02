@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import {
   Users,
   Boxes,
@@ -54,7 +55,8 @@ export const Route = createFileRoute("/_shell/")({
       { property: "og:description", content: "Executive overview of patients, digital twins, simulations and prediction accuracy." },
     ],
   }),
-  component: DashboardPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(DashboardPage, { variant: "cards" }),
 });
 
 const icons = { users: Users, twin: Boxes, alert: AlertTriangle, flask: FlaskConical, check: CheckCircle2, heart: HeartPulse };

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common/PageHeader";
@@ -21,7 +22,8 @@ export const Route = createFileRoute("/_shell/settings")({
       { property: "og:description", content: "General, appearance, notification, security, language, privacy and API settings." },
     ],
   }),
-  component: SettingsPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(SettingsPage, { variant: "detail" }),
 });
 
 function Row({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {

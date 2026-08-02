@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Building2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,7 +20,8 @@ export const Route = createFileRoute("/_admin/admin/hospitals")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: HospitalsPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(HospitalsPage, { variant: "table" }),
 });
 
 type Row = (typeof hospitals)[number];

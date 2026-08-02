@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { PageHeader } from "@/components/common/PageHeader";
@@ -19,7 +20,8 @@ export const Route = createFileRoute("/_shell/timeline")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: TimelinePage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(TimelinePage, { variant: "list" }),
 });
 
 const kinds = ["all", "diagnosis", "treatment", "scan", "note"] as const;

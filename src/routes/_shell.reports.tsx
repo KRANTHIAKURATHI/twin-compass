@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, FileSpreadsheet, FileText, Printer } from "lucide-react";
 import { toast } from "sonner";
@@ -26,7 +27,8 @@ export const Route = createFileRoute("/_shell/reports")({
       { property: "og:description", content: "Generate patient, digital twin, prediction and treatment comparison reports." },
     ],
   }),
-  component: ReportsPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(ReportsPage, { variant: "list" }),
 });
 
 function ReportsPage() {

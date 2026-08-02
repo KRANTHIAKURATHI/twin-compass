@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Activity, CalendarDays, FileText, HeartPulse, Syringe } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -23,7 +24,8 @@ export const Route = createFileRoute("/_patient/portal/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: PatientDashboard,
+  errorComponent: RouteErrorState,
+  component: withPageStates(PatientDashboard, { variant: "cards" }),
 });
 
 const me = patients[0];

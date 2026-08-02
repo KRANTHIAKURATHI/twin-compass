@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { FileQuestion, Inbox, Lock, ServerCrash, TriangleAlert } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
@@ -21,7 +22,8 @@ export const Route = createFileRoute("/_shell/states")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: StatesPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(StatesPage, { variant: "list" }),
 });
 
 const systemStates: SystemState[] = [

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Boxes, RefreshCw, Activity, Ruler, Syringe, Clock, GitCompare, RotateCcw, Archive } from "lucide-react";
 import { toast } from "sonner";
@@ -30,7 +31,8 @@ export const Route = createFileRoute("/_shell/digital-twins")({
       { property: "og:description", content: "Interactive virtual patient models with live tumor, treatment and risk state." },
     ],
   }),
-  component: DigitalTwinsPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(DigitalTwinsPage, { variant: "detail" }),
 });
 
 const twins = patients.slice(0, 8);

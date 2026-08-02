@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
 import { Play, Sparkles, ShieldCheck, TrendingDown, Clock, AlertTriangle, ArrowUpRight, Copy } from "lucide-react";
 import { toast } from "sonner";
@@ -30,7 +31,8 @@ export const Route = createFileRoute("/_shell/simulator")({
       { property: "og:description", content: "Compare treatment scenarios side by side with predicted response, risk and survival." },
     ],
   }),
-  component: SimulatorPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(SimulatorPage, { variant: "detail" }),
 });
 
 type Scenario = (typeof scenarios)[number];

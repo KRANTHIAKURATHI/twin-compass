@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Brain, HeartPulse, Repeat, Activity, Gauge } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -24,7 +25,8 @@ export const Route = createFileRoute("/_shell/predictions")({
       { property: "og:description", content: "Disease progression, treatment response, survival probability and recurrence risk predictions." },
     ],
   }),
-  component: PredictionsPage,
+  errorComponent: RouteErrorState,
+  component: withPageStates(PredictionsPage, { variant: "chart" }),
 });
 
 const axis = { stroke: "var(--color-muted-foreground)", fontSize: 12 };
