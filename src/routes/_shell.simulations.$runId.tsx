@@ -38,6 +38,8 @@ function SimulationDetail() {
   const { run } = Route.useLoaderData() as { run: SimulationRun };
   const compared = scenarios.filter((s) => run.compared.includes(s.name));
   const rows = compared.length > 0 ? compared : scenarios;
+  const selectedName = compared.length > 0 ? run.selected : (rows.find((s) => s.recommended)?.name ?? run.selected);
+
 
   return (
     <div className="mx-auto max-w-[1100px]">
