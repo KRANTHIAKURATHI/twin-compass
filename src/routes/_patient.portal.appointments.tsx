@@ -69,9 +69,11 @@ function MyAppointments() {
           <CardTitle className="text-base">Upcoming</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {upcoming.map((a) => (
-            <Row key={a.id} a={a} />
-          ))}
+          {upcoming.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">No upcoming appointments scheduled.</p>
+          ) : (
+            upcoming.map((a) => <Row key={a.id} a={a} />)
+          )}
         </CardContent>
       </Card>
 
@@ -80,9 +82,11 @@ function MyAppointments() {
           <CardTitle className="text-base">Past</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {past.map((a) => (
-            <Row key={a.id} a={a} />
-          ))}
+          {past.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">No past appointments yet.</p>
+          ) : (
+            past.map((a) => <Row key={a.id} a={a} />)
+          )}
         </CardContent>
       </Card>
     </div>
