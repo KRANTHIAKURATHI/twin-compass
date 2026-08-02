@@ -103,15 +103,15 @@ function PatientsPage() {
               >
                 <div className="grid gap-2 sm:col-span-2">
                   <Label htmlFor="p-name">Full name</Label>
-                  <Input id="p-name" placeholder="Jane Doe" required />
+                  <Input id="p-name" name="name" placeholder="Jane Doe" required />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="p-age">Age</Label>
-                  <Input id="p-age" type="number" min={18} max={110} placeholder="52" required />
+                  <Input id="p-age" name="age" type="number" min={18} max={110} placeholder="52" required />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="p-tumor">Tumor size (mm)</Label>
-                  <Input id="p-tumor" type="number" min={1} placeholder="22" />
+                  <Input id="p-tumor" name="tumorSize" type="number" min={1} placeholder="22" />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="p-stage">Cancer stage</Label>

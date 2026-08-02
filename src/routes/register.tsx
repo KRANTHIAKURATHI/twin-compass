@@ -57,11 +57,11 @@ function RegisterPage() {
       >
         <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor="r-name">Doctor name</Label>
-          <Input id="r-name" placeholder="Dr. Sarah Whitmore" autoComplete="name" required />
+          <Input id="r-name" name="name" placeholder="Dr. Sarah Whitmore" autoComplete="name" required />
         </div>
         <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor="r-email">Work email</Label>
-          <Input id="r-email" type="email" autoComplete="email" placeholder="name@hospital.health" required />
+          <Input id="r-email" name="email" type="email" autoComplete="email" placeholder="name@hospital.health" required />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="r-hospital">Hospital</Label>
@@ -87,7 +87,7 @@ function RegisterPage() {
         </div>
         <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor="r-password">Password</Label>
-          <Input id="r-password" type="password" autoComplete="new-password" placeholder="••••••••" required />
+          <Input id="r-password" name="password" type="password" autoComplete="new-password" placeholder="••••••••" required />
         </div>
         <div className="flex items-start gap-2 sm:col-span-2">
           <Checkbox id="r-terms" className="mt-0.5" required />

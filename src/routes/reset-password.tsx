@@ -51,7 +51,7 @@ function ResetPasswordPage() {
       >
         <div className="grid gap-2">
           <Label htmlFor="rp-password">New password</Label>
-          <Input id="rp-password" type="password" autoComplete="new-password" placeholder="••••••••" required />
+          <Input id="rp-password" name="password" type="password" autoComplete="new-password" placeholder="••••••••" required />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="rp-confirm">Confirm new password</Label>

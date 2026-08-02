@@ -55,7 +55,7 @@ function LoginPage() {
       >
         <div className="grid gap-2">
           <Label htmlFor="email">Work email</Label>
-          <Input id="email" type="email" autoComplete="email" placeholder="s.whitmore@hospital.health" required />
+          <Input id="email" name="email" type="email" autoComplete="email" placeholder="s.whitmore@hospital.health" required />
         </div>
         <div className="grid gap-2">
           <div className="flex items-center justify-between">
@@ -64,7 +64,7 @@ function LoginPage() {
               Forgot password?
             </Link>
           </div>
-          <Input id="password" type="password" autoComplete="current-password" placeholder="••••••••" required />
+          <Input id="password" name="password" type="password" autoComplete="current-password" placeholder="••••••••" required />
         </div>
         <div className="flex items-center gap-2">
           <Checkbox id="remember" defaultChecked />
