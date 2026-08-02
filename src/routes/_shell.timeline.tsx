@@ -75,8 +75,17 @@ function TimelinePage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Timeline items={items} />
+          {items.length === 0 ? (
+            <EmptyState
+              icon={CalendarClock}
+              title="No events in this view"
+              description="This patient has no recorded events of that type yet. Choose another filter."
+            />
+          ) : (
+            <Timeline items={items} />
+          )}
         </CardContent>
+
       </Card>
     </div>
   );
