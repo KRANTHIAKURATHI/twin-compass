@@ -22,9 +22,19 @@ export const Route = createFileRoute("/register")({
   component: RegisterPage,
 });
 
+const ROLE_OPTIONS = [
+  { value: "doctor", label: "Doctor" },
+  { value: "researcher", label: "Medical researcher" },
+  { value: "admin", label: "Hospital administrator" },
+] as const;
+
+import { useAuth } from "@/components/auth/AuthProvider";
+
 function RegisterPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState<(typeof ROLE_OPTIONS)[number]["value"]>("doctor");
 
   return (
     <AuthLayout
@@ -45,14 +55,29 @@ function RegisterPage() {
           e.preventDefault();
           const form = new FormData(e.currentTarget);
           setLoading(true);
-          await authService.register({
-            name: String(form.get("name") ?? ""),
-            email: String(form.get("email") ?? ""),
-            password: String(form.get("password") ?? ""),
-          });
-          setLoading(false);
-          toast.success("Account created", { description: "TODO: wire Supabase signUp" });
-          navigate({ to: "/" });
+          const email = String(form.get("email") ?? "");
+          const password = String(form.get("password") ?? "");
+          try {
+            await authService.register({
+              name: String(form.get("name") ?? ""),
+              email,
+              password,
+              role,
+              hospital: String(form.get("hospital") ?? "") || undefined,
+              specialization: String(form.get("specialization") ?? "") || undefined,
+            });
+            const session = await login({ email, password });
+            setLoading(false);
+            toast.success("Account created and signed in");
+            if (session.user.role === "patient") {
+              navigate({ to: "/portal" });
+            } else {
+              navigate({ to: "/" });
+            }
+          } catch (err: any) {
+            setLoading(false);
+            toast.error(err?.message || "Failed to create account");
+          }
         }}
       >
         <div className="grid gap-2 sm:col-span-2">
@@ -65,23 +90,24 @@ function RegisterPage() {
         </div>
         <div className="grid gap-2">
           <Label htmlFor="r-hospital">Hospital</Label>
-          <Input id="r-hospital" placeholder="Northfield Oncology Center" required />
+          <Input id="r-hospital" name="hospital" placeholder="Northfield Oncology Center" required />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="r-spec">Specialization</Label>
-          <Input id="r-spec" placeholder="Breast oncology" required />
+          <Input id="r-spec" name="specialization" placeholder="Breast oncology" required />
         </div>
         <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor="r-role">Role</Label>
-          <Select defaultValue="oncologist">
+          <Select value={role} onValueChange={(value) => setRole(value as typeof role)}>
             <SelectTrigger id="r-role">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="doctor">Doctor</SelectItem>
-              <SelectItem value="oncologist">Oncologist</SelectItem>
-              <SelectItem value="researcher">Medical researcher</SelectItem>
-              <SelectItem value="admin">Hospital administrator</SelectItem>
+              {ROLE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
 import { Play, Sparkles, ShieldCheck, TrendingDown, Clock, AlertTriangle, ArrowUpRight, Copy } from "lucide-react";
@@ -18,8 +18,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { patients, scenarios } from "@/services/data";
-import { simulationService } from "@/services";
+import type { Scenario } from "@/types/models";
+import {
+  useDuplicateScenario,
+  usePatients,
+  usePromoteSimulation,
+  useRunSimulation,
+  useSaveScenario,
+  useScenarios,
+} from "@/hooks/api";
 
 
 export const Route = createFileRoute("/_shell/simulator")({
@@ -35,51 +42,108 @@ export const Route = createFileRoute("/_shell/simulator")({
   component: withPageStates(SimulatorPage, { variant: "detail" }),
 });
 
-type Scenario = (typeof scenarios)[number];
-
 function SimulatorPage() {
-  const [patientId, setPatientId] = useState(patients[0].id);
-  const [running, setRunning] = useState(false);
+  const { data: patientsData, isLoading: patientsLoading, isError: patientsError } = usePatients();
+  const patients = patientsData ?? [];
+
+  const [patientId, setPatientId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!patientId && patients.length > 0) setPatientId(patients[0].id);
+  }, [patientId, patients]);
+
+  const { data: scenariosData, isLoading: scenariosLoading } = useScenarios(patientId ?? "");
+  const baseScenarios = scenariosData ?? [];
+
   const [hasRun, setHasRun] = useState(true);
   const [customScenarios, setCustomScenarios] = useState<Scenario[]>([]);
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
   const [promoteOpen, setPromoteOpen] = useState(false);
   const [promoteNotes, setPromoteNotes] = useState("");
   const [builder, setBuilder] = useState({ name: "", regimen: "", dosage: "60 mg/m²", duration: "12", notes: "" });
-  const patient = patients.find((p) => p.id === patientId)!;
+  const patient = patients.find((p) => p.id === patientId);
 
-  const allScenarios: Scenario[] = [...scenarios, ...customScenarios];
+  const allScenarios: Scenario[] = [...baseScenarios, ...customScenarios];
   const selected = allScenarios.find((s) => s.id === selectedScenario) ?? null;
 
-  const run = async () => {
-    setRunning(true);
-    await simulationService.run(patientId);
-    setRunning(false);
-    setHasRun(true);
-    toast.success("Simulation complete", { description: "4 scenarios compared · TODO: wire POST /api/simulations" });
+  const runSimulation = useRunSimulation();
+  const saveScenarioMutation = useSaveScenario();
+  const duplicateScenarioMutation = useDuplicateScenario();
+  const promoteSimulation = usePromoteSimulation();
+
+  const running = runSimulation.isPending;
+
+  const run = () => {
+    if (!patientId) return;
+    runSimulation.mutate({ patientId }, { onSuccess: () => setHasRun(true) });
   };
 
   const saveScenario = () => {
+    if (!patientId) {
+      toast.error("Select a patient before saving a scenario");
+      return;
+    }
     if (!builder.name.trim() || !builder.regimen.trim()) {
       toast.error("Scenario name and regimen are required");
       return;
     }
-    const draft: Scenario = {
-      ...scenarios[0],
-      id: `SC-${Date.now()}`,
+    const draft = {
       name: builder.name.trim(),
-      regimen: `${builder.regimen.trim()} · ${builder.dosage} · ${builder.duration} weeks`,
-      recommended: false,
+      regimen: builder.regimen.trim(),
+      dosage: builder.dosage,
+      durationWeeks: Number(builder.duration) || 0,
+      notes: builder.notes,
     };
-    setCustomScenarios((prev) => [...prev, draft]);
-    setBuilder({ name: "", regimen: "", dosage: "60 mg/m²", duration: "12", notes: "" });
-    toast.success("Scenario saved", { description: "TODO: wire POST /api/simulations/scenarios" });
+    saveScenarioMutation.mutate({ patientId, draft }, {
+      onSuccess: () => {
+        const template = allScenarios[0];
+        if (template) {
+          setCustomScenarios((prev) => [
+            ...prev,
+            {
+              ...template,
+              id: `SC-${Date.now()}`,
+              name: draft.name,
+              regimen: `${draft.regimen} · ${draft.dosage} · ${draft.durationWeeks} weeks`,
+              recommended: false,
+            },
+          ]);
+        }
+        setBuilder({ name: "", regimen: "", dosage: "60 mg/m²", duration: "12", notes: "" });
+      },
+    });
   };
 
   const duplicateScenario = (s: Scenario) => {
-    setCustomScenarios((prev) => [...prev, { ...s, id: `${s.id}-copy-${prev.length + 1}`, name: `${s.name} (copy)`, recommended: false }]);
-    toast.success(`Duplicated ${s.name}`);
+    duplicateScenarioMutation.mutate(s.id, {
+      onSuccess: () => {
+        setCustomScenarios((prev) => [
+          ...prev,
+          { ...s, id: `${s.id}-copy-${prev.length + 1}`, name: `${s.name} (copy)`, recommended: false },
+        ]);
+      },
+    });
   };
+
+  if (patientsLoading) {
+    return (
+      <div className="mx-auto max-w-[1400px] space-y-4">
+        <Skeleton className="h-9 w-64" />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-[420px] rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (patientsError || !patient) {
+    return (
+      <div className="mx-auto max-w-[1400px]">
+        <StateNotice state="prediction-unavailable" title="Could not load patients" description="Something went wrong fetching patients. Try again shortly." />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -109,7 +173,7 @@ function SimulatorPage() {
       <Card className="mb-4">
         <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Select value={patientId} onValueChange={setPatientId}>
+            <Select value={patientId ?? undefined} onValueChange={setPatientId}>
               <SelectTrigger className="w-[260px]" aria-label="Select patient">
                 <SelectValue />
               </SelectTrigger>
@@ -134,7 +198,7 @@ function SimulatorPage() {
         </CardContent>
       </Card>
 
-      {running || !hasRun ? (
+      {running || !hasRun || scenariosLoading ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-[420px] rounded-2xl" />
@@ -356,14 +420,21 @@ function SimulatorPage() {
               Cancel
             </Button>
             <Button
+              disabled={!selected || promoteSimulation.isPending}
               onClick={() => {
-                setPromoteOpen(false);
-                toast.success("Scenario promoted to treatment plan", {
-                  description: "TODO: wire POST /api/treatment-plans",
-                });
+                if (!selected) return;
+                promoteSimulation.mutate(
+                  { id: selected.id, notes: promoteNotes },
+                  {
+                    onSuccess: () => {
+                      setPromoteOpen(false);
+                      setPromoteNotes("");
+                    },
+                  },
+                );
               }}
             >
-              Promote scenario
+              {promoteSimulation.isPending ? "Promoting…" : "Promote scenario"}
             </Button>
           </DialogFooter>
         </DialogContent>

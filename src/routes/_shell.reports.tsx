@@ -2,7 +2,6 @@ import { useState } from "react";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, FileSpreadsheet, FileText, Printer } from "lucide-react";
-import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { RiskChip, StatusChip } from "@/components/common/StatusChip";
@@ -11,11 +10,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { patients, scenarios } from "@/services/data";
-import { downloadHistory, reportVersions, savedReports } from "@/services/data";
-import { reportService } from "@/services";
+import {
+  useDownloadHistory,
+  useExportReport,
+  useGenerateReport,
+  usePatients,
+  useReportVersions,
+  useReports,
+  useScenarios,
+} from "@/hooks/api";
 
 
 export const Route = createFileRoute("/_shell/reports")({
@@ -32,16 +38,35 @@ export const Route = createFileRoute("/_shell/reports")({
 });
 
 function ReportsPage() {
-  const [patientId, setPatientId] = useState(patients[0].id);
+  const { data: patients = [], isLoading: patientsLoading } = usePatients();
+  const [patientId, setPatientId] = useState<string>("");
   const [filter, setFilter] = useState<string>("All");
-  const p = patients.find((x) => x.id === patientId)!;
+  const activePatientId = patientId || patients[0]?.id || "";
+  const p = patients.find((x) => x.id === activePatientId);
+
+  const { data: savedReports = [], isLoading: reportsLoading } = useReports();
+  const currentReportId = savedReports[0]?.id ?? "";
+  const { data: reportVersions = [], isLoading: versionsLoading } = useReportVersions(currentReportId);
+  const { data: downloadHistory = [], isLoading: downloadsLoading } = useDownloadHistory();
+  const { data: scenarios = [] } = useScenarios(activePatientId);
+
+  const exportMutation = useExportReport();
+  const generateMutation = useGenerateReport();
 
   const filtered = savedReports.filter((r) => filter === "All" || r.type === filter);
 
-  const exportAs = async (format: "pdf" | "csv") => {
-    await reportService.export(format);
-    toast.success(`${format.toUpperCase()} export queued`, { description: "TODO: wire POST /api/reports/export" });
-  };
+  const exportAs = (format: "pdf" | "csv") => exportMutation.mutate(format);
+
+  const generate = () => generateMutation.mutate(activePatientId);
+
+  if (patientsLoading || !p) {
+    return (
+      <div className="mx-auto max-w-[1100px] space-y-4">
+        <Skeleton className="h-24 w-full rounded-xl" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1100px]">
@@ -51,7 +76,7 @@ function ReportsPage() {
         crumbs={[{ label: "Home", to: "/" }, { label: "Reports" }]}
         actions={
           <>
-            <Select value={patientId} onValueChange={setPatientId}>
+            <Select value={activePatientId} onValueChange={setPatientId}>
               <SelectTrigger className="w-[220px]" aria-label="Select patient for report">
                 <SelectValue />
               </SelectTrigger>
@@ -63,13 +88,13 @@ function ReportsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={() => exportAs("pdf")}>
+            <Button variant="outline" onClick={() => exportAs("pdf")} disabled={exportMutation.isPending}>
               <FileText className="size-4" aria-hidden="true" /> PDF
             </Button>
-            <Button variant="outline" onClick={() => exportAs("csv")}>
+            <Button variant="outline" onClick={() => exportAs("csv")} disabled={exportMutation.isPending}>
               <FileSpreadsheet className="size-4" aria-hidden="true" /> CSV
             </Button>
-            <Button onClick={() => toast.info("Opening print dialog", { description: "TODO: window.print() on published build" })}>
+            <Button onClick={() => window.print()}>
               <Printer className="size-4" aria-hidden="true" /> Print
             </Button>
           </>
@@ -228,7 +253,14 @@ function ReportsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 && (
+              {reportsLoading && (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                    Loading reports…
+                  </TableCell>
+                </TableRow>
+              )}
+              {!reportsLoading && filtered.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
                     No reports match this filter yet.
@@ -263,17 +295,26 @@ function ReportsPage() {
             <CardDescription>Revisions of the current clinical summary</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {reportVersions.map((v) => (
-              <div key={v.version} className="flex gap-3 rounded-xl border border-border p-3">
-                <StatusChip tone={v.version === reportVersions[0].version ? "success" : "neutral"}>v{v.version}</StatusChip>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">{v.note}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {v.author} · {v.date}
-                  </p>
+            {versionsLoading ? (
+              <>
+                <Skeleton className="h-14 w-full rounded-xl" />
+                <Skeleton className="h-14 w-full rounded-xl" />
+              </>
+            ) : reportVersions.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">No versions yet.</p>
+            ) : (
+              reportVersions.map((v) => (
+                <div key={v.version} className="flex gap-3 rounded-xl border border-border p-3">
+                  <StatusChip tone={v.version === reportVersions[0].version ? "success" : "neutral"}>v{v.version}</StatusChip>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{v.note}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {v.author} · {v.date}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
 
@@ -283,19 +324,28 @@ function ReportsPage() {
             <CardDescription>Who exported what, and when</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {downloadHistory.map((d) => (
-              <div key={d.id} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">
-                    {d.report} · {d.format}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {d.by} · {d.at}
-                  </p>
+            {downloadsLoading ? (
+              <>
+                <Skeleton className="h-14 w-full rounded-xl" />
+                <Skeleton className="h-14 w-full rounded-xl" />
+              </>
+            ) : downloadHistory.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">No downloads yet.</p>
+            ) : (
+              downloadHistory.map((d) => (
+                <div key={d.id} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">
+                      {d.report} · {d.format}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {d.by} · {d.date}
+                    </p>
+                  </div>
+                  <Download className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                 </div>
-                <Download className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
@@ -310,8 +360,9 @@ function ReportsPage() {
           {["Tumor board packet", "Monthly cohort summary", "Model performance audit"].map((t) => (
             <button
               key={t}
-              onClick={() => exportAs("pdf")}
-              className="hover-lift flex items-center gap-3 rounded-xl border border-border p-4 text-left"
+              onClick={generate}
+              disabled={generateMutation.isPending}
+              className="hover-lift flex items-center gap-3 rounded-xl border border-border p-4 text-left disabled:pointer-events-none disabled:opacity-50"
             >
               <Download className="size-4 text-primary" aria-hidden="true" />
               <span className="text-sm font-medium">{t}</span>

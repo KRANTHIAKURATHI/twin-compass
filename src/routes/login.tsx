@@ -2,12 +2,12 @@ import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
+import { useAuth } from "@/components/auth/AuthProvider";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authService } from "@/services";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -23,6 +23,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
 
   return (
@@ -44,13 +45,24 @@ function LoginPage() {
           e.preventDefault();
           const form = new FormData(e.currentTarget);
           setLoading(true);
-          await authService.login({
-            email: String(form.get("email") ?? ""),
-            password: String(form.get("password") ?? ""),
-          });
-          setLoading(false);
-          toast.success("Signed in", { description: "TODO: wire Supabase signInWithPassword" });
-          navigate({ to: "/" });
+          try {
+            const session = await login({
+              email: String(form.get("email") ?? ""),
+              password: String(form.get("password") ?? ""),
+            });
+            setLoading(false);
+            toast.success("Signed in");
+            if (session.user.role === "patient") {
+              navigate({ to: "/portal" });
+            } else if (session.user.role === "researcher") {
+              navigate({ to: "/research" });
+            } else {
+              navigate({ to: "/" });
+            }
+          } catch (err: any) {
+            setLoading(false);
+            toast.error(err?.message || "Invalid email or password");
+          }
         }}
       >
         <div className="grid gap-2">

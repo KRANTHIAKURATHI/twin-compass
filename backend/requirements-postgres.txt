@@ -1,0 +1,13 @@
+# Install this in addition to requirements.txt only when DATABASE_URL points
+# at Postgres/Supabase instead of SQLite:
+#   pip install -r requirements-postgres.txt
+#
+# psycopg[binary] (psycopg 3) has prebuilt wheels for current Python versions
+# on Windows/macOS/Linux with no C++ build toolchain needed. Use
+# postgresql+psycopg://... (not postgresql://...) in DATABASE_URL.
+#
+# If you prefer psycopg2 instead: pip install psycopg2-binary==2.9.9, then use
+# a plain postgresql://... URL. It needs a C++ build toolchain on platforms
+# without a prebuilt wheel for your Python version (e.g. Windows without
+# "Microsoft C++ Build Tools").
+psycopg[binary]==3.3.4

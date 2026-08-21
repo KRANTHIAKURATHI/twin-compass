@@ -10,6 +10,8 @@ export const endpoints = {
     forgotPassword: "/auth/forgot-password",
     resetPassword: "/auth/reset-password",
     me: "/auth/me",
+    updateMe: "/auth/me",
+    changePassword: "/auth/change-password",
   },
   patients: {
     list: "/patients",
@@ -23,7 +25,6 @@ export const endpoints = {
   },
   twins: {
     list: "/digital-twins",
-    detail: (patientId: string) => `/digital-twins/${patientId}`,
     versions: (patientId: string) => `/digital-twins/${patientId}/versions`,
     snapshots: (patientId: string) => `/digital-twins/${patientId}/snapshots`,
     resync: (patientId: string) => `/digital-twins/${patientId}/resync`,
@@ -50,7 +51,6 @@ export const endpoints = {
     detail: (id: string) => `/documents/${id}`,
     upload: "/documents",
     versions: (id: string) => `/documents/${id}/versions`,
-    links: (id: string) => `/documents/${id}/links`,
     timeline: (id: string) => `/documents/${id}/timeline`,
   },
   ocr: {
@@ -61,10 +61,9 @@ export const endpoints = {
   },
   reports: {
     list: "/reports",
-    detail: (id: string) => `/reports/${id}`,
-    generate: "/reports/generate",
     versions: (id: string) => `/reports/${id}/versions`,
     downloads: "/reports/downloads",
+    generate: "/reports/generate",
     export: "/reports/export",
   },
   appointments: {
@@ -103,4 +102,4 @@ export const endpoints = {
   search: {
     global: "/search",
   },
-} as const;
+};

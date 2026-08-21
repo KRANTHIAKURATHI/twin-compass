@@ -51,11 +51,28 @@ import type {
 
 export interface AuthService {
   login(credentials: Credentials): Promise<AuthSession>;
-  register(payload: Credentials & { name: string }): Promise<MutationResult<AuthUser>>;
+  register(
+    payload: Credentials & {
+      name: string;
+      role?: "doctor" | "patient" | "researcher" | "admin";
+      hospital?: string;
+      specialization?: string;
+    },
+  ): Promise<MutationResult<AuthUser>>;
   logout(): Promise<MutationResult>;
   forgotPassword(email: string): Promise<MutationResult>;
   resetPassword(payload: { token: string; password: string }): Promise<MutationResult>;
   me(): Promise<AuthUser>;
+  updateMe(payload: Partial<Pick<AuthUser, "name" | "title" | "hospital" | "avatarUrl">>): Promise<AuthUser>;
+  changePassword(payload: { currentPassword: string; newPassword: string }): Promise<MutationResult>;
+}
+
+export interface SearchService {
+  global(query: string): Promise<{
+    patients: { id: string; name: string; type: "patient" }[];
+    documents: { id: string; name: string; type: "document" }[];
+    reports: { id: string; name: string; type: "report" }[];
+  }>;
 }
 
 export interface PatientService {
@@ -91,7 +108,7 @@ export interface SimulationService {
   get(id: string): Promise<SimulationRun | undefined>;
   scenarios(patientId: string): Promise<Scenario[]>;
   run(patientId: string, draft?: ScenarioDraft): Promise<{ patientId: string; scenarios: Scenario[] }>;
-  save(draft: ScenarioDraft): Promise<MutationResult<SimulationRun>>;
+  save(patientId: string, draft: ScenarioDraft): Promise<MutationResult<SimulationRun>>;
   duplicate(id: string): Promise<MutationResult<SimulationRun>>;
   promote(id: string, notes?: string): Promise<MutationResult>;
 }
@@ -144,11 +161,14 @@ export interface AnalyticsService {
 
 export interface AdminService {
   hospitals(): Promise<Hospital[]>;
+  createHospital(payload: Omit<Hospital, "id" | "doctors" | "patients">): Promise<MutationResult<Hospital>>;
   doctors(): Promise<DoctorProfile[]>;
   departments(): Promise<Department[]>;
   users(): Promise<PlatformUser[]>;
+  createUser(payload: { name: string; email: string; password?: string; role: string; hospital?: string; specialization?: string }): Promise<MutationResult<AuthUser>>;
   auditLogs(): Promise<AuditLogEntry[]>;
   permissions(): Promise<PermissionRow[]>;
+  updatePermissions(permissions: PermissionRow[]): Promise<MutationResult>;
 }
 
 export interface ResearchService {

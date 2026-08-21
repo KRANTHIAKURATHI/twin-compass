@@ -17,6 +17,7 @@ import {
   adminService,
   analyticsService,
   appointmentService,
+  authService,
   documentService,
   notificationService,
   ocrService,
@@ -24,12 +25,13 @@ import {
   predictionService,
   reportService,
   researchService,
+  searchService,
   simulationService,
   treatmentService,
   twinService,
 } from "@/services";
 import { queryKeys } from "@/hooks/query-keys";
-import type { MutationResult, OcrField, Patient, PatientInput, ScenarioDraft } from "@/types/models";
+import type { Appointment, AuthUser, MutationResult, OcrField, Patient, PatientInput, ScenarioDraft } from "@/types/models";
 
 type QueryOpts<T> = Omit<UseQueryOptions<T, Error, T, readonly unknown[]>, "queryKey" | "queryFn">;
 
@@ -72,6 +74,25 @@ export function useApiMutation<TVars, TData = MutationResult>(
     },
   });
 }
+
+/* ------------------------------- Auth ------------------------------- */
+export const useMe = () => useApiQuery(queryKeys.auth, () => authService.me());
+
+export const useUpdateProfile = () =>
+  useApiMutation(
+    (payload: Partial<Pick<AuthUser, "name" | "title" | "hospital" | "avatarUrl">>) => authService.updateMe(payload),
+    { successMessage: "Profile updated", invalidate: [queryKeys.auth] },
+  );
+
+export const useChangePassword = () =>
+  useApiMutation(
+    (payload: { currentPassword: string; newPassword: string }) => authService.changePassword(payload),
+    { successMessage: "Password updated" },
+  );
+
+/* ------------------------------ Search ------------------------------ */
+export const useGlobalSearch = (query: string) =>
+  useApiQuery(["search", query], () => searchService.global(query), { enabled: query.trim().length > 0 });
 
 /* ---------------------------- Patients ----------------------------- */
 export const usePatients = (search?: string) =>
@@ -172,7 +193,7 @@ export const useRunSimulation = () =>
   );
 
 export const useSaveScenario = () =>
-  useApiMutation((draft: ScenarioDraft) => simulationService.save(draft), {
+  useApiMutation((vars: { patientId: string; draft: ScenarioDraft }) => simulationService.save(vars.patientId, vars.draft), {
     successMessage: "Scenario saved",
     invalidate: [queryKeys.simulations.all],
   });
@@ -246,6 +267,12 @@ export const useAppointments = () => useApiQuery(queryKeys.appointments, () => a
 export const useTreatmentPlan = (patientId: string) =>
   useApiQuery(queryKeys.treatment(patientId), () => treatmentService.plan(patientId));
 
+export const useCreateAppointment = () =>
+  useApiMutation((payload: Omit<Appointment, "id" | "status">) => appointmentService.create(payload), {
+    successMessage: "Appointment requested",
+    invalidate: [queryKeys.appointments],
+  });
+
 export const useCancelAppointment = () =>
   useApiMutation((id: string) => appointmentService.cancel(id), {
     successMessage: "Appointment cancelled",
@@ -273,6 +300,11 @@ export const useCohortAnalytics = () => useApiQuery(queryKeys.analytics.cohort, 
 export const useAccuracyAnalytics = () => useApiQuery(queryKeys.analytics.accuracy, () => analyticsService.accuracy());
 
 export const useHospitals = () => useApiQuery(queryKeys.admin.hospitals, () => adminService.hospitals());
+export const useCreateHospital = () =>
+  useApiMutation((payload: Omit<Hospital, "id" | "doctors" | "patients">) => adminService.createHospital(payload), {
+    successMessage: "Hospital tenant created",
+    invalidate: [queryKeys.admin.hospitals],
+  });
 export const useDoctors = () => useApiQuery(queryKeys.admin.doctors, () => adminService.doctors());
 export const useDepartments = () => useApiQuery(queryKeys.admin.departments, () => adminService.departments());
 export const usePlatformUsers = () => useApiQuery(queryKeys.admin.users, () => adminService.users());

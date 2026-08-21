@@ -5,11 +5,24 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { doctor, notifications } from "@/services/data";
+import { useMe, useNotifications } from "@/hooks/api";
 
 export function TopBar() {
-  const unread = notifications.filter((n) => n.unread).length;
   const navigate = useNavigate();
+  const { data: me } = useMe();
+  const { data: notifications = [] } = useNotifications();
+  const unread = notifications.filter((n) => n.unread).length;
+
+  const displayName = me?.name ?? "";
+  const displayTitle = me?.title ?? "";
+  const initials =
+    displayName
+      .split(" ")
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "DR";
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur-md sm:px-6">
@@ -61,12 +74,12 @@ export function TopBar() {
         >
           <Avatar className="size-8">
             <AvatarFallback className="bg-primary-soft text-xs font-semibold text-primary">
-              {doctor.initials}
+              {initials}
             </AvatarFallback>
           </Avatar>
           <span className="hidden text-left leading-tight sm:block">
-            <span className="block text-xs font-semibold">{doctor.name}</span>
-            <span className="block text-[11px] text-muted-foreground">{doctor.role}</span>
+            <span className="block text-xs font-semibold">{displayName}</span>
+            <span className="block text-[11px] text-muted-foreground">{displayTitle}</span>
           </span>
         </Link>
       </div>

@@ -1,15 +1,14 @@
 import { useState } from "react";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { PageErrorState, PageSkeleton, RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, Search as SearchIcon, User, Boxes } from "lucide-react";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { PageHeader } from "@/components/common/PageHeader";
-import { RiskChip, StatusChip } from "@/components/common/StatusChip";
+import { StatusChip } from "@/components/common/StatusChip";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { patients } from "@/services/data";
-import { documents } from "@/services/data";
+import { useGlobalSearch } from "@/hooks/api";
 
 export const Route = createFileRoute("/_shell/search")({
   validateSearch: (search: Record<string, unknown>) => ({ q: typeof search.q === "string" ? search.q : "" }),
@@ -30,14 +29,13 @@ export const Route = createFileRoute("/_shell/search")({
 function SearchPage() {
   const { q: initialQ } = Route.useSearch();
   const [q, setQ] = useState(initialQ);
-  const term = q.trim().toLowerCase();
+  const term = q.trim();
 
-  const patientHits = term
-    ? patients.filter((p) => p.name.toLowerCase().includes(term) || p.id.toLowerCase().includes(term) || p.hospital.toLowerCase().includes(term))
-    : [];
-  const docHits = term
-    ? documents.filter((d) => d.name.toLowerCase().includes(term) || d.patient.toLowerCase().includes(term) || d.category.toLowerCase().includes(term))
-    : [];
+  const { data, isLoading, isError } = useGlobalSearch(term);
+  const patientHits = data?.patients ?? [];
+  const docHits = data?.documents ?? [];
+  const reportHits = data?.reports ?? [];
+  const totalHits = patientHits.length + docHits.length + reportHits.length;
 
   return (
     <div className="mx-auto max-w-[1000px]">
@@ -61,7 +59,11 @@ function SearchPage() {
 
       {!term ? (
         <EmptyState icon={SearchIcon} title="Start typing to search" description="Try a patient name, patient ID, hospital or document type such as MRI." />
-      ) : patientHits.length + docHits.length === 0 ? (
+      ) : isLoading ? (
+        <PageSkeleton variant="list" />
+      ) : isError ? (
+        <PageErrorState title="Search failed" description="We couldn't complete that search. Please try again." />
+      ) : totalHits === 0 ? (
         <EmptyState icon={SearchIcon} title={`No results for “${q}”`} description="Check the spelling or try a broader term." />
       ) : (
         <div className="space-y-5">
@@ -79,16 +81,9 @@ function SearchPage() {
                         <Link to="/patients/$patientId" params={{ patientId: p.id }} className="text-sm font-medium hover:underline">
                           {p.name}
                         </Link>
-                        <p className="text-xs text-muted-foreground">
-                          {p.id} · Stage {p.stage} · {p.hospital}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{p.id}</p>
                       </div>
-                      <RiskChip level={p.risk} />
-                      <Link to="/digital-twins" className="text-xs text-primary hover:underline">
-                        <span className="flex items-center gap-1">
-                          <Boxes className="size-3.5" aria-hidden="true" /> Twin
-                        </span>
-                      </Link>
+                      <StatusChip tone="neutral">Patient</StatusChip>
                     </CardContent>
                   </Card>
                 ))}
@@ -110,11 +105,33 @@ function SearchPage() {
                         <Link to="/documents" className="text-sm font-medium hover:underline">
                           {d.name}
                         </Link>
-                        <p className="text-xs text-muted-foreground">
-                          {d.patient} · {d.date}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{d.id}</p>
                       </div>
-                      <StatusChip tone="neutral">{d.category}</StatusChip>
+                      <StatusChip tone="neutral">Document</StatusChip>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {reportHits.length > 0 && (
+            <section>
+              <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Reports · {reportHits.length}</h2>
+              <div className="space-y-2">
+                {reportHits.map((r) => (
+                  <Card key={r.id} className="hover-lift">
+                    <CardContent className="flex flex-wrap items-center gap-3">
+                      <span className="flex size-9 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                        <Boxes className="size-4" aria-hidden="true" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <Link to="/reports" className="text-sm font-medium hover:underline">
+                          {r.name}
+                        </Link>
+                        <p className="text-xs text-muted-foreground">{r.id}</p>
+                      </div>
+                      <StatusChip tone="neutral">Report</StatusChip>
                     </CardContent>
                   </Card>
                 ))}

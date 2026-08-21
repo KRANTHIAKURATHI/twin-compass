@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { PageErrorState, PageSkeleton, RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
-import { Bell, BellOff, Boxes, Brain, FlaskConical, ServerCog, UserPlus } from "lucide-react";
+import { Bell, BellOff, Boxes, Brain, Check, FlaskConical, ServerCog, UserPlus } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatusChip } from "@/components/common/StatusChip";
@@ -9,7 +8,8 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { notifications as seed } from "@/services/data";
+import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from "@/hooks/api";
+import type { NotificationItem } from "@/types/models";
 
 export const Route = createFileRoute("/_shell/notifications")({
   head: () => ({
@@ -33,16 +33,28 @@ const typeMeta = {
 };
 
 function NotificationsPage() {
-  const [items, setItems] = useState(seed);
+  const { data, isLoading, isError } = useNotifications("doctor");
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
+
+  if (isLoading) return <PageSkeleton variant="list" />;
+  if (isError)
+    return (
+      <div className="mx-auto max-w-[900px] pt-4">
+        <PageErrorState title="Could not load notifications" />
+      </div>
+    );
+
+  const items = data ?? [];
   const unread = items.filter((n) => n.unread);
 
-  const list = (rows: typeof items) =>
+  const list = (rows: NotificationItem[]) =>
     rows.length === 0 ? (
       <EmptyState icon={BellOff} title="You're all caught up" description="No notifications in this view right now." />
     ) : (
       <div className="space-y-2">
         {rows.map((n) => {
-          const meta = typeMeta[n.type as keyof typeof typeMeta];
+          const meta = typeMeta[(n.type as keyof typeof typeMeta) ?? "system"] ?? typeMeta.system;
           return (
             <Card key={n.id} className={n.unread ? "border-primary/30 bg-primary-soft/30 p-0" : "p-0"}>
               <CardContent className="flex items-start gap-3 p-4">
@@ -57,6 +69,17 @@ function NotificationsPage() {
                   <p className="mt-0.5 text-sm text-muted-foreground">{n.body}</p>
                 </div>
                 <span className="shrink-0 text-xs text-muted-foreground">{n.time}</span>
+                {n.unread && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="shrink-0"
+                    onClick={() => markRead.mutate(n.id)}
+                    disabled={markRead.isPending}
+                  >
+                    <Check className="size-3.5" aria-hidden="true" /> Mark read
+                  </Button>
+                )}
               </CardContent>
             </Card>
           );
@@ -71,7 +94,11 @@ function NotificationsPage() {
         description={`${unread.length} unread of ${items.length} events.`}
         crumbs={[{ label: "Home", to: "/" }, { label: "Notifications" }]}
         actions={
-          <Button variant="outline" onClick={() => setItems((v) => v.map((n) => ({ ...n, unread: false })))}>
+          <Button
+            variant="outline"
+            onClick={() => markAllRead.mutate(undefined)}
+            disabled={markAllRead.isPending || unread.length === 0}
+          >
             <Bell className="size-4" aria-hidden="true" /> Mark all as read
           </Button>
         }

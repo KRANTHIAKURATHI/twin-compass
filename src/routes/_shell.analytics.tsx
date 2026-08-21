@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { PageErrorState, PageSkeleton, RouteErrorState, withPageStates } from "@/components/common/PageState";
 import {
   Bar,
   BarChart,
@@ -17,14 +17,12 @@ import {
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  accuracyTrend,
-  ageDistribution,
-  riskDistribution,
-  stageDistribution,
-  survivalCurve,
-  treatmentComparison,
-} from "@/services/data";
+// No backend endpoints exist yet for age distribution, treatment frequency or
+// 5-year survival curves — analyticsService only exposes dashboard/cohort/accuracy
+// series — so these three charts stay sourced from fixtures until the API adds them.
+import { ageDistribution, survivalCurve, treatmentComparison } from "@/services/data";
+import { useAccuracyAnalytics, useCohortAnalytics, usePatients } from "@/hooks/api";
+import type { RiskLevel } from "@/types/models";
 
 export const Route = createFileRoute("/_shell/analytics")({
   head: () => ({
@@ -42,7 +40,14 @@ export const Route = createFileRoute("/_shell/analytics")({
 const axis = { stroke: "var(--color-muted-foreground)", fontSize: 12 };
 const tooltipStyle = { borderRadius: 12, border: "1px solid var(--color-border)", background: "var(--color-card)", fontSize: 12 };
 const riskColors = ["var(--color-success)", "var(--color-warning)", "var(--color-risk)"];
+const riskOrder: { key: RiskLevel; name: string }[] = [
+  { key: "low", name: "Low risk" },
+  { key: "moderate", name: "Moderate risk" },
+  { key: "high", name: "High risk" },
+];
 
+// Static — there is no admin/analytics endpoint for hospital-programme
+// aggregate stats yet.
 const hospitalStats = [
   { label: "Departments reporting", value: "12" },
   { label: "Oncologists onboarded", value: "86" },
@@ -71,6 +76,29 @@ function ChartCard({
 }
 
 function AnalyticsPage() {
+  const patientsQuery = usePatients();
+  const cohortQuery = useCohortAnalytics();
+  const accuracyQuery = useAccuracyAnalytics();
+
+  const loading = patientsQuery.isLoading || cohortQuery.isLoading || accuracyQuery.isLoading;
+  const error = patientsQuery.isError || cohortQuery.isError || accuracyQuery.isError;
+
+  if (loading) return <PageSkeleton variant="cards" />;
+  if (error)
+    return (
+      <div className="mx-auto max-w-[1400px] pt-4">
+        <PageErrorState />
+      </div>
+    );
+
+  const patients = patientsQuery.data ?? [];
+  const stageDistribution = cohortQuery.data ?? [];
+  const accuracyTrend = accuracyQuery.data ?? [];
+  const riskDistribution = riskOrder.map((r) => ({
+    ...r,
+    value: patients.filter((p) => p.risk === r.key).length,
+  }));
+
   return (
     <div className="mx-auto max-w-[1400px]">
       <PageHeader

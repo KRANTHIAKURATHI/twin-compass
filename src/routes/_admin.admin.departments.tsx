@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { RouteErrorState } from "@/components/common/PageState";
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
-import { departments } from "@/services/data";
+import { useDepartments } from "@/hooks/api";
+import type { Department } from "@/types/models";
 
 export const Route = createFileRoute("/_admin/admin/departments")({
   head: () => ({
@@ -16,10 +17,10 @@ export const Route = createFileRoute("/_admin/admin/departments")({
     ],
   }),
   errorComponent: RouteErrorState,
-  component: withPageStates(DepartmentsPage, { variant: "table" }),
+  component: DepartmentsPage,
 });
 
-type Row = (typeof departments)[number];
+type Row = Department;
 
 const columns: Column<Row>[] = [
   { key: "name", header: "Department", cell: (r) => <span className="font-medium">{r.name}</span> },
@@ -29,12 +30,17 @@ const columns: Column<Row>[] = [
 ];
 
 function DepartmentsPage() {
+  const { data, isLoading, isError, refetch } = useDepartments();
+
   return (
     <DataTablePage
       title="Departments"
       description="Service lines and their current workload."
       columns={columns}
-      rows={departments}
+      rows={data ?? []}
+      loading={isLoading}
+      error={isError}
+      onRetry={() => refetch()}
     />
   );
 }

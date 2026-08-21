@@ -3,7 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
 import { StatusChip } from "@/components/common/StatusChip";
-import { modelVersions } from "@/services/data";
+import { useModelVersions } from "@/hooks/api";
+import type { ModelVersion } from "@/types/models";
 
 export const Route = createFileRoute("/_research/research/versions")({
   head: () => ({
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/_research/research/versions")({
   component: withPageStates(VersionsPage, { variant: "table" }),
 });
 
-type Row = (typeof modelVersions)[number];
+type Row = ModelVersion & { id: string };
 
 const columns: Column<Row>[] = [
   { key: "version", header: "Version", cell: (r) => <span className="font-medium">{r.version}</span> },
@@ -35,12 +36,17 @@ const columns: Column<Row>[] = [
 ];
 
 function VersionsPage() {
+  const { data, isLoading, isError, refetch } = useModelVersions();
+
   return (
     <DataTablePage
       title="Model versions"
       description="Release history for the progression twin."
       columns={columns}
-      rows={modelVersions.map((v) => ({ ...v, id: v.version }))}
+      rows={(data ?? []).map((v) => ({ ...v, id: v.version }))}
+      loading={isLoading}
+      error={isError}
+      onRetry={() => refetch()}
     />
   );
 }

@@ -39,7 +39,7 @@ function Row({ title, description, children }: { title: string; description: str
 }
 
 function SettingsPage() {
-  const saved = () => toast.success("Setting saved", { description: "TODO: persist via /api/settings" });
+  const saved = () => toast.success("Saved for this session", { description: "This preference applies locally until you sign out." });
 
   return (
     <div className="mx-auto max-w-[1000px]">

@@ -3,7 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
 import { StatusChip } from "@/components/common/StatusChip";
-import { trainingRuns } from "@/services/data";
+import { useTrainingRuns } from "@/hooks/api";
+import type { TrainingRun } from "@/types/models";
 
 export const Route = createFileRoute("/_research/research/training")({
   head: () => ({
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/_research/research/training")({
   component: withPageStates(TrainingPage, { variant: "table" }),
 });
 
-type Row = (typeof trainingRuns)[number];
+type Row = TrainingRun;
 
 const columns: Column<Row>[] = [
   { key: "id", header: "Run", cell: (r) => <span className="font-medium">{r.id}</span> },
@@ -37,5 +38,17 @@ const columns: Column<Row>[] = [
 ];
 
 function TrainingPage() {
-  return <DataTablePage title="Training history" description="Runs executed on the research cluster." columns={columns} rows={trainingRuns} />;
+  const { data, isLoading, isError, refetch } = useTrainingRuns();
+
+  return (
+    <DataTablePage
+      title="Training history"
+      description="Runs executed on the research cluster."
+      columns={columns}
+      rows={data ?? []}
+      loading={isLoading}
+      error={isError}
+      onRetry={() => refetch()}
+    />
+  );
 }

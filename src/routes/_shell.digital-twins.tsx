@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Boxes, RefreshCw, Activity, Ruler, Syringe, Clock, GitCompare, RotateCcw, Archive } from "lucide-react";
-import { toast } from "sonner";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { EmptyState } from "@/components/common/EmptyState";
 import { PageHeader } from "@/components/common/PageHeader";
 import { RiskChip, StatusChip } from "@/components/common/StatusChip";
 import { StateNotice } from "@/components/common/StateNotice";
@@ -17,9 +17,18 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { patients, progressionForecast } from "@/services/data";
-import { twinVersions, twinSnapshots } from "@/services/data";
-import { twinService } from "@/services";
+// No backend equivalent exists for this treated-vs-untreated tumor trajectory
+// series (usePrediction/useConfidenceTrend return a differently shaped
+// per-patient series), so it stays sourced from fixtures until the API adds one.
+import { progressionForecast } from "@/services/data";
+import {
+  useArchiveTwin,
+  useResyncTwin,
+  useRestoreTwinVersion,
+  useTwins,
+  useTwinSnapshots,
+  useTwinVersions,
+} from "@/hooks/api";
 
 
 export const Route = createFileRoute("/_shell/digital-twins")({
@@ -35,7 +44,6 @@ export const Route = createFileRoute("/_shell/digital-twins")({
   component: withPageStates(DigitalTwinsPage, { variant: "detail" }),
 });
 
-const twins = patients.slice(0, 8);
 const axis = { stroke: "var(--color-muted-foreground)", fontSize: 12 };
 const tooltipStyle = {
   borderRadius: 12,
@@ -45,15 +53,32 @@ const tooltipStyle = {
 };
 
 function DigitalTwinsPage() {
-  const [selectedId, setSelectedId] = useState(twins[0].id);
-  const [syncing, setSyncing] = useState(false);
+  const { data: twinsData, isLoading: twinsLoading, isError: twinsError } = useTwins();
+  const twins = twinsData ?? [];
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tab, setTab] = useState("timeline");
   const [selected, setSelected] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
   const [restore, setRestore] = useState<string | null>(null);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archived, setArchived] = useState(false);
-  const twin = twins.find((t) => t.id === selectedId)!;
+
+  useEffect(() => {
+    if (!selectedId && twins.length > 0) setSelectedId(twins[0].id);
+  }, [selectedId, twins]);
+
+  const twin = twins.find((t) => t.id === selectedId) ?? twins[0];
+
+  const { data: twinVersionsData } = useTwinVersions(twin?.id ?? "");
+  const { data: twinSnapshotsData } = useTwinSnapshots(twin?.id ?? "");
+  const twinVersions = twinVersionsData ?? [];
+  const twinSnapshots = twinSnapshotsData ?? [];
+
+  const resyncTwin = useResyncTwin();
+  const restoreTwinVersion = useRestoreTwinVersion();
+  const archiveTwin = useArchiveTwin();
+  const syncing = resyncTwin.isPending;
 
   const toggleSelect = (version: string) =>
     setSelected((prev) =>
@@ -62,12 +87,38 @@ function DigitalTwinsPage() {
 
   const compared = twinVersions.filter((v) => selected.includes(v.version));
 
-  const resync = async () => {
-    setSyncing(true);
-    await twinService.resync(twin.id);
-    setSyncing(false);
-    toast.success("Digital twin re-synced", { description: "TODO: wire POST /api/digital-twins/{id}/resync" });
+  const resync = () => {
+    if (!twin) return;
+    resyncTwin.mutate(twin.id);
   };
+
+  if (twinsLoading) {
+    return (
+      <div className="mx-auto max-w-[1400px] space-y-4">
+        <Skeleton className="h-9 w-64" />
+        <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
+          <Skeleton className="h-96 rounded-2xl" />
+          <Skeleton className="h-96 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (twinsError) {
+    return (
+      <div className="mx-auto max-w-[1400px]">
+        <StateNotice state="prediction-unavailable" title="Could not load digital twins" description="Something went wrong fetching twins. Try again shortly." />
+      </div>
+    );
+  }
+
+  if (!twin) {
+    return (
+      <div className="mx-auto max-w-[1400px]">
+        <EmptyState icon={Boxes} title="No digital twins yet" description="Digital twins appear here once a patient profile has been created." />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -380,7 +431,7 @@ function DigitalTwinsPage() {
         description="Restoring creates a new active version from this snapshot. Predictions and simulations will be recalculated."
         confirmLabel="Restore version"
         onConfirm={() => {
-          toast.success(`Restored ${restore}`, { description: "TODO: wire POST /api/digital-twins/{id}/restore" });
+          if (restore) restoreTwinVersion.mutate({ patientId: twin.id, version: restore });
           setRestore(null);
         }}
       />
@@ -395,7 +446,7 @@ function DigitalTwinsPage() {
         onConfirm={() => {
           setArchived(true);
           setArchiveOpen(false);
-          toast.success("Digital twin archived", { description: "TODO: wire POST /api/digital-twins/{id}/archive" });
+          archiveTwin.mutate(twin.id);
         }}
       />
     </div>

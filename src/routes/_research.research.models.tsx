@@ -3,7 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
 import { StatusChip } from "@/components/common/StatusChip";
-import { models } from "@/services/data";
+import { useModels } from "@/hooks/api";
+import type { MLModel } from "@/types/models";
 
 export const Route = createFileRoute("/_research/research/models")({
   head: () => ({
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/_research/research/models")({
   component: withPageStates(ModelsPage, { variant: "table" }),
 });
 
-type Row = (typeof models)[number];
+type Row = MLModel;
 
 const columns: Column<Row>[] = [
   { key: "name", header: "Model", cell: (r) => <span className="font-medium">{r.name}</span> },
@@ -35,5 +36,17 @@ const columns: Column<Row>[] = [
 ];
 
 function ModelsPage() {
-  return <DataTablePage title="Models" description="The model suite behind every twin and prediction." columns={columns} rows={models} />;
+  const { data, isLoading, isError, refetch } = useModels();
+
+  return (
+    <DataTablePage
+      title="Models"
+      description="The model suite behind every twin and prediction."
+      columns={columns}
+      rows={data ?? []}
+      loading={isLoading}
+      error={isError}
+      onRetry={() => refetch()}
+    />
+  );
 }

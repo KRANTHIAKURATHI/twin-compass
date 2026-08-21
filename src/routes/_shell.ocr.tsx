@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
-import { CheckCircle2, FileText, RefreshCw, Sparkles, Upload } from "lucide-react";
+import { CheckCircle2, FileText, RefreshCw, Sparkles, Upload, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common/PageHeader";
@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StateNotice } from "@/components/common/StateNotice";
 import { cn } from "@/lib/utils";
-import { ocrFields } from "@/services/data";
+import { useApproveOcr, useExtractOcr, useOcrFields, useRejectOcr, useUploadDocument } from "@/hooks/api";
 
 
 export const Route = createFileRoute("/_shell/ocr")({
@@ -40,42 +40,98 @@ const steps: { key: Step; label: string }[] = [
   { key: "approved", label: "Twin updated" },
 ];
 
+function formatBytes(bytes: number) {
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const i = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
+  return `${(bytes / 1024 ** i).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
 function OcrPage() {
   const [step, setStep] = useState<Step>("upload");
-  const [values, setValues] = useState(() => Object.fromEntries(ocrFields.map((f) => [f.field, f.value])));
+  const [documentId, setDocumentId] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [fileSize, setFileSize] = useState(0);
+  const [values, setValues] = useState<Record<string, string>>({});
   const [confirmed, setConfirmed] = useState<string[]>([]);
   const [dragging, setDragging] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [fileName, setFileName] = useState("MRI_Breast_2026_06.pdf");
   const index = steps.findIndex((s) => s.key === step);
-  const allConfirmed = confirmed.length === ocrFields.length;
 
+  const uploadMutation = useUploadDocument();
+  const extractMutation = useExtractOcr();
+  const approveMutation = useApproveOcr();
+  const rejectMutation = useRejectOcr();
+
+  const {
+    data: ocrFields = [],
+    isLoading: fieldsLoading,
+    isError: fieldsError,
+    refetch: refetchFields,
+  } = useOcrFields(documentId);
+
+  const allConfirmed = ocrFields.length > 0 && confirmed.length === ocrFields.length;
+
+  // Seed editable values whenever a fresh set of extracted fields arrives.
   useEffect(() => {
-    if (step !== "extracting") return;
+    if (ocrFields.length) {
+      setValues(Object.fromEntries(ocrFields.map((f) => [f.field, f.value])));
+      setConfirmed([]);
+    }
+  }, [ocrFields]);
+
+  // Purely cosmetic progress animation while the real extraction request is in flight.
+  useEffect(() => {
+    if (!extractMutation.isPending) return;
     setProgress(8);
     const timer = window.setInterval(() => {
       setProgress((p) => (p >= 96 ? 96 : p + 11));
     }, 180);
-    const done = window.setTimeout(() => {
-      setProgress(100);
-      setStep("verify");
-    }, 1800);
-    return () => {
-      window.clearInterval(timer);
-      window.clearTimeout(done);
-    };
-  }, [step]);
+    return () => window.clearInterval(timer);
+  }, [extractMutation.isPending]);
 
-  const startExtraction = (name?: string) => {
-    if (name) setFileName(name);
-    setStep("extracting");
+  const reset = () => {
+    setStep("upload");
+    setDocumentId("");
+    setFileName("");
+    setFileSize(0);
+    setValues({});
+    setConfirmed([]);
+    setProgress(0);
+  };
+
+  const startExtraction = (file?: File) => {
+    if (!file) return;
+    setFileName(file.name);
+    setFileSize(file.size);
+    uploadMutation.mutate(
+      { name: file.name, size: file.size },
+      {
+        onSuccess: (result) => {
+          const id = result.data?.id;
+          if (!id) {
+            toast.error("Upload succeeded but no document id was returned");
+            return;
+          }
+          setDocumentId(String(id));
+          setStep("extracting");
+          extractMutation.mutate(String(id), {
+            onSuccess: () => {
+              setProgress(100);
+              setStep("verify");
+            },
+            onError: () => setStep("upload"),
+          });
+        },
+        onError: () => reset(),
+      },
+    );
   };
 
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    startExtraction(file?.name);
+    startExtraction(e.dataTransfer.files?.[0]);
   };
 
   const approve = () => {
@@ -83,10 +139,19 @@ function OcrPage() {
       toast.error("Confirm every field before approving");
       return;
     }
-    setStep("approved");
-    toast.success("Verified & twin updated", { description: "TODO: wire POST /api/ocr/{docId}/approve" });
+    const fields = ocrFields.map((f) => ({ ...f, value: values[f.field] ?? f.value }));
+    approveMutation.mutate(
+      { documentId, fields },
+      { onSuccess: () => setStep("approved") },
+    );
   };
 
+  const reject = () => {
+    rejectMutation.mutate(
+      { documentId, reason: "Rejected by clinician during verification" },
+      { onSuccess: () => reset() },
+    );
+  };
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -96,13 +161,7 @@ function OcrPage() {
         crumbs={[{ label: "Home", to: "/" }, { label: "OCR Verification" }]}
         actions={
           step !== "upload" && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                setStep("upload");
-                setConfirmed([]);
-              }}
-            >
+            <Button variant="outline" onClick={reset}>
               <RefreshCw className="size-4" aria-hidden="true" /> Start over
             </Button>
           )
@@ -136,7 +195,7 @@ function OcrPage() {
 
           <CardHeader>
             <CardTitle>Source document</CardTitle>
-            <CardDescription>PDF upload and preview</CardDescription>
+            <CardDescription>Document upload &amp; metadata</CardDescription>
           </CardHeader>
           <CardContent>
             {step === "upload" ? (
@@ -156,19 +215,26 @@ function OcrPage() {
                   <Upload className="size-6" aria-hidden="true" />
                 </span>
                 <p className="mt-4 text-sm font-medium">
-                  {dragging ? "Release to upload" : "Drag & drop a pathology, imaging or lab PDF"}
+                  {uploadMutation.isPending
+                    ? "Uploading…"
+                    : dragging
+                      ? "Release to upload"
+                      : "Drag & drop a pathology, imaging or lab PDF"}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">PDF, PNG or JPG up to 25 MB</p>
-                <label className="mt-5 inline-flex cursor-pointer items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+                <label className="mt-5 inline-flex cursor-pointer items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 aria-disabled:pointer-events-none aria-disabled:opacity-50">
                   Select file
                   <input
                     type="file"
                     className="sr-only"
                     accept=".pdf,.png,.jpg,.jpeg"
-                    onChange={(e) => startExtraction(e.target.files?.[0]?.name)}
+                    disabled={uploadMutation.isPending}
+                    onChange={(e) => startExtraction(e.target.files?.[0])}
                   />
                 </label>
-                <p className="mt-2 text-xs text-muted-foreground">TODO: wire POST /api/documents/upload</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Creates a document metadata record — file bytes are not stored by this backend yet.
+                </p>
               </div>
 
             ) : (
@@ -177,14 +243,17 @@ function OcrPage() {
                   <FileText className="size-5 text-primary" aria-hidden="true" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{fileName}</p>
-                    <p className="text-xs text-muted-foreground">8.2 MB · 4 pages · uploaded just now</p>
+                    <p className="text-xs text-muted-foreground">{formatBytes(fileSize)} · document id {documentId || "—"}</p>
                   </div>
                   <StatusChip tone="success">Uploaded</StatusChip>
                 </div>
-                <div className="flex h-72 flex-col items-center justify-center rounded-xl border border-border bg-surface text-center">
+                <div className="flex h-72 flex-col items-center justify-center rounded-xl border border-border bg-surface p-6 text-center">
                   <FileText className="size-10 text-muted-foreground" aria-hidden="true" />
-                  <p className="mt-3 text-sm font-medium">Page 1 preview</p>
-                  <p className="text-xs text-muted-foreground">TODO: render PDF pages</p>
+                  <p className="mt-3 text-sm font-medium">No in-browser file preview available</p>
+                  <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+                    File storage is not yet configured for this environment — only extracted metadata is available.
+                    Review the AI-extracted fields on the right.
+                  </p>
                 </div>
               </div>
             )}
@@ -209,7 +278,7 @@ function OcrPage() {
 
             {step === "extracting" && (
               <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">Running OCR field extractor v2.4… {progress}%</p>
+                <p className="text-sm text-muted-foreground">Running OCR field extractor… {progress}%</p>
                 <Progress value={progress} className="h-2" />
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Skeleton key={i} className="h-12 w-full rounded-xl" />
@@ -217,9 +286,26 @@ function OcrPage() {
               </div>
             )}
 
-            {step === "verify" && !allConfirmed && <StateNotice state="waiting-verification" />}
+            {step === "verify" && fieldsLoading && (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full rounded-xl" />
+                ))}
+              </div>
+            )}
 
-            {(step === "verify" || step === "approved") && (
+            {step === "verify" && fieldsError && (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 py-10 text-center">
+                <p className="text-sm text-muted-foreground">Could not load extracted fields.</p>
+                <Button variant="outline" size="sm" onClick={() => refetchFields()}>
+                  <RefreshCw className="size-4" aria-hidden="true" /> Retry
+                </Button>
+              </div>
+            )}
+
+            {step === "verify" && !fieldsLoading && !fieldsError && !allConfirmed && <StateNotice state="waiting-verification" />}
+
+            {(step === "verify" || step === "approved") && !fieldsLoading && !fieldsError && (
               <>
                 {ocrFields.map((f) => {
                   const low = f.confidence < 0.8;
@@ -250,7 +336,7 @@ function OcrPage() {
                       </div>
                       <div className="mt-2 flex items-center gap-2">
                         <Input
-                          value={values[f.field]}
+                          value={values[f.field] ?? ""}
                           onChange={(e) => setValues((v) => ({ ...v, [f.field]: e.target.value }))}
                           aria-label={f.field}
                           aria-invalid={empty}
@@ -279,12 +365,14 @@ function OcrPage() {
 
                 {step === "verify" ? (
                   <div className="flex flex-wrap items-center gap-2 pt-2">
-                    <Button onClick={approve} disabled={!allConfirmed}>
+                    <Button onClick={approve} disabled={!allConfirmed || approveMutation.isPending}>
                       <CheckCircle2 className="size-4" aria-hidden="true" /> Approve & update digital twin
                     </Button>
-
                     <Button variant="outline" onClick={() => setConfirmed(ocrFields.map((f) => f.field))}>
                       Confirm all
+                    </Button>
+                    <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={reject} disabled={rejectMutation.isPending}>
+                      <XCircle className="size-4" aria-hidden="true" /> Reject extraction
                     </Button>
                     <span className="text-xs text-muted-foreground">
                       {confirmed.length}/{ocrFields.length} fields confirmed

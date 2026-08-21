@@ -39,7 +39,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-import { roleLabels, ROLES, type Role } from "@/lib/roles";
+import type { Role } from "@/lib/roles";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 interface NavItem {
@@ -91,7 +91,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const { role, setRole } = useAuth();
+  const { role } = useAuth();
 
   const isActive = (url: string) => (url === "/" ? pathname === "/" : pathname.startsWith(url));
 
@@ -148,25 +148,6 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        {!collapsed && (
-          <div className="px-1.5 pb-1">
-            <label htmlFor="role-switch" className="text-xs text-muted-foreground">
-              Viewing as
-            </label>
-            <select
-              id="role-switch"
-              value={role}
-              onChange={(e) => setRole(e.target.value as Role)}
-              className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {roleLabels[r]}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
         <SidebarMenu>
 
           <SidebarMenuItem>

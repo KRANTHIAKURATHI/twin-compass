@@ -1,13 +1,21 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 
+import { EmptyState } from "@/components/common/EmptyState";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { StateNotice } from "@/components/common/StateNotice";
 import { PageHeader } from "@/components/common/PageHeader";
 import { PatientForm } from "@/components/patients/PatientForm";
-import { patients, type Patient } from "@/services/data";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Boxes } from "lucide-react";
+import { patientService } from "@/services";
+import { queryKeys, usePatient } from "@/hooks/api";
 
 export const Route = createFileRoute("/_shell/patients/$patientId/edit")({
-  loader: ({ params }) => {
-    const patient = patients.find((p) => p.id === params.patientId);
+  loader: async ({ params, context }) => {
+    const patient = await context.queryClient.ensureQueryData({
+      queryKey: queryKeys.patients.detail(params.patientId),
+      queryFn: () => patientService.get(params.patientId),
+    });
     if (!patient) throw notFound();
     return { patient };
   },
@@ -33,7 +41,38 @@ export const Route = createFileRoute("/_shell/patients/$patientId/edit")({
 });
 
 function EditPatientPage() {
-  const { patient } = Route.useLoaderData() as { patient: Patient };
+  const { patientId } = Route.useParams();
+  const { data: patient, isLoading, isError } = usePatient(patientId);
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-[1100px] space-y-4">
+        <Skeleton className="h-9 w-64" />
+        <Skeleton className="h-96 rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-[1100px]">
+        <StateNotice
+          state="prediction-unavailable"
+          title="Could not load this patient"
+          description="Something went wrong fetching this patient's record. Try again shortly."
+        />
+      </div>
+    );
+  }
+
+  if (!patient) {
+    return (
+      <div className="mx-auto max-w-[1100px]">
+        <EmptyState icon={Boxes} title="Patient not found" description="This patient record could not be located." />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-[1100px]">
       <PageHeader

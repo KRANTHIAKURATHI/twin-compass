@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
-import { Building2, Mail, Phone, ShieldCheck, Stethoscope } from "lucide-react";
+import { Building2, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common/PageHeader";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { doctor } from "@/services/data";
+import { useChangePassword, useMe, useUpdateProfile } from "@/hooks/api";
 
 export const Route = createFileRoute("/_shell/profile")({
   head: () => ({
@@ -26,6 +26,23 @@ export const Route = createFileRoute("/_shell/profile")({
 });
 
 function ProfilePage() {
+  const { data: me } = useMe();
+  const updateProfile = useUpdateProfile();
+  const changePassword = useChangePassword();
+
+  const displayName = me?.name ?? "";
+  const displayEmail = me?.email ?? "";
+  const displayRole = me?.role ?? "";
+  const displayHospital = me?.hospital ?? "";
+  const initials =
+    displayName
+      .split(" ")
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "DR";
+
   return (
     <div className="mx-auto max-w-[1100px]">
       <PageHeader
@@ -39,28 +56,27 @@ function ProfilePage() {
           <CardContent className="flex flex-col items-center pt-2 text-center">
             <Avatar className="size-24">
               <AvatarFallback className="bg-primary-soft text-2xl font-semibold text-primary">
-                {doctor.initials}
+                {initials}
               </AvatarFallback>
             </Avatar>
-            <h2 className="mt-4 text-lg font-semibold">{doctor.name}</h2>
-            <p className="text-sm text-muted-foreground">{doctor.role}</p>
+            <h2 className="mt-4 text-lg font-semibold">{displayName}</h2>
+            <p className="text-sm text-muted-foreground">{displayRole}</p>
             <StatusChip tone="success" dot className="mt-3">
               Verified clinician
             </StatusChip>
 
             <dl className="mt-6 w-full space-y-3 text-left text-sm">
               {[
-                { icon: Building2, label: doctor.hospital },
-                { icon: Stethoscope, label: doctor.specialization },
-                { icon: Mail, label: doctor.email },
-                { icon: Phone, label: doctor.phone },
-                { icon: ShieldCheck, label: `${doctor.experience} experience` },
-              ].map((row) => (
-                <div key={row.label} className="flex items-start gap-2.5">
-                  <row.icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                  <span className="text-muted-foreground">{row.label}</span>
-                </div>
-              ))}
+                { icon: Building2, label: displayHospital },
+                { icon: Mail, label: displayEmail },
+              ]
+                .filter((row) => row.label)
+                .map((row, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <row.icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                    <span className="text-muted-foreground">{row.label}</span>
+                  </div>
+                ))}
             </dl>
           </CardContent>
         </Card>
@@ -76,35 +92,28 @@ function ProfilePage() {
                 className="grid gap-4 sm:grid-cols-2"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  toast.success("Profile updated", { description: "TODO: wire PATCH /api/me" });
+                  const form = e.currentTarget;
+                  const name = (form.elements.namedItem("pf-name") as HTMLInputElement).value;
+                  const hospital = (form.elements.namedItem("pf-hospital") as HTMLInputElement).value;
+                  updateProfile.mutate({ name, hospital });
                 }}
               >
                 <div className="grid gap-2">
                   <Label htmlFor="pf-name">Doctor name</Label>
-                  <Input id="pf-name" defaultValue={doctor.name} />
+                  <Input id="pf-name" name="pf-name" defaultValue={displayName} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pf-email">Email</Label>
-                  <Input id="pf-email" type="email" defaultValue={doctor.email} />
+                  <Input id="pf-email" name="pf-email" type="email" defaultValue={displayEmail} disabled />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pf-hospital">Hospital</Label>
-                  <Input id="pf-hospital" defaultValue={doctor.hospital} />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pf-dept">Department</Label>
-                  <Input id="pf-dept" defaultValue={doctor.department} />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pf-spec">Specialization</Label>
-                  <Input id="pf-spec" defaultValue={doctor.specialization} />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pf-phone">Phone</Label>
-                  <Input id="pf-phone" defaultValue={doctor.phone} />
+                  <Input id="pf-hospital" name="pf-hospital" defaultValue={displayHospital} />
                 </div>
                 <div className="sm:col-span-2">
-                  <Button type="submit">Save changes</Button>
+                  <Button type="submit" disabled={updateProfile.isPending}>
+                    Save changes
+                  </Button>
                 </div>
               </form>
             </CardContent>
@@ -120,23 +129,34 @@ function ProfilePage() {
                 className="grid gap-4 sm:grid-cols-3"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  toast.success("Password updated", { description: "TODO: wire Supabase updateUser" });
+                  const form = e.currentTarget;
+                  const currentPassword = (form.elements.namedItem("pw-current") as HTMLInputElement).value;
+                  const newPassword = (form.elements.namedItem("pw-new") as HTMLInputElement).value;
+                  const confirmPassword = (form.elements.namedItem("pw-confirm") as HTMLInputElement).value;
+                  if (newPassword !== confirmPassword) {
+                    toast.error("Passwords do not match", { description: "New password and confirmation must match." });
+                    return;
+                  }
+                  changePassword.mutate(
+                    { currentPassword, newPassword },
+                    { onSuccess: () => form.reset() },
+                  );
                 }}
               >
                 <div className="grid gap-2">
                   <Label htmlFor="pw-current">Current password</Label>
-                  <Input id="pw-current" type="password" autoComplete="current-password" />
+                  <Input id="pw-current" name="pw-current" type="password" autoComplete="current-password" />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pw-new">New password</Label>
-                  <Input id="pw-new" type="password" autoComplete="new-password" />
+                  <Input id="pw-new" name="pw-new" type="password" autoComplete="new-password" />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pw-confirm">Confirm password</Label>
-                  <Input id="pw-confirm" type="password" autoComplete="new-password" />
+                  <Input id="pw-confirm" name="pw-confirm" type="password" autoComplete="new-password" />
                 </div>
                 <div className="sm:col-span-3">
-                  <Button type="submit" variant="outline">
+                  <Button type="submit" variant="outline" disabled={changePassword.isPending}>
                     Update password
                   </Button>
                 </div>

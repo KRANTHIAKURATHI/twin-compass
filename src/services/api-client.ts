@@ -36,6 +36,15 @@ export function setAuthTokenGetter(fn: TokenGetter) {
   getToken = fn;
 }
 
+type UnauthorizedHandler = () => void;
+
+let onUnauthorized: UnauthorizedHandler = () => {};
+
+/** Plug in a handler that clears the session and redirects to login on a 401. */
+export function setUnauthorizedHandler(fn: UnauthorizedHandler) {
+  onUnauthorized = fn;
+}
+
 export interface RequestOptions {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   body?: unknown;
@@ -82,6 +91,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const payload = isJson ? ((await response.json().catch(() => null)) as Record<string, any> | null) : null;
 
   if (!response.ok) {
+    if (response.status === 401) onUnauthorized();
     throw new ApiError(payload?.["message"] ?? payload?.["detail"] ?? response.statusText, response.status, {
       code: payload?.["code"],
       fieldErrors: payload?.["errors"] ?? payload?.["fieldErrors"],

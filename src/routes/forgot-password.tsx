@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MailCheck } from "lucide-react";
+import { toast } from "sonner";
 
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/forgot-password")({
 function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [devResetToken, setDevResetToken] = useState<string | undefined>(undefined);
 
   return (
     <AuthLayout
@@ -42,7 +44,9 @@ function ForgotPasswordPage() {
             Check your inbox and follow the link to choose a new password.
           </p>
           <Button variant="outline" className="mt-4" asChild>
-            <Link to="/reset-password">Open reset form</Link>
+            <Link to="/reset-password" search={{ token: devResetToken ?? "" }}>
+              Open reset form
+            </Link>
           </Button>
         </div>
       ) : (
@@ -50,15 +54,23 @@ function ForgotPasswordPage() {
           className="space-y-4"
           onSubmit={async (e) => {
             e.preventDefault();
+            const form = new FormData(e.currentTarget);
+            const email = String(form.get("email") ?? "").trim();
+            if (!email) {
+              toast.error("Enter your work email to receive a reset link");
+              return;
+            }
             setLoading(true);
-            await authService.forgotPassword("demo");
+            const result = await authService.forgotPassword(email);
             setLoading(false);
+            const token = (result.data as { resetToken?: string } | undefined)?.resetToken;
+            setDevResetToken(token);
             setSent(true);
           }}
         >
           <div className="grid gap-2">
             <Label htmlFor="fp-email">Work email</Label>
-            <Input id="fp-email" type="email" autoComplete="email" placeholder="name@hospital.health" required />
+            <Input id="fp-email" name="email" type="email" autoComplete="email" placeholder="name@hospital.health" required />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Sending link…" : "Send reset link"}

@@ -21,6 +21,7 @@ import type {
   PredictionService,
   ReportService,
   ResearchService,
+  SearchService,
   SimulationService,
   TreatmentService,
   TwinService,
@@ -49,24 +50,63 @@ const ok = <T>(data?: T, message?: string): MutationResult<T> => ({ ok: true, da
 /* ------------------------------------------------------------------ */
 /* Auth                                                                 */
 /* ------------------------------------------------------------------ */
+/**
+ * Mock mode has no backend to hold session state, so `me`/`updateMe` would
+ * otherwise always echo the static fixture regardless of who "logged in" or
+ * what was last saved. This keeps a per-browser mock identity so login and
+ * profile edits behave like a real session while `USING_MOCKS` is true.
+ */
+const MOCK_USER_KEY = "oncotwin.mockUser";
+
+function readMockUser(): AuthUser {
+  if (typeof window === "undefined") return fx.currentDoctorFixture;
+  try {
+    const raw = window.localStorage.getItem(MOCK_USER_KEY);
+    return raw ? (JSON.parse(raw) as AuthUser) : fx.currentDoctorFixture;
+  } catch {
+    return fx.currentDoctorFixture;
+  }
+}
+
+function writeMockUser(user: AuthUser) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(MOCK_USER_KEY, JSON.stringify(user));
+}
+
 export const authService: AuthService = {
   login: (credentials) =>
     withFallback<AuthSession>(
       () => apiRequest(endpoints.auth.login, { method: "POST", body: credentials }),
-      () => ({
-        user: { ...fx.currentDoctorFixture, email: credentials.email || fx.currentDoctorFixture.email },
-        accessToken: "mock-access-token",
-        expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
-      }),
+      () => {
+        const user = { ...fx.currentDoctorFixture, email: credentials.email || fx.currentDoctorFixture.email };
+        writeMockUser(user);
+        return {
+          user,
+          accessToken: "mock-access-token",
+          expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+        };
+      },
       600,
     ),
   register: (payload) =>
     withFallback(
       () => apiRequest(endpoints.auth.register, { method: "POST", body: payload }),
-      () => ok<AuthUser>({ ...fx.currentDoctorFixture, name: payload.name, email: payload.email }),
+      () => {
+        const user = { ...fx.currentDoctorFixture, name: payload.name, email: payload.email };
+        writeMockUser(user);
+        return ok<AuthUser>(user);
+      },
       600,
     ),
-  logout: () => withFallback(() => apiRequest(endpoints.auth.logout, { method: "POST" }), () => ok(), 200),
+  logout: () =>
+    withFallback(
+      () => apiRequest(endpoints.auth.logout, { method: "POST" }),
+      () => {
+        if (typeof window !== "undefined") window.localStorage.removeItem(MOCK_USER_KEY);
+        return ok();
+      },
+      200,
+    ),
   forgotPassword: (email) =>
     withFallback(
       () => apiRequest(endpoints.auth.forgotPassword, { method: "POST", body: { email } }),
@@ -79,7 +119,23 @@ export const authService: AuthService = {
       () => ok(undefined, "Password updated"),
       600,
     ),
-  me: () => withFallback<AuthUser>(() => apiRequest(endpoints.auth.me), () => fx.currentDoctorFixture),
+  me: () => withFallback<AuthUser>(() => apiRequest(endpoints.auth.me), () => readMockUser()),
+  updateMe: (payload) =>
+    withFallback<AuthUser>(
+      () => apiRequest(endpoints.auth.updateMe, { method: "PATCH", body: payload }),
+      () => {
+        const user = { ...readMockUser(), ...payload };
+        writeMockUser(user);
+        return user;
+      },
+      400,
+    ),
+  changePassword: (payload) =>
+    withFallback(
+      () => apiRequest(endpoints.auth.changePassword, { method: "POST", body: payload }),
+      () => ok(undefined, "Password updated"),
+      400,
+    ),
 };
 
 /* ------------------------------------------------------------------ */
@@ -232,9 +288,13 @@ export const simulationService: SimulationService = {
       () => ({ patientId, scenarios: fx.scenarioFixtures }),
       900,
     ),
-  save: (draft) =>
+  save: (patientId, draft) =>
     withFallback(
-      () => apiRequest(endpoints.simulations.save, { method: "POST", body: draft }),
+      () =>
+        apiRequest(`${endpoints.simulations.save}?patient_id=${encodeURIComponent(patientId)}`, {
+          method: "POST",
+          body: draft,
+        }),
       () => ok(fx.simulationRunFixtures[0], "Scenario saved"),
       500,
     ),
@@ -422,11 +482,29 @@ export const analyticsService: AnalyticsService = {
 
 export const adminService: AdminService = {
   hospitals: () => withFallback(() => apiRequest(endpoints.admin.hospitals), () => fx.hospitalFixtures),
+  createHospital: (payload) =>
+    withFallback(
+      () => apiRequest(endpoints.admin.hospitals, { method: "POST", body: payload }),
+      () => ok({ id: `h-${Date.now()}`, doctors: 0, patients: 0, ...payload }),
+      400,
+    ),
   doctors: () => withFallback(() => apiRequest(endpoints.admin.doctors), () => fx.doctorDirectoryFixtures),
   departments: () => withFallback(() => apiRequest(endpoints.admin.departments), () => fx.departmentFixtures),
   users: () => withFallback(() => apiRequest(endpoints.admin.users), () => fx.platformUserFixtures),
+  createUser: (payload) =>
+    withFallback(
+      () => apiRequest(endpoints.admin.users, { method: "POST", body: payload }),
+      () => ok({ id: `u-${Date.now()}`, name: payload.name, email: payload.email, role: payload.role as any }),
+      400,
+    ),
   auditLogs: () => withFallback(() => apiRequest(endpoints.admin.audit), () => fx.auditLogFixtures),
   permissions: () => withFallback(() => apiRequest(endpoints.admin.permissions), () => fx.permissionMatrixFixtures),
+  updatePermissions: (permissions) =>
+    withFallback(
+      () => apiRequest(endpoints.admin.permissions, { method: "PUT", body: permissions }),
+      () => ok(undefined, "Permissions updated"),
+      400,
+    ),
 };
 
 export const researchService: ResearchService = {
@@ -435,6 +513,28 @@ export const researchService: ResearchService = {
   trainingRuns: () => withFallback(() => apiRequest(endpoints.research.training), () => fx.trainingRunFixtures),
   modelVersions: () => withFallback(() => apiRequest(endpoints.research.versions), () => fx.modelVersionFixtures),
   performance: () => withFallback(() => apiRequest(endpoints.research.performance), () => fx.performanceTrendFixtures),
+};
+
+export const searchService: SearchService = {
+  global: (query) =>
+    withFallback(
+      () => apiRequest(endpoints.search.global, { query: { q: query } }),
+      () => ({
+        patients: fx.patientFixtures
+          .filter((p) => p.name.toLowerCase().includes(query.toLowerCase()))
+          .slice(0, 10)
+          .map((p) => ({ id: p.id, name: p.name, type: "patient" as const })),
+        documents: fx.documentFixtures
+          .filter((d) => d.name.toLowerCase().includes(query.toLowerCase()))
+          .slice(0, 10)
+          .map((d) => ({ id: d.id, name: d.name, type: "document" as const })),
+        reports: fx.savedReportFixtures
+          .filter((r) => r.title.toLowerCase().includes(query.toLowerCase()))
+          .slice(0, 10)
+          .map((r) => ({ id: r.id, name: r.title, type: "report" as const })),
+      }),
+      300,
+    ),
 };
 
 export const services = {
@@ -452,4 +552,5 @@ export const services = {
   analytics: analyticsService,
   admin: adminService,
   research: researchService,
+  search: searchService,
 };

@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { RouteErrorState } from "@/components/common/PageState";
 import { UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
 import { StatusChip } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
-import { platformUsers } from "@/services/data";
+import { usePlatformUsers } from "@/hooks/api";
+import type { PlatformUser } from "@/types/models";
 
 export const Route = createFileRoute("/_admin/admin/users")({
   head: () => ({
@@ -20,10 +21,10 @@ export const Route = createFileRoute("/_admin/admin/users")({
     ],
   }),
   errorComponent: RouteErrorState,
-  component: withPageStates(UsersPage, { variant: "table" }),
+  component: UsersPage,
 });
 
-type Row = (typeof platformUsers)[number];
+type Row = PlatformUser;
 
 const columns: Column<Row>[] = [
   { key: "name", header: "User", cell: (r) => <span className="font-medium">{r.name}</span> },
@@ -38,14 +39,23 @@ const columns: Column<Row>[] = [
 ];
 
 function UsersPage() {
+  const { data, isLoading, isError, refetch } = usePlatformUsers();
+
   return (
     <DataTablePage
       title="Users"
       description="Every account with access to the platform."
       columns={columns}
-      rows={platformUsers}
+      rows={data ?? []}
+      loading={isLoading}
+      error={isError}
+      onRetry={() => refetch()}
       actions={
-        <Button onClick={() => toast.success("User invited", { description: "TODO: wire POST /api/admin/users" })}>
+        <Button
+          onClick={() =>
+            toast.info("Not yet available", { description: "There is no backend endpoint to invite a user yet." })
+          }
+        >
           <UserPlus className="size-4" aria-hidden="true" /> Add user
         </Button>
       }

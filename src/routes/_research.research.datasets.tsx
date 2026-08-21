@@ -3,7 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
 import { StatusChip } from "@/components/common/StatusChip";
-import { datasets } from "@/services/data";
+import { useDatasets } from "@/hooks/api";
+import type { Dataset } from "@/types/models";
 
 export const Route = createFileRoute("/_research/research/datasets")({
   head: () => ({
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/_research/research/datasets")({
   component: withPageStates(DatasetsPage, { variant: "table" }),
 });
 
-type Row = (typeof datasets)[number];
+type Row = Dataset;
 
 const columns: Column<Row>[] = [
   { key: "name", header: "Dataset", cell: (r) => <span className="font-medium">{r.name}</span> },
@@ -30,5 +31,17 @@ const columns: Column<Row>[] = [
 ];
 
 function DatasetsPage() {
-  return <DataTablePage title="Datasets" description="Cohorts available for training and validation." columns={columns} rows={datasets} />;
+  const { data, isLoading, isError, refetch } = useDatasets();
+
+  return (
+    <DataTablePage
+      title="Datasets"
+      description="Cohorts available for training and validation."
+      columns={columns}
+      rows={data ?? []}
+      loading={isLoading}
+      error={isError}
+      onRetry={() => refetch()}
+    />
+  );
 }

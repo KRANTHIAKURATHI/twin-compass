@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { PageErrorState, PageSkeleton, RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Download, Eye, FileText, History, Search, Upload } from "lucide-react";
-import { toast } from "sonner";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -17,10 +16,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Timeline } from "@/components/common/Timeline";
-import { documents } from "@/services/data";
-import { documentLinks, documentTimeline } from "@/services/data";
+import { useDocumentTimeline, useDocumentVersions, useDocuments } from "@/hooks/api";
+import { documentLinks } from "@/services/data";
+import type { DocumentRecord } from "@/types/models";
 
 
 export const Route = createFileRoute("/_shell/documents")({
@@ -40,23 +41,23 @@ export const Route = createFileRoute("/_shell/documents")({
 
 const categories = ["All", "MRI", "CT", "PET", "Biopsy", "Blood"] as const;
 
-const versionHistory = [
-  { v: 3, date: "2026-06-20", by: "Dr. Sarah Whitmore", note: "Approved OCR extraction" },
-  { v: 2, date: "2026-06-20", by: "OCR Pipeline v2.4", note: "Re-parsed with improved model" },
-  { v: 1, date: "2026-06-19", by: "Rui Mensah", note: "Original upload" },
-];
-
 function DocumentCenter() {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<string>("All");
-  const [preview, setPreview] = useState<(typeof documents)[number] | null>(null);
-  const [history, setHistory] = useState<(typeof documents)[number] | null>(null);
+  const [preview, setPreview] = useState<DocumentRecord | null>(null);
+  const [history, setHistory] = useState<DocumentRecord | null>(null);
 
-  const rows = documents.filter(
-    (d) =>
-      (cat === "All" || d.category === cat) &&
-      (d.name.toLowerCase().includes(query.toLowerCase()) || d.patient.toLowerCase().includes(query.toLowerCase())),
-  );
+  const { data: documents = [], isLoading, isError, refetch } = useDocuments(query);
+
+  const rows = documents.filter((d) => cat === "All" || d.category === cat);
+
+  if (isLoading) return <PageSkeleton variant="list" />;
+  if (isError)
+    return (
+      <div className="mx-auto max-w-[900px] pt-4">
+        <PageErrorState onRetry={() => refetch()} />
+      </div>
+    );
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -129,13 +130,11 @@ function DocumentCenter() {
                   <Button size="sm" variant="ghost" onClick={() => setHistory(d)}>
                     <History className="size-4" aria-hidden="true" /> Versions
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => toast.success("Download started", { description: "TODO: wire GET /api/documents/{id}/file" })}
-                  >
-                    <Download className="size-4" aria-hidden="true" /> Download
-                  </Button>
+                  <span title="File storage not yet configured — metadata only">
+                    <Button size="sm" variant="ghost" disabled>
+                      <Download className="size-4" aria-hidden="true" /> Download
+                    </Button>
+                  </span>
                 </div>
 
               </CardContent>
@@ -152,10 +151,32 @@ function DocumentCenter() {
               {preview?.category} · {preview?.patient} · {preview?.date}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex h-72 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface text-center">
-            <FileText className="size-10 text-muted-foreground" aria-hidden="true" />
-            <p className="mt-3 text-sm font-medium">PDF preview placeholder</p>
-            <p className="text-xs text-muted-foreground">TODO: render document via GET /api/documents/{"{id}"}/preview</p>
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <p className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <FileText className="size-4" aria-hidden="true" /> Document metadata
+            </p>
+            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              {preview &&
+                (
+                  [
+                    ["Category", preview.category],
+                    ["Patient", preview.patient],
+                    ["Date", preview.date],
+                    ["Size", preview.size],
+                    ["Version", `v${preview.version}`],
+                    ["Status", preview.status],
+                  ] as const
+                ).map(([k, v]) => (
+                  <div key={k}>
+                    <dt className="text-xs text-muted-foreground">{k}</dt>
+                    <dd className="mt-0.5 text-sm font-medium">{v}</dd>
+                  </div>
+                ))}
+            </dl>
+            <p className="mt-4 text-xs text-muted-foreground">
+              File storage is not yet configured for this environment — only document metadata is available, so no
+              in-browser preview can be rendered.
+            </p>
           </div>
           <div>
             <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Linked records</p>
@@ -183,26 +204,43 @@ function DocumentCenter() {
             <DialogTitle>Version history</DialogTitle>
             <DialogDescription>{history?.name}</DialogDescription>
           </DialogHeader>
-          <ul className="space-y-3">
-            {versionHistory.map((v) => (
-              <li key={v.v} className="flex gap-3 rounded-xl border border-border p-3">
-                <StatusChip tone={v.v === versionHistory[0].v ? "success" : "neutral"}>v{v.v}</StatusChip>
-                <div>
-                  <p className="text-sm font-medium">{v.note}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {v.by} · {v.date}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <div>
-            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Document timeline</p>
-            <Timeline items={documentTimeline} />
-          </div>
-
+          <HistoryDialogBody documentId={history?.id ?? ""} />
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function HistoryDialogBody({ documentId }: { documentId: string }) {
+  const { data: versions = [], isLoading: versionsLoading } = useDocumentVersions(documentId);
+  const { data: timeline = [], isLoading: timelineLoading } = useDocumentTimeline(documentId);
+
+  return (
+    <>
+      {versionsLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-12 w-full rounded-xl" />
+          <Skeleton className="h-12 w-full rounded-xl" />
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {versions.map((v) => (
+            <li key={v.version} className="flex gap-3 rounded-xl border border-border p-3">
+              <StatusChip tone={v.version === versions[0]?.version ? "success" : "neutral"}>v{v.version}</StatusChip>
+              <div>
+                <p className="text-sm font-medium">{v.note}</p>
+                <p className="text-xs text-muted-foreground">
+                  {v.author} · {v.date}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div>
+        <p className="mb-3 mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">Document timeline</p>
+        {timelineLoading ? <Skeleton className="h-24 w-full rounded-xl" /> : <Timeline items={timeline} />}
+      </div>
+    </>
   );
 }

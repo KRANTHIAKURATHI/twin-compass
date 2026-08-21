@@ -2,28 +2,19 @@ import { useMemo, useState } from "react";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpDown, Filter, Plus, Search, Trash2, Pencil, Users } from "lucide-react";
-import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { RiskChip, StatusChip, type ChipTone } from "@/components/common/StatusChip";
 import { EmptyState } from "@/components/common/EmptyState";
+import { StateNotice } from "@/components/common/StateNotice";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { patients, type Patient, type PatientStatus } from "@/services/data";
-import { patientService } from "@/services";
+import type { PatientStatus } from "@/types/models";
+import { useDeletePatient, usePatients } from "@/hooks/api";
 
 export const Route = createFileRoute("/_shell/patients/")({
   head: () => ({
@@ -53,25 +44,44 @@ function PatientsPage() {
   const [status, setStatus] = useState("all");
   const [sortAsc, setSortAsc] = useState(true);
   const [page, setPage] = useState(1);
-  const [createOpen, setCreateOpen] = useState(false);
+
+  const { data: patientsData, isLoading, isError } = usePatients(query);
+  const deletePatient = useDeletePatient();
+  const patients = patientsData ?? [];
 
   const filtered = useMemo(() => {
-    const rows = patients.filter((p) => {
-      const q = query.trim().toLowerCase();
-      const matchQ = !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
-      return matchQ && (stage === "all" || p.stage === stage) && (status === "all" || p.status === status);
-    });
+    const rows = patients.filter(
+      (p) => (stage === "all" || p.stage === stage) && (status === "all" || p.status === status),
+    );
     return [...rows].sort((a, b) => (sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)));
-  }, [query, stage, status, sortAsc]);
+  }, [patients, stage, status, sortAsc]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const current = Math.min(page, pageCount);
   const rows = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
 
-  const remove = async (p: Patient) => {
-    await patientService.remove(p.id);
-    toast.success(`${p.name} removed`, { description: "TODO: wire DELETE /api/patients/{id}" });
-  };
+  const remove = (id: string) => deletePatient.mutate(id);
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-[1400px] space-y-4">
+        <Skeleton className="h-9 w-64" />
+        <Skeleton className="h-96 rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-[1400px]">
+        <StateNotice
+          state="prediction-unavailable"
+          title="Could not load patients"
+          description="Something went wrong fetching the patient list. Try again shortly."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -80,75 +90,11 @@ function PatientsPage() {
         description="All patients under your care, with biomarkers, treatment and twin status."
         crumbs={[{ label: "Home", to: "/" }, { label: "Patients" }]}
         actions={
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="size-4" aria-hidden="true" /> Add patient
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Create patient</DialogTitle>
-                <DialogDescription>Register a new patient and generate their digital twin.</DialogDescription>
-              </DialogHeader>
-              <form
-                className="grid gap-4 sm:grid-cols-2"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  const form = new FormData(e.currentTarget);
-                  await patientService.create({ name: String(form.get("name") ?? "") });
-                  setCreateOpen(false);
-                  toast.success("Patient created", { description: "TODO: wire POST /api/patients" });
-                }}
-              >
-                <div className="grid gap-2 sm:col-span-2">
-                  <Label htmlFor="p-name">Full name</Label>
-                  <Input id="p-name" name="name" placeholder="Jane Doe" required />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="p-age">Age</Label>
-                  <Input id="p-age" name="age" type="number" min={18} max={110} placeholder="52" required />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="p-tumor">Tumor size (mm)</Label>
-                  <Input id="p-tumor" name="tumorSize" type="number" min={1} placeholder="22" />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="p-stage">Cancer stage</Label>
-                  <Select defaultValue="II">
-                    <SelectTrigger id="p-stage">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["0", "I", "II", "III", "IV"].map((s) => (
-                        <SelectItem key={s} value={s}>
-                          Stage {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="p-her2">HER2 status</Label>
-                  <Select defaultValue="Negative">
-                    <SelectTrigger id="p-her2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Positive">Positive</SelectItem>
-                      <SelectItem value="Negative">Negative</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <DialogFooter className="sm:col-span-2">
-                  <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">Create patient</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button asChild>
+            <Link to="/patients/new">
+              <Plus className="size-4" aria-hidden="true" /> Add patient
+            </Link>
+          </Button>
         }
       />
 
@@ -276,7 +222,7 @@ function PatientsPage() {
                             <Pencil className="size-4" aria-hidden="true" />
                           </Link>
                         </Button>
-                        <Button variant="ghost" size="icon" aria-label={`Delete ${p.name}`} onClick={() => remove(p)}>
+                        <Button variant="ghost" size="icon" aria-label={`Delete ${p.name}`} onClick={() => remove(p.id)}>
                           <Trash2 className="size-4 text-risk" aria-hidden="true" />
                         </Button>
                       </div>

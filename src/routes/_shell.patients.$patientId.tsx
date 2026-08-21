@@ -2,25 +2,39 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Activity, Boxes, Download, FileText, FlaskConical, Image as ImageIcon, Pencil, Stethoscope } from "lucide-react";
 
+import { EmptyState } from "@/components/common/EmptyState";
 import { PageHeader } from "@/components/common/PageHeader";
 import { RiskChip, StatusChip } from "@/components/common/StatusChip";
+import { StateNotice } from "@/components/common/StateNotice";
 import { Timeline } from "@/components/common/Timeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { patients, type Patient } from "@/services/data";
-import { imagingStudies, labResults, simulationHistory, treatmentPlan } from "@/services/data";
-import { systemTimelineEvents } from "@/services/data";
-
-
+import { patientService } from "@/services";
+// No backend equivalent exists yet for the "twin & simulations" system timeline
+// or the simulation-history table shape rendered below, so those two sections
+// stay sourced from fixtures until the API adds matching endpoints.
+import { simulationHistory, systemTimelineEvents } from "@/services/data";
+import {
+  queryKeys,
+  usePatient,
+  usePatientImaging,
+  usePatientLabs,
+  usePatientTimeline,
+  useTreatmentPlan,
+} from "@/hooks/api";
 
 export const Route = createFileRoute("/_shell/patients/$patientId")({
-  loader: ({ params }) => {
-    const patient = patients.find((p) => p.id === params.patientId);
+  loader: async ({ params, context }) => {
+    const patient = await context.queryClient.ensureQueryData({
+      queryKey: queryKeys.patients.detail(params.patientId),
+      queryFn: () => patientService.get(params.patientId),
+    });
     if (!patient) throw notFound();
     return { patient };
   },
@@ -53,7 +67,48 @@ function Field({ label, value }: { label: string; value: string | number }) {
 }
 
 function PatientProfile() {
-  const { patient: p } = Route.useLoaderData() as { patient: Patient };
+  const { patientId } = Route.useParams();
+  const { data: p, isLoading, isError } = usePatient(patientId);
+  const { data: labResultsData } = usePatientLabs(patientId);
+  const { data: imagingStudiesData } = usePatientImaging(patientId);
+  const { data: timelineData } = usePatientTimeline(patientId);
+  const { data: plan } = useTreatmentPlan(patientId);
+
+  const labResults = labResultsData ?? [];
+  const imagingStudies = imagingStudiesData ?? [];
+  const timeline = timelineData ?? [];
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-[1400px] space-y-4">
+        <Skeleton className="h-9 w-64" />
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Skeleton className="h-96 rounded-2xl lg:col-span-2" />
+          <Skeleton className="h-96 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-[1400px]">
+        <StateNotice
+          state="prediction-unavailable"
+          title="Could not load this patient"
+          description="Something went wrong fetching this patient's record. Try again shortly."
+        />
+      </div>
+    );
+  }
+
+  if (!p) {
+    return (
+      <div className="mx-auto max-w-[1400px]">
+        <EmptyState icon={Boxes} title="Patient not found" description="This patient record could not be located." />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -225,17 +280,17 @@ function PatientProfile() {
             </CardHeader>
             <CardContent className="space-y-4">
               <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <Field label="Regimen" value={treatmentPlan.regimen} />
-                <Field label="Cycle" value={`${treatmentPlan.cycle} of ${treatmentPlan.totalCycles}`} />
-                <Field label="Started" value={treatmentPlan.startedOn} />
-                <Field label="Next dose" value={treatmentPlan.nextDose} />
+                <Field label="Regimen" value={plan?.regimen ?? "—"} />
+                <Field label="Cycle" value={plan ? `${plan.cycle} of ${plan.totalCycles}` : "—"} />
+                <Field label="Started" value={plan?.startedOn ?? "—"} />
+                <Field label="Next dose" value={plan?.nextDose ?? "—"} />
               </dl>
               <div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Adherence</span>
-                  <span className="font-semibold">{treatmentPlan.adherence}%</span>
+                  <span className="font-semibold">{plan?.adherence ?? 0}%</span>
                 </div>
-                <Progress value={treatmentPlan.adherence} className="mt-2 h-2" />
+                <Progress value={plan?.adherence ?? 0} className="mt-2 h-2" />
               </div>
             </CardContent>
           </Card>
@@ -255,11 +310,11 @@ function PatientProfile() {
                 </TabsList>
                 <TabsContent value="disease" className="pt-5">
                   <Timeline
-                    items={[...p.timeline, ...systemTimelineEvents].sort((a, b) => (a.date < b.date ? 1 : -1))}
+                    items={[...timeline, ...systemTimelineEvents].sort((a, b) => (a.date < b.date ? 1 : -1))}
                   />
                 </TabsContent>
                 <TabsContent value="treatment" className="pt-5">
-                  <Timeline items={p.timeline.filter((t) => t.kind === "treatment" || t.kind === "note")} />
+                  <Timeline items={timeline.filter((t) => t.kind === "treatment" || t.kind === "note")} />
                 </TabsContent>
                 <TabsContent value="system" className="pt-5">
                   <Timeline items={systemTimelineEvents} />

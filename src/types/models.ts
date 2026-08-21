@@ -386,8 +386,11 @@ export interface AuditLogEntry {
   id: ID;
   time: ISODate;
   actor: string;
+  actorRole?: string;
   action: string;
   target: string;
+  before?: Record<string, unknown> | null;
+  after?: Record<string, unknown> | null;
   ip: string;
 }
 

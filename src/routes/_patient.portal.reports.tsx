@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { PageErrorState, PageSkeleton, RouteErrorState } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, Eye, FileText, Search } from "lucide-react";
 
@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { documents } from "@/services/data";
+import { useReports } from "@/hooks/api";
 
 export const Route = createFileRoute("/_patient/portal/reports")({
   head: () => ({
@@ -23,12 +23,24 @@ export const Route = createFileRoute("/_patient/portal/reports")({
     ],
   }),
   errorComponent: RouteErrorState,
-  component: withPageStates(MyReports, { variant: "list" }),
+  component: MyReports,
 });
 
 function MyReports() {
   const [q, setQ] = useState("");
-  const rows = documents.filter((d) => `${d.name} ${d.category}`.toLowerCase().includes(q.toLowerCase()));
+  const reportsQuery = useReports();
+
+  if (reportsQuery.isLoading) return <PageSkeleton variant="list" />;
+  if (reportsQuery.isError) {
+    return (
+      <div className="mx-auto max-w-[900px] pt-4">
+        <PageErrorState onRetry={() => reportsQuery.refetch()} />
+      </div>
+    );
+  }
+
+  const reports = reportsQuery.data ?? [];
+  const rows = reports.filter((d) => `${d.title} ${d.type}`.toLowerCase().includes(q.toLowerCase()));
 
   return (
     <div className="mx-auto max-w-[1100px]">
@@ -50,22 +62,22 @@ function MyReports() {
                   <FileText className="size-5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium leading-tight">{d.name}</p>
+                  <p className="truncate text-sm font-medium leading-tight">{d.title}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {d.category} · {d.date} · {d.size} · v{d.version}
+                    {d.type} · {d.created} · v{d.version}
                   </p>
                 </div>
                 <div className="ml-auto flex shrink-0 items-center gap-1">
                   <span className="hidden w-[112px] justify-start sm:flex">
-                    <StatusChip tone={d.status === "Verified" ? "success" : d.status === "Pending OCR" ? "warning" : "risk"}>
+                    <StatusChip tone={d.status === "Final" ? "success" : d.status === "Draft" ? "warning" : "risk"}>
                       {d.status}
                     </StatusChip>
                   </span>
 
-                  <Button variant="ghost" size="icon" aria-label={`Preview ${d.name}`}>
+                  <Button variant="ghost" size="icon" aria-label={`Preview ${d.title}`}>
                     <Eye className="size-4" aria-hidden="true" />
                   </Button>
-                  <Button variant="ghost" size="icon" aria-label={`Download ${d.name}`}>
+                  <Button variant="ghost" size="icon" aria-label={`Download ${d.title}`}>
                     <Download className="size-4" aria-hidden="true" />
                   </Button>
                 </div>

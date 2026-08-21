@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { RouteErrorState } from "@/components/common/PageState";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
 import { StatusChip } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
-import { doctorsDirectory } from "@/services/data";
+import { useDoctors } from "@/hooks/api";
+import type { DoctorProfile } from "@/types/models";
 
 export const Route = createFileRoute("/_admin/admin/doctors")({
   head: () => ({
@@ -20,10 +21,10 @@ export const Route = createFileRoute("/_admin/admin/doctors")({
     ],
   }),
   errorComponent: RouteErrorState,
-  component: withPageStates(DoctorsPage, { variant: "table" }),
+  component: DoctorsPage,
 });
 
-type Row = (typeof doctorsDirectory)[number];
+type Row = DoctorProfile;
 
 const columns: Column<Row>[] = [
   { key: "id", header: "ID", cell: (r) => <span className="text-muted-foreground">{r.id}</span> },
@@ -39,14 +40,23 @@ const columns: Column<Row>[] = [
 ];
 
 function DoctorsPage() {
+  const { data, isLoading, isError, refetch } = useDoctors();
+
   return (
     <DataTablePage
       title="Doctors"
       description="Clinician accounts across the network."
       columns={columns}
-      rows={doctorsDirectory}
+      rows={data ?? []}
+      loading={isLoading}
+      error={isError}
+      onRetry={() => refetch()}
       actions={
-        <Button onClick={() => toast.success("Invitation sent", { description: "TODO: wire POST /api/admin/doctors" })}>
+        <Button
+          onClick={() =>
+            toast.info("Not yet available", { description: "There is no backend endpoint to invite a doctor yet." })
+          }
+        >
           <Plus className="size-4" aria-hidden="true" /> Invite doctor
         </Button>
       }

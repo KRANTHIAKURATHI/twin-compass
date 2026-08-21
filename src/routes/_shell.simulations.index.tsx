@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { PageErrorState, RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { FlaskConical } from "lucide-react";
 
 import { EmptyState } from "@/components/common/EmptyState";
@@ -7,8 +7,9 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { StatusChip } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { simulationRuns } from "@/services/data";
+import { useSimulationRuns } from "@/hooks/api";
 
 export const Route = createFileRoute("/_shell/simulations/")({
   head: () => ({
@@ -26,6 +27,9 @@ export const Route = createFileRoute("/_shell/simulations/")({
 });
 
 function SimulationsPage() {
+  const { data: simulationRunsData, isLoading, isError, refetch } = useSimulationRuns();
+  const simulationRuns = simulationRunsData ?? [];
+
   return (
     <div className="mx-auto max-w-[1200px]">
       <PageHeader
@@ -41,7 +45,11 @@ function SimulationsPage() {
         }
       />
 
-      {simulationRuns.length === 0 ? (
+      {isLoading ? (
+        <Skeleton className="h-96 rounded-2xl" />
+      ) : isError ? (
+        <PageErrorState onRetry={() => refetch()} title="Could not load simulation runs" />
+      ) : simulationRuns.length === 0 ? (
         <EmptyState icon={FlaskConical} title="No simulations yet" description="Run the treatment simulator to compare scenarios." />
       ) : (
         <Card>

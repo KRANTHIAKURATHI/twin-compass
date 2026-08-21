@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { PageErrorState, PageSkeleton, RouteErrorState, withPageStates } from "@/components/common/PageState";
 import {
   Users,
   Boxes,
@@ -34,17 +34,22 @@ import { StatusChip } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { EmptyState } from "@/components/common/EmptyState";
+// No backend endpoint currently returns a response-vs-recurrence breakdown by
+// treatment regimen — analyticsService only exposes dashboard/cohort/accuracy
+// series — so this one chart stays sourced from fixtures until the API adds one.
+import { treatmentComparison } from "@/services/data";
 import {
-  accuracyTrend,
-  dashboardStats,
-  followUps,
-  patientGrowth,
-  recentActivity,
-  riskDistribution,
-  stageDistribution,
-  treatmentComparison,
-  notifications,
-} from "@/services/data";
+  useAccuracyAnalytics,
+  useAppointments,
+  useCohortAnalytics,
+  useDashboardAnalytics,
+  useNotifications,
+  usePatients,
+  useSimulationRuns,
+  useTwins,
+} from "@/hooks/api";
+import type { RiskLevel } from "@/types/models";
 
 export const Route = createFileRoute("/_shell/")({
   head: () => ({
@@ -59,8 +64,20 @@ export const Route = createFileRoute("/_shell/")({
   component: withPageStates(DashboardPage, { variant: "cards" }),
 });
 
-const icons = { users: Users, twin: Boxes, alert: AlertTriangle, flask: FlaskConical, check: CheckCircle2, heart: HeartPulse };
 const riskColors = ["var(--color-success)", "var(--color-warning)", "var(--color-risk)"];
+const riskOrder: { key: RiskLevel; name: string }[] = [
+  { key: "low", name: "Low risk" },
+  { key: "moderate", name: "Moderate risk" },
+  { key: "high", name: "High risk" },
+];
+
+const notificationTone: Record<string, "primary" | "success" | "warning" | "risk"> = {
+  patient: "primary",
+  prediction: "success",
+  twin: "primary",
+  simulation: "warning",
+  system: "risk",
+};
 
 const axis = { stroke: "var(--color-muted-foreground)", fontSize: 12 };
 const tooltipStyle = {
@@ -72,6 +89,89 @@ const tooltipStyle = {
 };
 
 function DashboardPage() {
+  const patientsQuery = usePatients();
+  const twinsQuery = useTwins();
+  const simulationsQuery = useSimulationRuns();
+  const growthQuery = useDashboardAnalytics();
+  const cohortQuery = useCohortAnalytics();
+  const accuracyQuery = useAccuracyAnalytics();
+  const appointmentsQuery = useAppointments();
+  const notificationsQuery = useNotifications("doctor");
+
+  const loading =
+    patientsQuery.isLoading ||
+    twinsQuery.isLoading ||
+    simulationsQuery.isLoading ||
+    growthQuery.isLoading ||
+    cohortQuery.isLoading ||
+    accuracyQuery.isLoading;
+
+  const error =
+    patientsQuery.isError ||
+    twinsQuery.isError ||
+    simulationsQuery.isError ||
+    growthQuery.isError ||
+    cohortQuery.isError ||
+    accuracyQuery.isError;
+
+  if (loading) return <PageSkeleton variant="cards" />;
+  if (error)
+    return (
+      <div className="mx-auto max-w-[900px] pt-4">
+        <PageErrorState />
+      </div>
+    );
+
+  const patients = patientsQuery.data ?? [];
+  const twins = twinsQuery.data ?? [];
+  const simulations = simulationsQuery.data ?? [];
+  const patientGrowth = growthQuery.data ?? [];
+  const stageDistribution = cohortQuery.data ?? [];
+  const accuracyTrend = accuracyQuery.data ?? [];
+  const appointments = appointmentsQuery.data ?? [];
+  const notifications = notificationsQuery.data ?? [];
+
+  const riskDistribution = riskOrder.map((r) => ({
+    ...r,
+    value: patients.filter((p) => p.risk === r.key).length,
+  }));
+
+  const avgSurvival = patients.length
+    ? Math.round((patients.reduce((sum, p) => sum + p.survivalProbability, 0) / patients.length) * 10) / 10
+    : 0;
+
+  const latestAccuracy = accuracyTrend.length ? Number(accuracyTrend[accuracyTrend.length - 1].accuracy) : null;
+
+  const dashboardStats = [
+    { label: "Total Patients", value: patients.length.toLocaleString(), icon: Users, tone: "primary" as const },
+    { label: "Active Digital Twins", value: twins.length.toLocaleString(), icon: Boxes, tone: "primary" as const },
+    {
+      label: "High Risk Patients",
+      value: patients.filter((p) => p.risk === "high").length.toLocaleString(),
+      icon: AlertTriangle,
+      tone: "risk" as const,
+    },
+    { label: "Treatment Simulations", value: simulations.length.toLocaleString(), icon: FlaskConical, tone: "primary" as const },
+    {
+      label: "Latest Prediction Accuracy",
+      value: latestAccuracy !== null ? `${latestAccuracy}%` : "—",
+      icon: CheckCircle2,
+      tone: "success" as const,
+    },
+    { label: "Avg. Survival Probability", value: `${avgSurvival}%`, icon: HeartPulse, tone: "warning" as const },
+  ];
+
+  const recentActivity = notifications.slice(0, 5).map((n) => ({
+    title: n.title,
+    detail: n.body,
+    time: n.time,
+    tone: notificationTone[n.type ?? "system"] ?? "primary",
+  }));
+
+  const upcomingAppointments = appointments
+    .filter((a) => a.status === "Confirmed" || a.status === "Scheduled")
+    .slice(0, 4);
+
   return (
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
@@ -92,14 +192,7 @@ function DashboardPage() {
 
       <section aria-label="Key metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {dashboardStats.map((s) => (
-          <StatCard
-            key={s.label}
-            label={s.label}
-            value={s.value}
-            delta={s.delta}
-            tone={s.tone}
-            icon={icons[s.icon as keyof typeof icons]}
-          />
+          <StatCard key={s.label} label={s.label} value={s.value} tone={s.tone} icon={s.icon} />
         ))}
       </section>
 
@@ -107,7 +200,7 @@ function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Patient & twin growth</CardTitle>
-            <CardDescription>Registered patients vs. active digital twins, last 7 months</CardDescription>
+            <CardDescription>Registered patients vs. active digital twins</CardDescription>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -202,7 +295,7 @@ function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Prediction accuracy</CardTitle>
-            <CardDescription>Model v2.4 · placeholder metric</CardDescription>
+            <CardDescription>Ensemble accuracy over time (%)</CardDescription>
           </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -225,21 +318,25 @@ function DashboardPage() {
             <CardDescription>Latest events across your cohort</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1">
-            {recentActivity.map((a, i) => (
-              <div key={a.title + i}>
-                <div className="flex items-center gap-3 py-2.5">
-                  <StatusChip tone={a.tone} dot>
-                    {a.tone === "risk" ? "Alert" : a.tone === "warning" ? "Watch" : a.tone === "success" ? "Done" : "Info"}
-                  </StatusChip>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{a.title}</p>
-                    <p className="truncate text-xs text-muted-foreground">{a.detail}</p>
+            {recentActivity.length === 0 ? (
+              <EmptyState icon={Bell} title="No recent activity" description="Events will appear here as they happen across your cohort." />
+            ) : (
+              recentActivity.map((a, i) => (
+                <div key={a.title + i}>
+                  <div className="flex items-center gap-3 py-2.5">
+                    <StatusChip tone={a.tone} dot>
+                      {a.tone === "risk" ? "Alert" : a.tone === "warning" ? "Watch" : a.tone === "success" ? "Done" : "Info"}
+                    </StatusChip>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{a.title}</p>
+                      <p className="truncate text-xs text-muted-foreground">{a.detail}</p>
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground">{a.time}</span>
                   </div>
-                  <span className="shrink-0 text-xs text-muted-foreground">{a.time}</span>
+                  {i < recentActivity.length - 1 && <Separator />}
                 </div>
-                {i < recentActivity.length - 1 && <Separator />}
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
 
@@ -251,22 +348,21 @@ function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2.5">
-              {followUps.map((f) => (
-                <Link
-                  key={f.id}
-                  to="/patients/$patientId"
-                  params={{ patientId: f.id }}
-                  className="flex items-center gap-3 rounded-lg border border-border p-2.5 transition-colors hover:bg-muted"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{f.patient}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {f.type} · {f.when}
-                    </p>
+              {upcomingAppointments.length === 0 ? (
+                <p className="px-1 py-2 text-xs text-muted-foreground">No upcoming follow-ups scheduled.</p>
+              ) : (
+                upcomingAppointments.map((f) => (
+                  <div key={f.id} className="flex items-center gap-3 rounded-lg border border-border p-2.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{f.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {f.doctor} · {f.date} {f.time}
+                      </p>
+                    </div>
+                    <ArrowUpRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   </div>
-                  <ArrowUpRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                </Link>
-              ))}
+                ))
+              )}
             </CardContent>
           </Card>
 

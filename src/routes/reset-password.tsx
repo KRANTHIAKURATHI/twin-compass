@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { authService } from "@/services";
 
 export const Route = createFileRoute("/reset-password")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    token: typeof search.token === "string" ? search.token : "",
+  }),
   head: () => ({
     meta: [
       { title: "Set a new password — OncoTwin" },
@@ -22,6 +25,7 @@ export const Route = createFileRoute("/reset-password")({
 
 function ResetPasswordPage() {
   const navigate = useNavigate();
+  const { token } = Route.useSearch();
   const [loading, setLoading] = useState(false);
 
   return (
@@ -39,13 +43,17 @@ function ResetPasswordPage() {
         onSubmit={async (e) => {
           e.preventDefault();
           const form = new FormData(e.currentTarget);
+          if (!token) {
+            toast.error("This reset link is invalid or has expired. Request a new one.");
+            return;
+          }
           setLoading(true);
           await authService.resetPassword({
-            token: String(form.get("token") ?? ""),
+            token,
             password: String(form.get("password") ?? ""),
           });
           setLoading(false);
-          toast.success("Password updated", { description: "TODO: wire Supabase updateUser" });
+          toast.success("Password updated");
           navigate({ to: "/login" });
         }}
       >

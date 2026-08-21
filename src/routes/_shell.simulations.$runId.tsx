@@ -1,26 +1,19 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
-import { CheckCircle2 } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { PageErrorState, RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { CheckCircle2, FlaskConical } from "lucide-react";
 
+import { EmptyState } from "@/components/common/EmptyState";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatusChip } from "@/components/common/StatusChip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { scenarios } from "@/services/data";
-import { simulationRuns, type SimulationRun } from "@/services/data";
+import { useScenarios, useSimulationRun } from "@/hooks/api";
 
 export const Route = createFileRoute("/_shell/simulations/$runId")({
-  loader: ({ params }) => {
-    const run = simulationRuns.find((r) => r.id === params.runId);
-    if (!run) throw notFound();
-    return { run };
-  },
-  head: ({ loaderData }) => {
-    if (!loaderData) {
-      return { meta: [{ title: "Simulation unavailable — OncoTwin" }, { name: "robots", content: "noindex" }] };
-    }
-    const title = `Simulation ${loaderData.run.id} — OncoTwin`;
-    const description = `Scenario comparison, results and decision notes for simulation ${loaderData.run.id}.`;
+  head: ({ params }) => {
+    const title = `Simulation ${params.runId} — OncoTwin`;
+    const description = `Scenario comparison, results and decision notes for simulation ${params.runId}.`;
     return {
       meta: [
         { title },
@@ -37,11 +30,44 @@ export const Route = createFileRoute("/_shell/simulations/$runId")({
 });
 
 function SimulationDetail() {
-  const { run } = Route.useLoaderData() as { run: SimulationRun };
+  const { runId } = Route.useParams();
+  const { data: run, isLoading, isError, refetch } = useSimulationRun(runId);
+  const { data: scenariosData } = useScenarios(run?.patientId ?? "");
+  const scenarios = scenariosData ?? [];
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-[1100px] space-y-4">
+        <Skeleton className="h-9 w-64" />
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl" />
+        </div>
+        <Skeleton className="h-64 rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-[1100px]">
+        <PageErrorState onRetry={() => refetch()} title="Could not load this simulation" />
+      </div>
+    );
+  }
+
+  if (!run) {
+    return (
+      <div className="mx-auto max-w-[1100px]">
+        <EmptyState icon={FlaskConical} title="Simulation not found" description="This simulation run does not exist or was removed." />
+      </div>
+    );
+  }
+
   const compared = scenarios.filter((s) => run.compared.includes(s.name));
   const rows = compared.length > 0 ? compared : scenarios;
   const selectedName = compared.length > 0 ? run.selected : (rows.find((s) => s.recommended)?.name ?? run.selected);
-
 
   return (
     <div className="mx-auto max-w-[1100px]">
