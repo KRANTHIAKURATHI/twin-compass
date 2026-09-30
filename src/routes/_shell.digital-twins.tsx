@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { PageErrorState, RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Boxes, RefreshCw, Activity, Ruler, Syringe, Clock, GitCompare, RotateCcw, Archive } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { EmptyState } from "@/components/common/EmptyState";
 import { PageHeader } from "@/components/common/PageHeader";
 import { RiskChip, StatusChip } from "@/components/common/StatusChip";
 import { StateNotice } from "@/components/common/StateNotice";
@@ -17,19 +16,17 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-// No backend equivalent exists for this treated-vs-untreated tumor trajectory
-// series (usePrediction/useConfidenceTrend return a differently shaped
-// per-patient series), so it stays sourced from fixtures until the API adds one.
-import { progressionForecast } from "@/services/data";
 import {
   useArchiveTwin,
+  usePatient,
+  usePatientTimeline,
   useResyncTwin,
   useRestoreTwinVersion,
-  useTwins,
+  useTumorSizeHistory,
   useTwinSnapshots,
   useTwinVersions,
+  useTwins,
 } from "@/hooks/api";
-
 
 export const Route = createFileRoute("/_shell/digital-twins")({
   head: () => ({
@@ -52,71 +49,70 @@ const tooltipStyle = {
   fontSize: 12,
 };
 
-function DigitalTwinsPage() {
-  const { data: twinsData, isLoading: twinsLoading, isError: twinsError } = useTwins();
-  const twins = twinsData ?? [];
+/** `—` rather than `0` for anything the record simply does not carry. */
+const show = (value: unknown, suffix = "") =>
+  value === null || value === undefined || value === "" ? "—" : `${value}${suffix}`;
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleString() : "—");
+
+function DigitalTwinsPage() {
+  const { data: twins = [], isLoading: twinsLoading, isError: twinsError, refetch: refetchTwins } = useTwins();
+  const [selectedId, setSelectedId] = useState("");
   const [tab, setTab] = useState("timeline");
   const [selected, setSelected] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
   const [restore, setRestore] = useState<string | null>(null);
   const [archiveOpen, setArchiveOpen] = useState(false);
-  const [archived, setArchived] = useState(false);
 
   useEffect(() => {
-    if (!selectedId && twins.length > 0) setSelectedId(twins[0].id);
-  }, [selectedId, twins]);
+    if (!selectedId && twins[0]) setSelectedId(twins[0].patientId);
+  }, [twins, selectedId]);
 
-  const twin = twins.find((t) => t.id === selectedId) ?? twins[0];
+  const twinRow = twins.find((t) => t.patientId === selectedId);
+  const { data: patient } = usePatient(selectedId);
+  const { data: versions = [], isLoading: versionsLoading, isError: versionsError } = useTwinVersions(selectedId);
+  const { data: snapshots = [], isError: snapshotsError } = useTwinSnapshots(selectedId);
+  const { data: timeline = [] } = usePatientTimeline(selectedId);
+  const { data: sizeHistory = [], isLoading: historyLoading } = useTumorSizeHistory(selectedId);
 
-  const { data: twinVersionsData } = useTwinVersions(twin?.id ?? "");
-  const { data: twinSnapshotsData } = useTwinSnapshots(twin?.id ?? "");
-  const twinVersions = twinVersionsData ?? [];
-  const twinSnapshots = twinSnapshotsData ?? [];
+  const resync = useResyncTwin();
+  const restoreVersion = useRestoreTwinVersion();
+  const archive = useArchiveTwin();
 
-  const resyncTwin = useResyncTwin();
-  const restoreTwinVersion = useRestoreTwinVersion();
-  const archiveTwin = useArchiveTwin();
-  const syncing = resyncTwin.isPending;
+  // Clear any comparison selection when switching patient — the version
+  // labels are per-patient, so carrying them across would compare nothing.
+  useEffect(() => setSelected([]), [selectedId]);
 
   const toggleSelect = (version: string) =>
     setSelected((prev) =>
       prev.includes(version) ? prev.filter((v) => v !== version) : [...prev.slice(-1), version],
     );
 
-  const compared = twinVersions.filter((v) => selected.includes(v.version));
-
-  const resync = () => {
-    if (!twin) return;
-    resyncTwin.mutate(twin.id);
-  };
+  const compared = versions.filter((v) => selected.includes(v.version));
+  const syncing = resync.isPending;
+  const archived = (twinRow?.status ?? "") === "Archived";
 
   if (twinsLoading) {
-    return (
-      <div className="mx-auto max-w-[1400px] space-y-4">
-        <Skeleton className="h-9 w-64" />
-        <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
-          <Skeleton className="h-96 rounded-2xl" />
-          <Skeleton className="h-96 rounded-2xl" />
-        </div>
-      </div>
-    );
+    return <Skeleton className="h-[600px] rounded-2xl" />;
   }
 
   if (twinsError) {
     return (
-      <div className="mx-auto max-w-[1400px]">
-        <StateNotice state="prediction-unavailable" title="Could not load digital twins" description="Something went wrong fetching twins. Try again shortly." />
-      </div>
+      <PageErrorState
+        title="Couldn't load digital twins"
+        description="We could not reach the server to load the twin list. Check your connection and try again."
+        onRetry={() => refetchTwins()}
+      />
     );
   }
 
-  if (!twin) {
+  if (!twins.length) {
     return (
-      <div className="mx-auto max-w-[1400px]">
-        <EmptyState icon={Boxes} title="No digital twins yet" description="Digital twins appear here once a patient profile has been created." />
-      </div>
+      <StateNotice
+        state="prediction-unavailable"
+        title="No digital twins yet"
+        description="Twins are built from patient records. Add a patient, then re-sync to create its first version."
+      />
     );
   }
 
@@ -124,15 +120,15 @@ function DigitalTwinsPage() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Digital Twins"
-        description="Each twin mirrors a patient's tumor biology, treatment exposure and predicted trajectory."
+        description="Each twin mirrors a patient's tumor biology, treatment exposure and recorded trajectory."
         crumbs={[{ label: "Home", to: "/" }, { label: "Digital Twins" }]}
         actions={
           <>
-            <Button variant="outline" onClick={() => setArchiveOpen(true)} disabled={archived}>
+            <Button variant="outline" onClick={() => setArchiveOpen(true)} disabled={archived || !selectedId}>
               <Archive className="size-4" aria-hidden="true" />
               {archived ? "Archived" : "Archive twin"}
             </Button>
-            <Button onClick={resync} disabled={syncing}>
+            <Button onClick={() => resync.mutate(selectedId)} disabled={syncing || !selectedId}>
               <RefreshCw className={syncing ? "size-4 animate-spin" : "size-4"} aria-hidden="true" />
               {syncing ? "Re-syncing…" : "Re-sync twin"}
             </Button>
@@ -155,26 +151,24 @@ function DigitalTwinsPage() {
         </div>
       )}
 
-
-
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
         <Card className="h-fit gap-0 p-2">
-          <p className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Active twins</p>
+          <p className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Twins</p>
           <div className="space-y-1">
             {twins.map((t) => (
               <button
-                key={t.id}
-                onClick={() => setSelectedId(t.id)}
-                aria-pressed={t.id === selectedId}
+                key={t.patientId}
+                onClick={() => setSelectedId(t.patientId)}
+                aria-pressed={t.patientId === selectedId}
                 className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
-                  t.id === selectedId ? "bg-primary-soft text-primary" : "hover:bg-muted"
+                  t.patientId === selectedId ? "bg-primary-soft text-primary" : "hover:bg-muted"
                 }`}
               >
                 <Boxes className="size-4 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{t.name}</span>
+                  <span className="block truncate text-sm font-medium">{t.patient}</span>
                   <span className="block text-xs text-muted-foreground">
-                    {t.id} · Stage {t.stage}
+                    {t.patientId} · {t.version ?? "No version"}
                   </span>
                 </span>
               </button>
@@ -191,32 +185,40 @@ function DigitalTwinsPage() {
                   <Activity className="size-12 text-primary" aria-hidden="true" />
                 </div>
                 <p className="mt-4 text-center text-sm font-semibold">Virtual patient</p>
-                <p className="text-center text-xs text-muted-foreground">Twin ID TW-{twin.id.slice(3)}</p>
+                <p className="text-center text-xs text-muted-foreground">
+                  {twinRow?.version ? `Version ${twinRow.version}` : "No version yet"}
+                </p>
                 <StatusChip
-                  tone={twin.twinStatus === "Synced" ? "success" : twin.twinStatus === "Stale" ? "warning" : "primary"}
+                  tone={
+                    twinRow?.status === "Active"
+                      ? "success"
+                      : twinRow?.status === "Not created"
+                        ? "neutral"
+                        : "warning"
+                  }
                   dot
                   className="mt-3"
                 >
-                  {twin.twinStatus}
+                  {twinRow?.status ?? "Unknown"}
                 </StatusChip>
               </div>
 
               <div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-xl font-semibold">{twin.name}</h2>
-                  <RiskChip level={twin.risk} />
-                  <StatusChip tone="neutral">Stage {twin.stage}</StatusChip>
+                  <h2 className="text-xl font-semibold">{twinRow?.patient ?? "—"}</h2>
+                  {patient?.risk && <RiskChip level={patient.risk} />}
+                  <StatusChip tone="neutral">Stage {show(patient?.stage)}</StatusChip>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {twin.age} years · {twin.hospital}
+                  {show(patient?.age)} years · {show(patient?.hospital)}
                 </p>
 
                 <dl className="mt-5 grid grid-cols-2 gap-4 xl:grid-cols-4">
                   {[
-                    { icon: Ruler, label: "Tumor size", value: `${twin.tumorSizeMm} mm` },
-                    { icon: Syringe, label: "Treatment", value: twin.currentTreatment },
-                    { icon: Activity, label: "Health status", value: twin.status },
-                    { icon: Clock, label: "Twin updated", value: twin.lastUpdated },
+                    { icon: Ruler, label: "Tumor size", value: show(twinRow?.tumorSizeMm, " mm") },
+                    { icon: Syringe, label: "Treatment", value: show(patient?.currentTreatment) },
+                    { icon: Activity, label: "Health status", value: show(patient?.status) },
+                    { icon: Clock, label: "Twin updated", value: formatDate(twinRow?.createdAt) },
                   ].map((m) => (
                     <div key={m.label} className="rounded-xl border border-border p-3">
                       <m.icon className="size-4 text-primary" aria-hidden="true" />
@@ -228,21 +230,27 @@ function DigitalTwinsPage() {
 
                 <div className="mt-5">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Predicted 5-year survival</span>
-                    <span className="font-semibold">{twin.survivalProbability}%</span>
+                    {/* "Recorded", not "predicted": this number is stored on the
+                        twin version, not produced by a model at view time. */}
+                    <span className="text-muted-foreground">Recorded 5-year survival</span>
+                    <span className="font-semibold">
+                      {twinRow?.survival != null ? `${Math.round(twinRow.survival * 100)}%` : "—"}
+                    </span>
                   </div>
-                  <Progress value={twin.survivalProbability} className="mt-2 h-2" />
+                  <Progress value={twinRow?.survival != null ? twinRow.survival * 100 : 0} className="mt-2 h-2" />
                 </div>
 
                 <div className="mt-5 flex flex-wrap gap-2">
                   <Button asChild>
                     <Link to="/simulator">Run treatment simulation</Link>
                   </Button>
-                  <Button variant="outline" asChild>
-                    <Link to="/patients/$patientId" params={{ patientId: twin.id }}>
-                      Open patient profile
-                    </Link>
-                  </Button>
+                  {selectedId && (
+                    <Button variant="outline" asChild>
+                      <Link to="/patients/$patientId" params={{ patientId: selectedId }}>
+                        Open patient profile
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -251,31 +259,51 @@ function DigitalTwinsPage() {
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Simulated tumor trajectory</CardTitle>
-                <CardDescription>Treated vs. untreated tumor volume (mm)</CardDescription>
+                <CardTitle>Measured tumor size</CardTitle>
+                <CardDescription>
+                  Tumor size recorded on each twin version — measurements, not a projection
+                </CardDescription>
               </CardHeader>
               <CardContent className="h-64">
-                {syncing ? (
+                {historyLoading || syncing ? (
                   <Skeleton className="size-full rounded-xl" />
+                ) : sizeHistory.length === 0 ? (
+                  <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
+                    No measurements recorded yet. Re-sync the twin to record the current size.
+                  </div>
+                ) : sizeHistory.length === 1 ? (
+                  // A single reading is a point, not a trend. Drawing a line
+                  // through one measurement would imply a trajectory.
+                  <div className="flex h-full flex-col items-center justify-center gap-1 text-center">
+                    <p className="text-3xl font-semibold">{sizeHistory[0].tumorSizeMm} mm</p>
+                    <p className="text-sm text-muted-foreground">
+                      {sizeHistory[0].version} · {formatDate(sizeHistory[0].date)}
+                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      One measurement so far — a trend needs at least two.
+                    </p>
+                  </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={progressionForecast} margin={{ left: -20 }}>
+                    <AreaChart data={sizeHistory} margin={{ left: -20 }}>
                       <defs>
-                        <linearGradient id="gUntreated" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--color-chart-4)" stopOpacity={0.3} />
-                          <stop offset="100%" stopColor="var(--color-chart-4)" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="gTreated" x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient id="gMeasured" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="var(--color-chart-2)" stopOpacity={0.3} />
                           <stop offset="100%" stopColor="var(--color-chart-2)" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                      <XAxis dataKey="month" tickLine={false} axisLine={false} {...axis} />
-                      <YAxis tickLine={false} axisLine={false} {...axis} />
+                      <XAxis dataKey="version" tickLine={false} axisLine={false} {...axis} />
+                      <YAxis tickLine={false} axisLine={false} unit=" mm" {...axis} />
                       <Tooltip contentStyle={tooltipStyle} />
-                      <Area type="monotone" dataKey="untreated" stroke="var(--color-chart-4)" strokeWidth={2} fill="url(#gUntreated)" />
-                      <Area type="monotone" dataKey="treated" stroke="var(--color-chart-2)" strokeWidth={2} fill="url(#gTreated)" />
+                      <Area
+                        type="monotone"
+                        dataKey="tumorSizeMm"
+                        name="Tumor size (mm)"
+                        stroke="var(--color-chart-2)"
+                        strokeWidth={2}
+                        fill="url(#gMeasured)"
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 )}
@@ -297,7 +325,14 @@ function DigitalTwinsPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                {tab === "timeline" && <Timeline items={twin.timeline} />}
+                {tab === "timeline" &&
+                  (timeline.length ? (
+                    <Timeline items={timeline} />
+                  ) : (
+                    <p className="py-8 text-center text-sm text-muted-foreground">
+                      No timeline events recorded for this patient yet.
+                    </p>
+                  ))}
 
                 {tab === "versions" && (
                   <div className="space-y-3">
@@ -305,70 +340,91 @@ function DigitalTwinsPage() {
                       <Button size="sm" variant="outline" onClick={() => setCompareOpen(true)}>
                         <GitCompare className="size-4" aria-hidden="true" /> Compare versions
                       </Button>
-                      <span className="text-xs text-muted-foreground">
-                        {selected.length}/2 selected
-                      </span>
+                      <span className="text-xs text-muted-foreground">{selected.length}/2 selected</span>
                     </div>
-                    <ul className="space-y-3">
-                      {twinVersions.map((v) => (
-                        <li
-                          key={v.version}
-                          className={cn(
-                            "rounded-xl border p-3",
-                            selected.includes(v.version) ? "border-primary ring-1 ring-primary/30" : "border-border",
-                          )}
-                        >
-                          <div className="flex flex-wrap items-center gap-2">
-                            <StatusChip tone="neutral">{v.version}</StatusChip>
-                            <StatusChip tone={v.status === "Active" ? "success" : v.status === "Archived" ? "warning" : "neutral"}>
-                              {v.status}
-                            </StatusChip>
-                            <span className="ml-auto text-xs text-muted-foreground">{v.createdAt}</span>
-                          </div>
-                          <p className="mt-2 text-sm font-medium">{v.summary}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {v.author} · {v.model} · {v.tumorSizeMm} mm · {v.survival}% survival
-                          </p>
-                          <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              aria-pressed={selected.includes(v.version)}
-                              onClick={() => toggleSelect(v.version)}
-                            >
-                              {selected.includes(v.version) ? "Deselect" : "Select to compare"}
-                            </Button>
-                            {v.status !== "Active" && (
-                              <Button size="sm" variant="ghost" onClick={() => setRestore(v.version)}>
-                                <RotateCcw className="size-4" aria-hidden="true" /> Restore
-                              </Button>
+                    {versionsLoading ? (
+                      <Skeleton className="h-40 rounded-xl" />
+                    ) : versionsError ? (
+                      <p className="py-8 text-center text-sm text-destructive">
+                        Couldn't load version history. Try refreshing the page.
+                      </p>
+                    ) : versions.length === 0 ? (
+                      <p className="py-8 text-center text-sm text-muted-foreground">
+                        No versions yet. Re-sync the twin to cut its first version.
+                      </p>
+                    ) : (
+                      <ul className="space-y-3">
+                        {versions.map((v) => (
+                          <li
+                            key={v.version}
+                            className={cn(
+                              "rounded-xl border p-3",
+                              selected.includes(v.version) ? "border-primary ring-1 ring-primary/30" : "border-border",
                             )}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                          >
+                            <div className="flex flex-wrap items-center gap-2">
+                              <StatusChip tone="neutral">{v.version}</StatusChip>
+                              <StatusChip
+                                tone={v.status === "Active" ? "success" : v.status === "Archived" ? "warning" : "neutral"}
+                              >
+                                {v.status}
+                              </StatusChip>
+                              <span className="ml-auto text-xs text-muted-foreground">{formatDate(v.createdAt)}</span>
+                            </div>
+                            <p className="mt-2 text-sm font-medium">{show(v.summary)}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {show(v.author)} · {show(v.model)} · {show(v.tumorSizeMm, " mm")} ·{" "}
+                              {v.survival != null ? `${Math.round(v.survival * 100)}% survival` : "no survival recorded"}
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                aria-pressed={selected.includes(v.version)}
+                                onClick={() => toggleSelect(v.version)}
+                              >
+                                {selected.includes(v.version) ? "Deselect" : "Select to compare"}
+                              </Button>
+                              {v.status !== "Active" && (
+                                <Button size="sm" variant="ghost" onClick={() => setRestore(v.version)}>
+                                  <RotateCcw className="size-4" aria-hidden="true" /> Restore
+                                </Button>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 )}
 
-                {tab === "snapshots" && (
-                  <ul className="space-y-3">
-                    {twinSnapshots.map((s) => (
-                      <li key={s.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3">
-                        <StatusChip tone="primary">{s.version}</StatusChip>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium">{s.id}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {s.trigger} · {s.size}
-                          </p>
-                        </div>
-                        <span className="text-xs text-muted-foreground">{s.takenAt}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                {tab === "snapshots" &&
+                  (snapshotsError ? (
+                    <p className="py-8 text-center text-sm text-destructive">
+                      Couldn't load snapshots. Try refreshing the page.
+                    </p>
+                  ) : snapshots.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-muted-foreground">
+                      No snapshots recorded for this twin.
+                    </p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {snapshots.map((s) => (
+                        <li key={s.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3">
+                          <StatusChip tone="primary">{s.version}</StatusChip>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium">{s.id}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {show(s.trigger)} · {show(s.size)}
+                            </p>
+                          </div>
+                          <span className="text-xs text-muted-foreground">{formatDate(s.takenAt)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ))}
               </CardContent>
             </Card>
-
           </div>
         </div>
       </div>
@@ -398,13 +454,16 @@ function DigitalTwinsPage() {
                 </thead>
                 <tbody>
                   {[
-                    ["Created", (v: (typeof compared)[number]) => v.createdAt],
+                    ["Created", (v: (typeof compared)[number]) => formatDate(v.createdAt)],
                     ["Status", (v: (typeof compared)[number]) => v.status],
-                    ["Model", (v: (typeof compared)[number]) => v.model],
-                    ["Tumor size", (v: (typeof compared)[number]) => `${v.tumorSizeMm} mm`],
-                    ["5-year survival", (v: (typeof compared)[number]) => `${v.survival}%`],
-                    ["Risk", (v: (typeof compared)[number]) => v.risk],
-                    ["Change", (v: (typeof compared)[number]) => v.summary],
+                    ["Model", (v: (typeof compared)[number]) => show(v.model)],
+                    ["Tumor size", (v: (typeof compared)[number]) => show(v.tumorSizeMm, " mm")],
+                    [
+                      "5-year survival",
+                      (v: (typeof compared)[number]) => (v.survival != null ? `${Math.round(v.survival * 100)}%` : "—"),
+                    ],
+                    ["Risk", (v: (typeof compared)[number]) => show(v.risk)],
+                    ["Change", (v: (typeof compared)[number]) => show(v.summary)],
                   ].map(([label, get]) => (
                     <tr key={label as string} className="border-t border-border align-top">
                       <td className="py-2 pr-4 text-muted-foreground">{label as string}</td>
@@ -428,10 +487,10 @@ function DigitalTwinsPage() {
         open={restore !== null}
         onOpenChange={(o) => !o && setRestore(null)}
         title={`Restore ${restore ?? ""}?`}
-        description="Restoring creates a new active version from this snapshot. Predictions and simulations will be recalculated."
+        description="Restoring copies this version forward as a new active version. The original stays in the history."
         confirmLabel="Restore version"
         onConfirm={() => {
-          if (restore) restoreTwinVersion.mutate({ patientId: twin.id, version: restore });
+          if (restore) restoreVersion.mutate({ patientId: selectedId, version: restore });
           setRestore(null);
         }}
       />
@@ -444,12 +503,10 @@ function DigitalTwinsPage() {
         confirmLabel="Archive twin"
         destructive
         onConfirm={() => {
-          setArchived(true);
+          archive.mutate(selectedId);
           setArchiveOpen(false);
-          archiveTwin.mutate(twin.id);
         }}
       />
     </div>
-
   );
 }

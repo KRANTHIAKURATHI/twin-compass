@@ -8,14 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ApiError } from "@/services/api-client";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Sign in — OncoTwin Clinical Platform" },
-      { name: "description", content: "Sign in to the OncoTwin clinical decision support platform for oncologists." },
+      {
+        name: "description",
+        content: "Sign in to the OncoTwin clinical decision support platform for oncologists.",
+      },
       { property: "og:title", content: "Sign in — OncoTwin Clinical Platform" },
-      { property: "og:description", content: "Sign in to the OncoTwin clinical decision support platform for oncologists." },
+      {
+        property: "og:description",
+        content: "Sign in to the OncoTwin clinical decision support platform for oncologists.",
+      },
     ],
   }),
   component: LoginPage,
@@ -25,6 +32,7 @@ function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <AuthLayout
@@ -33,7 +41,10 @@ function LoginPage() {
       footer={
         <>
           New to OncoTwin?{" "}
-          <Link to="/register" className="font-medium text-primary underline-offset-4 hover:underline">
+          <Link
+            to="/register"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
             Create an account
           </Link>
         </>
@@ -45,39 +56,62 @@ function LoginPage() {
           e.preventDefault();
           const form = new FormData(e.currentTarget);
           setLoading(true);
+          setError(null);
           try {
-            const session = await login({
+            // Backend-ready: calling useAuth().login (not authService directly)
+            // means the resulting session is actually stored in AuthProvider's
+            // context — this is what makes RequireRole guards and the sidebar's
+            // signed-in user reflect a real login once VITE_API_BASE_URL is set.
+            await login({
               email: String(form.get("email") ?? ""),
               password: String(form.get("password") ?? ""),
             });
-            setLoading(false);
             toast.success("Signed in");
-            if (session.user.role === "patient") {
-              navigate({ to: "/portal" });
-            } else if (session.user.role === "researcher") {
-              navigate({ to: "/research" });
-            } else {
-              navigate({ to: "/" });
-            }
-          } catch (err: any) {
+            navigate({ to: "/" });
+          } catch (err) {
+            const message =
+              err instanceof ApiError ? err.message : "Unable to sign in. Please try again.";
+            setError(message);
+          } finally {
             setLoading(false);
-            toast.error(err?.message || "Invalid email or password");
           }
         }}
       >
         <div className="grid gap-2">
           <Label htmlFor="email">Work email</Label>
-          <Input id="email" name="email" type="email" autoComplete="email" placeholder="s.whitmore@hospital.health" required />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="s.whitmore@hospital.health"
+            required
+          />
         </div>
         <div className="grid gap-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
-            <Link to="/forgot-password" className="text-xs text-primary underline-offset-4 hover:underline">
+            <Link
+              to="/forgot-password"
+              className="text-xs text-primary underline-offset-4 hover:underline"
+            >
               Forgot password?
             </Link>
           </div>
-          <Input id="password" name="password" type="password" autoComplete="current-password" placeholder="••••••••" required />
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="••••••••"
+            required
+          />
         </div>
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
         <div className="flex items-center gap-2">
           <Checkbox id="remember" defaultChecked />
           <Label htmlFor="remember" className="text-sm font-normal text-muted-foreground">

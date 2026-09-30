@@ -8,11 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import type { Patient, PatientInput, PatientStatus, ReceptorStatus, TumorStage } from "@/types/models";
+import type { Patient, PatientInput } from "@/types/models";
 import { useCreatePatient, useUpdatePatient } from "@/hooks/api";
 
-const stages: TumorStage[] = ["0", "I", "II", "III", "IV"];
-const receptors: ReceptorStatus[] = ["Positive", "Negative"];
+const stages = ["0", "I", "II", "III", "IV"];
+const receptors = ["Positive", "Negative"];
 const treatments = [
   "AC-T Chemotherapy",
   "Tamoxifen (Endocrine)",
@@ -21,61 +21,112 @@ const treatments = [
   "Neoadjuvant Chemo",
   "Radiotherapy",
 ];
-const statuses: PatientStatus[] = ["In Treatment", "Remission", "Monitoring", "Critical"];
-const genders = ["Female", "Male", "Other"];
+const statuses = ["In Treatment", "Remission", "Monitoring", "Critical"];
+
+/** Radix Select cannot hold an empty string, so "not recorded" is undefined. */
+const optional = (value: string | null | undefined) => (value ? value : undefined);
+
+/** Dates arrive as timestamps but `<input type="date">` wants `YYYY-MM-DD`. */
+const dateInput = (value?: string | null) => (value ? value.slice(0, 10) : "");
+
+type FormState = {
+  name: string;
+  age: string;
+  gender: string;
+  email: string;
+  phone: string;
+  hospital: string;
+  stage: string;
+  tumorSizeMm: string;
+  nodesInvolved: string;
+  grade: string;
+  erStatus: string;
+  prStatus: string;
+  her2Status: string;
+  ki67: number | null;
+  currentTreatment: string;
+  status: string;
+  diagnosedOn: string;
+  notes: string;
+};
+
+const initial = (patient?: Patient): FormState => ({
+  name: patient?.name ?? "",
+  age: patient?.age == null ? "" : String(patient.age),
+  gender: patient?.gender ?? "",
+  email: patient?.email ?? "",
+  phone: patient?.phone ?? "",
+  hospital: patient?.hospital ?? "",
+  stage: patient?.stage ?? "",
+  tumorSizeMm: patient?.tumorSizeMm == null ? "" : String(patient.tumorSizeMm),
+  nodesInvolved: patient?.nodesInvolved == null ? "" : String(patient.nodesInvolved),
+  grade: patient?.grade == null ? "" : String(patient.grade),
+  erStatus: patient?.erStatus ?? "",
+  prStatus: patient?.prStatus ?? "",
+  her2Status: patient?.her2Status ?? "",
+  ki67: patient?.ki67 ?? null,
+  currentTreatment: patient?.currentTreatment ?? "",
+  status: patient?.status ?? "",
+  diagnosedOn: dateInput(patient?.diagnosedOn),
+  notes: patient?.notes ?? "",
+});
+
+/**
+ * Builds the API payload from the form.
+ *
+ * Blank fields are omitted rather than sent as 0 or a plausible default. The
+ * form used to pre-fill age 52, a hospital name, a 22 mm tumour and grade 2,
+ * then submit only `ki67` regardless — so untouched invented values looked
+ * saved while real edits were silently dropped. Both halves of that are fixed
+ * here: nothing is invented, and everything entered is sent.
+ */
+function toPayload(f: FormState): PatientInput {
+  const num = (value: string) => (value.trim() === "" ? undefined : Number(value));
+  const str = (value: string) => (value.trim() === "" ? undefined : value.trim());
+  return {
+    name: f.name.trim(),
+    age: num(f.age),
+    gender: str(f.gender),
+    email: str(f.email),
+    phone: str(f.phone),
+    hospital: str(f.hospital),
+    stage: str(f.stage) as Patient["stage"],
+    tumorSizeMm: num(f.tumorSizeMm),
+    nodesInvolved: num(f.nodesInvolved),
+    grade: (f.grade === "" ? undefined : Number(f.grade)) as Patient["grade"],
+    erStatus: str(f.erStatus) as Patient["erStatus"],
+    prStatus: str(f.prStatus) as Patient["prStatus"],
+    her2Status: str(f.her2Status) as Patient["her2Status"],
+    ki67: f.ki67 ?? undefined,
+    currentTreatment: str(f.currentTreatment),
+    status: str(f.status) as Patient["status"],
+    diagnosedOn: str(f.diagnosedOn),
+    notes: str(f.notes),
+  };
+}
 
 export function PatientForm({ patient, mode }: { patient?: Patient; mode: "create" | "edit" }) {
   const navigate = useNavigate();
+  const [form, setForm] = useState<FormState>(() => initial(patient));
   const createPatient = useCreatePatient();
   const updatePatient = useUpdatePatient(patient?.id ?? "");
   const saving = createPatient.isPending || updatePatient.isPending;
 
-  const [gender, setGender] = useState(patient?.gender ?? "Female");
-  const [stage, setStage] = useState<TumorStage>(patient?.stage ?? "II");
-  const [grade, setGrade] = useState(String(patient?.grade ?? 2));
-  const [erStatus, setErStatus] = useState<ReceptorStatus>(patient?.erStatus ?? "Positive");
-  const [prStatus, setPrStatus] = useState<ReceptorStatus>(patient?.prStatus ?? "Positive");
-  const [her2Status, setHer2Status] = useState<ReceptorStatus>(patient?.her2Status ?? "Positive");
-  const [ki67, setKi67] = useState(patient?.ki67 ?? 20);
-  const [treatment, setTreatment] = useState(patient?.currentTreatment ?? treatments[0]);
-  const [status, setStatus] = useState<PatientStatus>(patient?.status ?? "In Treatment");
+  const set = <K extends keyof FormState>(key: K) => (value: FormState[K]) =>
+    setForm((f) => ({ ...f, [key]: value }));
 
-  const submit = (e: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
-
-    const payload: PatientInput = {
-      name: String(form.get("name") ?? ""),
-      age: Number(form.get("age") ?? 0),
-      gender,
-      email: String(form.get("email") ?? ""),
-      phone: String(form.get("phone") ?? ""),
-      hospital: String(form.get("hospital") ?? ""),
-      stage,
-      tumorSizeMm: Number(form.get("tumor") ?? 0),
-      nodesInvolved: Number(form.get("nodes") ?? 0),
-      grade: Number(grade) as 1 | 2 | 3,
-      erStatus,
-      prStatus,
-      her2Status,
-      ki67,
-      currentTreatment: treatment,
-      status,
-      diagnosedOn: String(form.get("diagnosed") ?? ""),
-      notes: String(form.get("notes") ?? ""),
-    };
-
-    const onSuccess = () => {
-      navigate({
-        to: mode === "edit" ? "/patients/$patientId" : "/patients",
-        params: { patientId: patient?.id ?? "" },
-      });
-    };
-
+    const payload = toPayload(form);
     if (mode === "create") {
-      createPatient.mutate(payload, { onSuccess });
+      const created = await createPatient.mutateAsync(payload);
+      // The API assigns the patient code, so the new record is the only place
+      // to learn where to navigate; without it, fall back to the list.
+      const newId = created.data?.id;
+      navigate(newId ? { to: "/patients/$patientId", params: { patientId: newId } } : { to: "/patients" });
     } else {
-      updatePatient.mutate(payload, { onSuccess });
+      await updatePatient.mutateAsync(payload);
+      navigate({ to: "/patients/$patientId", params: { patientId: patient!.id } });
     }
   };
 
@@ -89,20 +140,28 @@ export function PatientForm({ patient, mode }: { patient?: Patient; mode: "creat
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="name">Full name</Label>
-            <Input id="name" name="name" defaultValue={patient?.name} placeholder="Jane Doe" required />
+            <Input id="name" value={form.name} onChange={(e) => set("name")(e.target.value)} placeholder="Jane Doe" required />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="age">Age</Label>
-            <Input id="age" name="age" type="number" min={18} max={110} defaultValue={patient?.age ?? 52} required />
+            <Input
+              id="age"
+              type="number"
+              min={18}
+              max={110}
+              value={form.age}
+              onChange={(e) => set("age")(e.target.value)}
+              placeholder="Not recorded"
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="gender">Gender</Label>
-            <Select value={gender} onValueChange={setGender}>
+            <Select value={optional(form.gender)} onValueChange={set("gender")}>
               <SelectTrigger id="gender">
-                <SelectValue />
+                <SelectValue placeholder="Not recorded" />
               </SelectTrigger>
               <SelectContent>
-                {genders.map((g) => (
+                {["Female", "Male", "Other"].map((g) => (
                   <SelectItem key={g} value={g}>
                     {g}
                   </SelectItem>
@@ -112,15 +171,26 @@ export function PatientForm({ patient, mode }: { patient?: Patient; mode: "creat
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" defaultValue={patient?.email} placeholder="jane.doe@mail.health" />
+            <Input
+              id="email"
+              type="email"
+              value={form.email}
+              onChange={(e) => set("email")(e.target.value)}
+              placeholder="jane.doe@mail.health"
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="phone">Phone</Label>
-            <Input id="phone" name="phone" defaultValue={patient?.phone} placeholder="+1 (415) 555-0000" />
+            <Input id="phone" value={form.phone} onChange={(e) => set("phone")(e.target.value)} placeholder="+1 (415) 555-0000" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="hospital">Hospital</Label>
-            <Input id="hospital" name="hospital" defaultValue={patient?.hospital ?? "Northfield Oncology Center"} />
+            <Input
+              id="hospital"
+              value={form.hospital}
+              onChange={(e) => set("hospital")(e.target.value)}
+              placeholder="Not recorded"
+            />
           </div>
         </CardContent>
       </Card>
@@ -133,9 +203,9 @@ export function PatientForm({ patient, mode }: { patient?: Patient; mode: "creat
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="stage">Cancer stage</Label>
-            <Select value={stage} onValueChange={(v) => setStage(v as TumorStage)}>
+            <Select value={optional(form.stage)} onValueChange={set("stage")}>
               <SelectTrigger id="stage">
-                <SelectValue />
+                <SelectValue placeholder="Not recorded" />
               </SelectTrigger>
               <SelectContent>
                 {stages.map((s) => (
@@ -148,17 +218,33 @@ export function PatientForm({ patient, mode }: { patient?: Patient; mode: "creat
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="tumor">Tumor size (mm)</Label>
-            <Input id="tumor" name="tumor" type="number" min={1} max={200} defaultValue={patient?.tumorSizeMm ?? 22} />
+            <Input
+              id="tumor"
+              type="number"
+              min={1}
+              max={200}
+              value={form.tumorSizeMm}
+              onChange={(e) => set("tumorSizeMm")(e.target.value)}
+              placeholder="Not measured"
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="nodes">Nodes involved</Label>
-            <Input id="nodes" name="nodes" type="number" min={0} max={40} defaultValue={patient?.nodesInvolved ?? 0} />
+            <Input
+              id="nodes"
+              type="number"
+              min={0}
+              max={40}
+              value={form.nodesInvolved}
+              onChange={(e) => set("nodesInvolved")(e.target.value)}
+              placeholder="Not assessed"
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="grade">Histologic grade</Label>
-            <Select value={grade} onValueChange={setGrade}>
+            <Select value={optional(form.grade)} onValueChange={set("grade")}>
               <SelectTrigger id="grade">
-                <SelectValue />
+                <SelectValue placeholder="Not recorded" />
               </SelectTrigger>
               <SelectContent>
                 {[1, 2, 3].map((g) => (
@@ -169,16 +255,16 @@ export function PatientForm({ patient, mode }: { patient?: Patient; mode: "creat
               </SelectContent>
             </Select>
           </div>
-          {[
-            { id: "er", label: "ER status", value: erStatus, onChange: setErStatus },
-            { id: "pr", label: "PR status", value: prStatus, onChange: setPrStatus },
-            { id: "her2", label: "HER2 status", value: her2Status, onChange: setHer2Status },
-          ].map((r) => (
+          {([
+            { id: "er", label: "ER status", key: "erStatus" as const },
+            { id: "pr", label: "PR status", key: "prStatus" as const },
+            { id: "her2", label: "HER2 status", key: "her2Status" as const },
+          ]).map((r) => (
             <div key={r.id} className="space-y-1.5">
               <Label htmlFor={r.id}>{r.label}</Label>
-              <Select value={r.value} onValueChange={(v) => r.onChange(v as ReceptorStatus)}>
+              <Select value={optional(form[r.key])} onValueChange={set(r.key)}>
                 <SelectTrigger id={r.id}>
-                  <SelectValue />
+                  <SelectValue placeholder="Not recorded" />
                 </SelectTrigger>
                 <SelectContent>
                   {receptors.map((v) => (
@@ -191,8 +277,24 @@ export function PatientForm({ patient, mode }: { patient?: Patient; mode: "creat
             </div>
           ))}
           <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="ki67">Ki-67 proliferation index — {ki67}%</Label>
-            <Slider id="ki67" value={[ki67]} min={0} max={100} step={1} onValueChange={(v) => setKi67(v[0])} />
+            <Label htmlFor="ki67">
+              Ki-67 proliferation index — {form.ki67 === null ? "not recorded" : `${form.ki67}%`}
+            </Label>
+            {/* The slider starts at 0 only once the clinician moves it, so an
+                untouched control never writes a value of its own. */}
+            <Slider
+              id="ki67"
+              value={[form.ki67 ?? 0]}
+              min={0}
+              max={100}
+              step={1}
+              onValueChange={(v) => set("ki67")(v[0])}
+            />
+            {form.ki67 !== null && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => set("ki67")(null)}>
+                Clear
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -204,9 +306,9 @@ export function PatientForm({ patient, mode }: { patient?: Patient; mode: "creat
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="treatment">Current treatment</Label>
-            <Select value={treatment} onValueChange={setTreatment}>
+            <Select value={optional(form.currentTreatment)} onValueChange={set("currentTreatment")}>
               <SelectTrigger id="treatment">
-                <SelectValue />
+                <SelectValue placeholder="None recorded" />
               </SelectTrigger>
               <SelectContent>
                 {treatments.map((t) => (
@@ -219,9 +321,9 @@ export function PatientForm({ patient, mode }: { patient?: Patient; mode: "creat
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="status">Health status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as PatientStatus)}>
+            <Select value={optional(form.status)} onValueChange={set("status")}>
               <SelectTrigger id="status">
-                <SelectValue />
+                <SelectValue placeholder="Not recorded" />
               </SelectTrigger>
               <SelectContent>
                 {statuses.map((s) => (
@@ -234,11 +336,22 @@ export function PatientForm({ patient, mode }: { patient?: Patient; mode: "creat
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="diagnosed">Diagnosed on</Label>
-            <Input id="diagnosed" name="diagnosed" type="date" defaultValue={patient?.diagnosedOn ?? "2026-01-15"} />
+            <Input
+              id="diagnosed"
+              type="date"
+              value={form.diagnosedOn}
+              onChange={(e) => set("diagnosedOn")(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="notes">Clinical notes</Label>
-            <Textarea id="notes" name="notes" rows={4} defaultValue={patient?.notes} placeholder="Observations, comorbidities, plan…" />
+            <Textarea
+              id="notes"
+              rows={4}
+              value={form.notes}
+              onChange={(e) => set("notes")(e.target.value)}
+              placeholder="Observations, comorbidities, plan…"
+            />
           </div>
         </CardContent>
       </Card>

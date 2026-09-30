@@ -2,7 +2,6 @@
 
 _Last updated: frontend integration-prep pass. No UI was redesigned; no backend was implemented._
 
-
 ## How the data flow works now
 
 ```text

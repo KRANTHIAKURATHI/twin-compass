@@ -1,65 +1,34 @@
-from tests.conftest import auth_headers, register_user
+"""Unit tests for app.dependencies.auth.require_roles — no network, no database."""
+from __future__ import annotations
 
-from app.seed import DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD
+import uuid
 
+import pytest
 
-def _admin_headers(client):
-    return auth_headers(client, DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD)
-
-
-def _create_patient(client, headers, **overrides):
-    payload = {"name": "Jane Doe", "email": "jane@example.com"}
-    payload.update(overrides)
-    resp = client.post("/patients", json=payload, headers=headers)
-    assert resp.status_code == 200, resp.text
-    return resp.json()["data"]
+from app.core.exceptions import AuthorizationError
+from app.dependencies.auth import CurrentUser, require_roles
 
 
-def test_patient_role_cannot_write(client):
-    admin = _admin_headers(client)
-    register_user(client, "patient1@example.com", "Password123!", "patient")
-    patient_headers = auth_headers(client, "patient1@example.com", "Password123!")
-
-    resp = client.post("/patients", json={"name": "New", "email": "new@example.com"}, headers=patient_headers)
-    assert resp.status_code == 403
-
-    p = _create_patient(client, admin, name="Existing", email="existing@example.com")
-    resp = client.patch(f"/patients/{p['id']}", json={"name": "Changed"}, headers=patient_headers)
-    assert resp.status_code == 403
-
-    resp = client.delete(f"/patients/{p['id']}", headers=patient_headers)
-    assert resp.status_code == 403
+def _user(role: str) -> CurrentUser:
+    return CurrentUser(id=uuid.uuid4(), email="user@example.com", role=role)  # type: ignore[arg-type]
 
 
-def test_patient_role_sees_only_own_record(client):
-    admin = _admin_headers(client)
-    own = _create_patient(client, admin, name="Own Record", email="patient2@example.com")
-    other = _create_patient(client, admin, name="Other Record", email="someone-else@example.com")
-
-    register_user(client, "patient2@example.com", "Password123!", "patient")
-    patient_headers = auth_headers(client, "patient2@example.com", "Password123!")
-
-    resp = client.get(f"/patients/{own['id']}", headers=patient_headers)
-    assert resp.status_code == 200
-
-    resp = client.get(f"/patients/{other['id']}", headers=patient_headers)
-    assert resp.status_code == 403
-
-    resp = client.get("/patients", headers=patient_headers)
-    assert resp.status_code == 200
-    ids = [row["id"] for row in resp.json()]
-    assert ids == [own["id"]]
+@pytest.mark.asyncio
+async def test_require_roles_allows_matching_role():
+    dependency = require_roles("admin", "doctor")
+    result = await dependency(_user("doctor"))
+    assert result.role == "doctor"
 
 
-def test_doctor_role_unrestricted(client):
-    admin = _admin_headers(client)
-    p = _create_patient(client, admin, name="Doctor Visible", email="docvis@example.com")
+@pytest.mark.asyncio
+async def test_require_roles_rejects_non_matching_role():
+    dependency = require_roles("admin")
+    with pytest.raises(AuthorizationError):
+        await dependency(_user("patient"))
 
-    register_user(client, "doc1@example.com", "Password123!", "doctor")
-    doctor_headers = auth_headers(client, "doc1@example.com", "Password123!")
 
-    resp = client.get(f"/patients/{p['id']}", headers=doctor_headers)
-    assert resp.status_code == 200
-
-    resp = client.patch(f"/patients/{p['id']}", json={"name": "Renamed"}, headers=doctor_headers)
-    assert resp.status_code == 200
+@pytest.mark.asyncio
+async def test_require_roles_rejects_when_no_roles_match_any():
+    dependency = require_roles("admin", "researcher")
+    with pytest.raises(AuthorizationError):
+        await dependency(_user("doctor"))

@@ -92,29 +92,36 @@ export interface PatientReportRef {
   size: string;
 }
 
+/**
+ * A patient record.
+ *
+ * Clinical fields are nullable on purpose: the API returns null for anything
+ * the record does not carry, so the UI can render "—" instead of inventing a
+ * measurement. Anything that reads one of these must handle null.
+ */
 export interface Patient {
   id: ID;
   name: string;
-  age: number;
+  age: number | null;
   gender: string;
   phone: string;
   email: string;
   hospital: string;
-  stage: TumorStage;
-  tumorSizeMm: number;
-  erStatus: ReceptorStatus;
-  prStatus: ReceptorStatus;
-  her2Status: ReceptorStatus;
-  ki67: number;
-  grade: 1 | 2 | 3;
-  nodesInvolved: number;
+  stage: TumorStage | null;
+  tumorSizeMm: number | null;
+  erStatus: ReceptorStatus | null;
+  prStatus: ReceptorStatus | null;
+  her2Status: ReceptorStatus | null;
+  ki67: number | null;
+  grade: 1 | 2 | 3 | null;
+  nodesInvolved: number | null;
   currentTreatment: string;
-  status: PatientStatus;
-  risk: RiskLevel;
-  survivalProbability: number;
+  status: PatientStatus | null;
+  risk: RiskLevel | null;
+  survivalProbability: number | null;
   lastUpdated: ISODate;
   diagnosedOn: ISODate;
-  twinStatus: "Synced" | "Recalculating" | "Stale";
+  twinStatus: "Synced" | "Recalculating" | "Stale" | null;
   history: string[];
   notes: string;
   timeline: TimelineEvent[];
@@ -179,10 +186,17 @@ export interface PredictionRun {
   date: ISODate;
   twinVersion: string;
   model: string;
-  survival: number;
-  recurrence: number;
-  response: string;
-  confidence: number;
+  /** Null when the run recorded no figure — distinct from a predicted 0%. */
+  survival: number | null;
+  /** Complement of `survival`, so null whenever that is. */
+  recurrence: number | null;
+  /**
+   * The twin's risk band at the time of the run. Stored in a column named
+   * `response` for historical reasons; it has never held a treatment response.
+   */
+  riskBand: RiskLevel | null;
+  /** Null when the run recorded no confidence — distinct from 0%. */
+  confidence: number | null;
   status: "Complete" | "Low confidence" | "Superseded";
 }
 
@@ -195,24 +209,85 @@ export interface FeatureImportance {
   feature: string;
   weight: number;
   direction: string;
+  /** Pearson r against recorded survival across the cohort. */
+  correlation?: number;
+  /** This patient's own value for the factor, for context next to the weight. */
+  patientValue?: string | number | null;
+}
+
+/**
+ * What the explainability panel actually receives.
+ *
+ * `basis: "cohort"` is not decoration — these weights describe correlations
+ * across the patient cohort, not an attribution of one prediction, and the
+ * panel must say so. `reliability` is "indicative" for small cohorts where a
+ * coefficient can hit 1.0 by coincidence.
+ */
+export interface ExplainabilityResult {
+  basis: "cohort";
+  cohortSize: number;
+  reliability: "reasonable" | "indicative" | "insufficient";
+  factors: FeatureImportance[];
+  caveat: string;
+}
+
+/** One measured tumour-size reading taken from a twin version. */
+export interface TumorSizePoint {
+  version: string;
+  date: ISODate;
+  tumorSizeMm: number;
+  survival: number;
 }
 
 /* ------------------------------------------------------------------ */
 /* Simulation                                                           */
 /* ------------------------------------------------------------------ */
 
+/**
+ * One treatment scenario in a comparison.
+ *
+ * Outcome measures are nullable because predicting them needs
+ * treatment-response and toxicity data this deployment does not hold. The API
+ * returns null rather than a plausible-looking percentage, and the UI renders
+ * an em dash. Only the regimen label, the patient's recorded risk band and
+ * their recorded survival probability are ever populated today.
+ */
 export interface Scenario {
   id: ID;
   name: string;
   regimen: string;
-  predictedResponse: number;
-  tumorChange: number;
-  risk: RiskLevel;
-  confidence: number;
-  survival5y: number;
-  sideEffectRisk: number;
-  recoveryWeeks: number;
+  predictedResponse: number | null;
+  tumorChange: number | null;
+  risk: RiskLevel | null;
+  confidence: number | null;
+  survival5y: number | null;
+  sideEffectRisk: number | null;
+  recoveryWeeks: number | null;
   recommended: boolean;
+  /** Tumour diameter the projection started from — the twin's, in mm. */
+  baselineSizeMm?: number | null;
+  /** Projected tumour diameter at the end of the regimen, in mm. */
+  projectedSizeMm?: number | null;
+  /** Number of cycles the projection ran over. */
+  cycles?: number | null;
+  /**
+   * Where this card's numbers came from, or - when they are all null - why
+   * there are none. Rendered under every card so a reader never has to guess
+   * whether a figure was computed, measured, or simply absent.
+   */
+  basis?: string | null;
+  provenance?: ScenarioProvenance | null;
+}
+
+export interface ScenarioProvenance {
+  kind: string;
+  subtype: string | null;
+  regimenFamily: string | null;
+  source: string | null;
+  /** False until a clinician signs off on the regimen parameter table. */
+  parametersVerified: boolean;
+  model: string | null;
+  unavailableReason: string | null;
 }
 
 export interface ScenarioDraft {
@@ -238,6 +313,8 @@ export interface SimulationRun {
   survival: number;
   response: number;
   confidence: number;
+  /** The scenarios as recorded at run time, so a run can be reopened as-run. */
+  scenarios: Scenario[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -249,8 +326,11 @@ export interface DocumentRecord {
   name: string;
   category: "MRI" | "CT" | "PET" | "Biopsy" | "Blood" | string;
   patient: string;
+  patientId: ID;
   date: ISODate;
   size: string;
+  sizeBytes: number;
+  mimeType: string;
   version: number;
   status: "Verified" | "Pending OCR" | "Needs review" | string;
 }
@@ -262,17 +342,51 @@ export interface DocumentVersion {
   note: string;
 }
 
-export interface OcrField {
-  field: string;
-  value: string;
-  confidence: number;
+export interface DocumentLinks {
+  patientId: ID;
+  patient: string;
+  twinVersion: string | null;
+  prediction: string | null;
+  report: string | null;
 }
+
+export interface DocumentPreview {
+  available: boolean;
+  mimeType: string;
+  url: string | null;
+}
+
+export interface DocumentDownload {
+  url: string;
+  expiresIn: number;
+}
+
+export type OcrFieldStatus = "pending" | "approved" | "rejected";
+
+export interface OcrField {
+  /** Machine key matching a patient column (e.g. "tumor_size_mm") — used when approving. */
+  field: string;
+  /** Human-readable label for display (e.g. "Tumor size (mm)"). */
+  label?: string;
+  value: string | null;
+  /** Omitted/null when the OCR provider does not supply a confidence score — never fabricated. */
+  confidence: number | null;
+  status?: OcrFieldStatus;
+}
+
+export type OcrExtractionStatus = "Extracted" | "Approved" | "Rejected";
 
 export interface OcrExtraction {
   documentId: ID;
+  patientId: ID;
+  status: OcrExtractionStatus;
   fields: OcrField[];
-  model: string;
+  /** Null until a real OCR provider is configured server-side. */
+  model: string | null;
   extractedAt: ISODate;
+  reviewedBy?: string | null;
+  reviewedAt?: ISODate | null;
+  rejectReason?: string | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -303,10 +417,71 @@ export interface DownloadRecord {
   report: ID;
   format: string;
   by: string;
-  date: ISODate;
+  at: ISODate;
 }
 
 export type ExportFormat = "pdf" | "csv";
+
+/** Prediction section of a report snapshot — honest about model absence. */
+export type ReportPrediction =
+  | {
+      basis: "measured";
+      date: ISODate;
+      twinVersion: string | null;
+      model: string | null;
+      survival: number | null;
+      recurrence: number | null;
+      riskBand: string | null;
+      confidence: number | null;
+    }
+  | { basis: "none"; caveat: string };
+
+export interface ReportSimulationRun {
+  id: ID;
+  date: ISODate;
+  selected: string | null;
+  decision: string | null;
+  survival: number | null;
+  response: number | null;
+  confidence: number | null;
+}
+
+export interface ReportContent {
+  patient: {
+    name: string;
+    patientId: string;
+    age: number | null;
+    stage: string | null;
+    tumorSizeMm: number | null;
+    erStatus: string | null;
+    prStatus: string | null;
+    her2Status: string | null;
+    currentTreatment: string | null;
+    status: string | null;
+  };
+  digitalTwin: {
+    version: string;
+    createdAt: ISODate;
+    status: string;
+    tumorSizeMm: number | null;
+    survival: number | null;
+    risk: string | null;
+  } | null;
+  prediction: ReportPrediction;
+  simulations: {
+    basis: "prototype";
+    caveat: string;
+    runs: ReportSimulationRun[];
+  };
+  documents: { count: number };
+  timeline: TimelineEvent[];
+  notes: string | null;
+  generationNote?: string;
+}
+
+export interface ReportDetail extends SavedReport {
+  content: ReportContent;
+}
 
 /* ------------------------------------------------------------------ */
 /* Care coordination                                                    */
@@ -386,11 +561,8 @@ export interface AuditLogEntry {
   id: ID;
   time: ISODate;
   actor: string;
-  actorRole?: string;
   action: string;
   target: string;
-  before?: Record<string, unknown> | null;
-  after?: Record<string, unknown> | null;
   ip: string;
 }
 
@@ -454,4 +626,96 @@ export interface PerformancePoint {
 
 export interface MetricPoint {
   [key: string]: string | number;
+}
+
+/**
+ * A headline number on the dashboard.
+ *
+ * `value` is nullable on purpose: "no patient has a recorded survival
+ * probability yet" is a real state, and rendering it as 0% would be a claim
+ * the data does not support. Tiles read null as "—".
+ */
+export interface DashboardStat {
+  key: string;
+  label: string;
+  value: number | null;
+  format: "count" | "percent";
+}
+
+/** The registered model, as recorded in `ml_models`. */
+export interface ModelSummary {
+  name: string;
+  version: string;
+  auc: number;
+  task?: string;
+  status: string;
+}
+
+/**
+ * Validation performance. `seriesKind` matters: the stored series is
+ * cross-validation folds, so charting it as a time trend would imply the model
+ * improved over time, which was never measured.
+ */
+export interface AccuracyResult {
+  series: Array<{ label: string; auc: number; precision: number; recall: number }>;
+  seriesKind: "cross-validation-folds";
+  model: ModelSummary | null;
+}
+
+export interface RiskSlice {
+  key: string;
+  name: string;
+  value: number;
+}
+
+export interface TreatmentComparisonRow {
+  treatment: string;
+  response: number;
+  recurrence: number;
+  runs: number;
+}
+
+export interface ActivityEntry {
+  title: string;
+  detail: string;
+  time: ISODate;
+  actorRole: string;
+}
+
+export interface FollowUpEntry {
+  patient: string;
+  id: string;
+  when: string;
+  type: string;
+}
+
+export interface DashboardAnalytics {
+  stats: DashboardStat[];
+  model: ModelSummary | null;
+  patientGrowth: Array<{ month: string; patients: number; twins: number }>;
+  riskDistribution: RiskSlice[];
+  stageDistribution: Array<{ stage: string; count: number }>;
+  treatmentComparison: TreatmentComparisonRow[];
+  accuracy: AccuracyResult;
+  recentActivity: ActivityEntry[];
+  followUps: FollowUpEntry[];
+}
+
+/**
+ * Two anchor points per risk band, not a curve: baseline (true by definition)
+ * and the probability actually recorded. This database holds no year-by-year
+ * outcome data, so the intermediate years cannot be drawn honestly.
+ */
+export interface SurvivalByRisk {
+  points: Array<Record<string, string | number | null>>;
+  cohortSizes: Record<string, number>;
+  caveat: string;
+}
+
+export interface CohortAnalytics {
+  ageDistribution: Array<{ range: string; count: number }>;
+  stageDistribution: Array<{ stage: string; count: number }>;
+  riskDistribution: RiskSlice[];
+  treatmentComparison: TreatmentComparisonRow[];
+  survivalByRisk: SurvivalByRisk;
 }

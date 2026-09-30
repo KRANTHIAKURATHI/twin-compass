@@ -15,6 +15,7 @@ export const queryKeys = {
   twins: {
     all: ["twins"] as const,
     list: ["twins", "list"] as const,
+    detail: (id: string) => ["twins", id, "detail"] as const,
     versions: (id: string) => ["twins", id, "versions"] as const,
     snapshots: (id: string) => ["twins", id, "snapshots"] as const,
   },
@@ -23,6 +24,7 @@ export const queryKeys = {
     latest: (id: string) => ["predictions", id, "latest"] as const,
     history: (id: string) => ["predictions", id, "history"] as const,
     trend: (id: string) => ["predictions", id, "trend"] as const,
+    progression: (id: string) => ["predictions", id, "progression"] as const,
     explain: (id: string) => ["predictions", id, "explain"] as const,
   },
   simulations: {
@@ -34,17 +36,20 @@ export const queryKeys = {
   documents: {
     all: ["documents"] as const,
     list: (search?: string) => ["documents", "list", search ?? ""] as const,
+    detail: (id: string) => ["documents", "detail", id] as const,
     versions: (id: string) => ["documents", id, "versions"] as const,
     timeline: (id: string) => ["documents", id, "timeline"] as const,
+    links: (id: string) => ["documents", id, "links"] as const,
   },
   ocr: {
     fields: (id: string) => ["ocr", id, "fields"] as const,
   },
   reports: {
     all: ["reports"] as const,
-    list: ["reports", "list"] as const,
+    list: (patientId?: string) => ["reports", "list", patientId ?? ""] as const,
+    detail: (id: string) => ["reports", "detail", id] as const,
     versions: (id: string) => ["reports", id, "versions"] as const,
-    downloads: ["reports", "downloads"] as const,
+    downloads: (reportId?: string) => ["reports", "downloads", reportId ?? ""] as const,
   },
   appointments: ["appointments"] as const,
   treatment: (patientId: string) => ["treatment", patientId] as const,

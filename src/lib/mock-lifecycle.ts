@@ -91,17 +91,18 @@ export interface PredictionRun {
   model: string;
   survival: number;
   recurrence: number;
-  response: string;
+  /** Renamed from `response`: the field has only ever held a risk band. */
+  riskBand: "low" | "moderate" | "high";
   confidence: number;
   status: "Complete" | "Low confidence" | "Superseded";
 }
 
 export const predictionHistory: PredictionRun[] = [
-  { id: "PR-5120", date: "2026-07-28", twinVersion: "v7", model: "twin-v2.4", survival: 88, recurrence: 17, response: "Likely responder", confidence: 91, status: "Complete" },
-  { id: "PR-5044", date: "2026-06-21", twinVersion: "v6", model: "twin-v2.4", survival: 86, recurrence: 19, response: "Likely responder", confidence: 86, status: "Superseded" },
-  { id: "PR-4980", date: "2026-05-14", twinVersion: "v5", model: "twin-v2.3", survival: 84, recurrence: 22, response: "Partial response", confidence: 74, status: "Low confidence" },
-  { id: "PR-4901", date: "2026-04-02", twinVersion: "v4", model: "twin-v2.3", survival: 82, recurrence: 24, response: "Partial response", confidence: 81, status: "Superseded" },
-  { id: "PR-4822", date: "2026-02-10", twinVersion: "v3", model: "twin-v2.2", survival: 79, recurrence: 27, response: "Uncertain", confidence: 68, status: "Low confidence" },
+  { id: "PR-5120", date: "2026-07-28", twinVersion: "v7", model: "twin-v2.4", survival: 88, recurrence: 17, riskBand: "low", confidence: 91, status: "Complete" },
+  { id: "PR-5044", date: "2026-06-21", twinVersion: "v6", model: "twin-v2.4", survival: 86, recurrence: 19, riskBand: "low", confidence: 86, status: "Superseded" },
+  { id: "PR-4980", date: "2026-05-14", twinVersion: "v5", model: "twin-v2.3", survival: 84, recurrence: 22, riskBand: "moderate", confidence: 74, status: "Low confidence" },
+  { id: "PR-4901", date: "2026-04-02", twinVersion: "v4", model: "twin-v2.3", survival: 82, recurrence: 24, riskBand: "moderate", confidence: 81, status: "Superseded" },
+  { id: "PR-4822", date: "2026-02-10", twinVersion: "v3", model: "twin-v2.2", survival: 79, recurrence: 27, riskBand: "high", confidence: 68, status: "Low confidence" },
 ];
 
 export const confidenceTrend = [

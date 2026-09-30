@@ -6,7 +6,7 @@
  * the real API as soon as `VITE_API_BASE_URL` is set and otherwise resolves
  * the typed fixtures. No UI change is needed to switch.
  */
-import { apiRequest, withFallback, USING_MOCKS } from "@/services/api-client";
+import { apiRequest, withFallback, ApiError, USING_MOCKS } from "@/services/api-client";
 import { endpoints } from "@/services/endpoints";
 import * as fx from "@/services/fixtures";
 import type {
@@ -21,24 +21,37 @@ import type {
   PredictionService,
   ReportService,
   ResearchService,
-  SearchService,
   SimulationService,
   TreatmentService,
+  TwinDetail,
+  TwinListEntry,
   TwinService,
+  UserService,
 } from "@/services/contracts";
 import type {
+  AccuracyResult,
   Appointment,
   AuthSession,
   AuthUser,
+  CohortAnalytics,
+  DashboardAnalytics,
+  DocumentDownload,
+  DocumentLinks,
+  DocumentPreview,
   DocumentRecord,
+  ExplainabilityResult,
   ExportFormat,
   MutationResult,
+  OcrExtraction,
   Patient,
   PatientInput,
+  PredictionRun,
+  ReportDetail,
   SavedReport,
   Scenario,
   SimulationRun,
   TimelineEvent,
+  TumorSizePoint,
 } from "@/types/models";
 
 export { USING_MOCKS };
@@ -50,61 +63,40 @@ const ok = <T>(data?: T, message?: string): MutationResult<T> => ({ ok: true, da
 /* ------------------------------------------------------------------ */
 /* Auth                                                                 */
 /* ------------------------------------------------------------------ */
-/**
- * Mock mode has no backend to hold session state, so `me`/`updateMe` would
- * otherwise always echo the static fixture regardless of who "logged in" or
- * what was last saved. This keeps a per-browser mock identity so login and
- * profile edits behave like a real session while `USING_MOCKS` is true.
- */
-const MOCK_USER_KEY = "oncotwin.mockUser";
-
-function readMockUser(): AuthUser {
-  if (typeof window === "undefined") return fx.currentDoctorFixture;
-  try {
-    const raw = window.localStorage.getItem(MOCK_USER_KEY);
-    return raw ? (JSON.parse(raw) as AuthUser) : fx.currentDoctorFixture;
-  } catch {
-    return fx.currentDoctorFixture;
-  }
-}
-
-function writeMockUser(user: AuthUser) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(MOCK_USER_KEY, JSON.stringify(user));
-}
-
 export const authService: AuthService = {
   login: (credentials) =>
     withFallback<AuthSession>(
       () => apiRequest(endpoints.auth.login, { method: "POST", body: credentials }),
-      () => {
-        const user = { ...fx.currentDoctorFixture, email: credentials.email || fx.currentDoctorFixture.email };
-        writeMockUser(user);
-        return {
-          user,
-          accessToken: "mock-access-token",
-          expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
-        };
-      },
+      () => ({
+        user: {
+          ...fx.currentDoctorFixture,
+          email: credentials.email || fx.currentDoctorFixture.email,
+        },
+        accessToken: "mock-access-token",
+        expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+      }),
       600,
     ),
   register: (payload) =>
     withFallback(
       () => apiRequest(endpoints.auth.register, { method: "POST", body: payload }),
-      () => {
-        const user = { ...fx.currentDoctorFixture, name: payload.name, email: payload.email };
-        writeMockUser(user);
-        return ok<AuthUser>(user);
-      },
+      () => ok<AuthUser>({ ...fx.currentDoctorFixture, name: payload.name, email: payload.email }),
       600,
     ),
   logout: () =>
     withFallback(
       () => apiRequest(endpoints.auth.logout, { method: "POST" }),
-      () => {
-        if (typeof window !== "undefined") window.localStorage.removeItem(MOCK_USER_KEY);
-        return ok();
-      },
+      () => ok(),
+      200,
+    ),
+  refresh: () =>
+    withFallback<AuthSession>(
+      () => apiRequest(endpoints.auth.refresh, { method: "POST" }),
+      () => ({
+        user: fx.currentDoctorFixture,
+        accessToken: "mock-access-token",
+        expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+      }),
       200,
     ),
   forgotPassword: (email) =>
@@ -119,21 +111,25 @@ export const authService: AuthService = {
       () => ok(undefined, "Password updated"),
       600,
     ),
-  me: () => withFallback<AuthUser>(() => apiRequest(endpoints.auth.me), () => readMockUser()),
-  updateMe: (payload) =>
+  me: () =>
     withFallback<AuthUser>(
-      () => apiRequest(endpoints.auth.updateMe, { method: "PATCH", body: payload }),
-      () => {
-        const user = { ...readMockUser(), ...payload };
-        writeMockUser(user);
-        return user;
-      },
-      400,
+      () => apiRequest(endpoints.auth.me),
+      () => fx.currentDoctorFixture,
     ),
-  changePassword: (payload) =>
-    withFallback(
-      () => apiRequest(endpoints.auth.changePassword, { method: "POST", body: payload }),
-      () => ok(undefined, "Password updated"),
+};
+
+/* ------------------------------------------------------------------ */
+/* Users (profile)                                                      */
+/* ------------------------------------------------------------------ */
+export const userService: UserService = {
+  updateProfile: (payload) =>
+    withFallback<AuthUser>(
+      () => apiRequest(endpoints.users.updateProfile, { method: "PATCH", body: payload }),
+      () => ({
+        ...fx.currentDoctorFixture,
+        ...payload,
+        name: payload.name ?? fx.currentDoctorFixture.name,
+      }),
       400,
     ),
 };
@@ -160,13 +156,21 @@ export const patientService: PatientService = {
   create: (payload: PatientInput) =>
     withFallback(
       () => apiRequest(endpoints.patients.create, { method: "POST", body: payload }),
-      () => ok({ id: `PT-${Math.floor(Math.random() * 9000) + 1000}`, ...payload } as Patient, "Patient created"),
+      () =>
+        ok(
+          { id: `PT-${Math.floor(Math.random() * 9000) + 1000}`, ...payload } as Patient,
+          "Patient created",
+        ),
       500,
     ),
   update: (id, payload) =>
     withFallback(
       () => apiRequest(endpoints.patients.update(id), { method: "PATCH", body: payload }),
-      () => ok({ ...(fx.patientFixtures.find((p) => p.id === id) as Patient), ...payload }, "Patient updated"),
+      () =>
+        ok(
+          { ...(fx.patientFixtures.find((p) => p.id === id) as Patient), ...payload },
+          "Patient updated",
+        ),
       500,
     ),
   remove: (id) =>
@@ -197,9 +201,35 @@ export const patientService: PatientService = {
 /* ------------------------------------------------------------------ */
 export const twinService: TwinService = {
   list: () =>
-    withFallback<Patient[]>(
+    withFallback<TwinListEntry[]>(
       () => apiRequest(endpoints.twins.list),
-      () => fx.patientFixtures.slice(0, 12),
+      // Mock mode only. A fixture patient has no twin version, so it is
+      // described as "Not created" rather than given an invented version.
+      () =>
+        fx.patientFixtures.slice(0, 12).map((p) => ({
+          patientId: p.id,
+          patient: p.name,
+          version: null,
+          status: "Not created",
+          createdAt: null,
+          author: "",
+          summary: "",
+          tumorSizeMm: p.tumorSizeMm,
+          survival: p.survivalProbability ?? null,
+          risk: p.risk,
+          model: "",
+        })),
+    ),
+  get: (patientId) =>
+    withFallback<TwinDetail>(
+      () => apiRequest(endpoints.twins.detail(patientId)),
+      () => ({
+        patientId,
+        patient: fx.patientFixtures.find((p) => p.id === patientId)?.name ?? patientId,
+        twinStatus: "Not created",
+        active: fx.twinVersionFixtures[0] ?? null,
+        versions: fx.twinVersionFixtures,
+      }),
     ),
   versions: (patientId) =>
     withFallback(
@@ -236,9 +266,9 @@ export const twinService: TwinService = {
 /* ------------------------------------------------------------------ */
 export const predictionService: PredictionService = {
   forPatient: (patientId) =>
-    withFallback(
+    withFallback<PredictionRun | null>(
       () => apiRequest(endpoints.predictions.forPatient(patientId)),
-      () => fx.predictionHistoryFixtures[0],
+      () => fx.predictionHistoryFixtures[0] ?? null,
     ),
   history: (patientId) =>
     withFallback(
@@ -250,10 +280,21 @@ export const predictionService: PredictionService = {
       () => apiRequest(endpoints.predictions.confidenceTrend(patientId)),
       () => fx.confidenceTrendFixtures,
     ),
+  progression: (patientId) =>
+    withFallback<TumorSizePoint[]>(
+      () => apiRequest(endpoints.predictions.progression(patientId)),
+      () => [],
+    ),
   explain: (patientId) =>
-    withFallback(
+    withFallback<ExplainabilityResult>(
       () => apiRequest(endpoints.predictions.explain(patientId)),
-      () => fx.featureImportanceFixtures,
+      () => ({
+        basis: "cohort",
+        cohortSize: fx.patientFixtures.length,
+        reliability: "indicative",
+        factors: fx.featureImportanceFixtures,
+        caveat: "Fixture data — not computed from any cohort.",
+      }),
     ),
   run: (patientId) =>
     withFallback(
@@ -267,41 +308,50 @@ export const predictionService: PredictionService = {
 /* Simulations                                                          */
 /* ------------------------------------------------------------------ */
 export const simulationService: SimulationService = {
-  list: () =>
-    withFallback(
-      () => apiRequest(endpoints.simulations.list),
-      () => fx.simulationRunFixtures,
+  list: (patientId) =>
+    withFallback<SimulationRun[]>(
+      () =>
+        apiRequest(endpoints.simulations.list, {
+          query: (patientId ? { patientId } : undefined) as never,
+        }),
+      () =>
+        patientId
+          ? fx.simulationRunFixtures.filter((r) => r.patientId === patientId)
+          : fx.simulationRunFixtures,
     ),
   get: (id) =>
     withFallback<SimulationRun | undefined>(
       () => apiRequest(endpoints.simulations.detail(id)),
       () => fx.simulationRunFixtures.find((r) => r.id === id),
     ),
-  scenarios: (_patientId) =>
-    withFallback<Scenario[]>(
-      () => apiRequest(endpoints.simulations.list),
-      () => fx.scenarioFixtures,
-    ),
+  // Reads the patient's newest recorded run and returns the scenarios stored
+  // on it. Previously this fetched the runs list and typed it as Scenario[],
+  // which was simply the wrong shape.
+  scenarios: async (patientId) => {
+    const runs = await simulationService.list(patientId);
+    return (runs[0]?.scenarios ?? []) as Scenario[];
+  },
   run: (patientId, draft) =>
     withFallback(
-      () => apiRequest(endpoints.simulations.run, { method: "POST", body: { patientId, ...draft } }),
-      () => ({ patientId, scenarios: fx.scenarioFixtures }),
+      () =>
+        apiRequest(endpoints.simulations.run, { method: "POST", body: { patientId, ...draft } }),
+      () => ({ id: `mock-run-${patientId}`, patientId, scenarios: fx.scenarioFixtures }),
       900,
     ),
   save: (patientId, draft) =>
     withFallback(
-      () =>
-        apiRequest(`${endpoints.simulations.save}?patient_id=${encodeURIComponent(patientId)}`, {
-          method: "POST",
-          body: draft,
-        }),
+      () => apiRequest(endpoints.simulations.save, { method: "POST", body: { patientId, ...draft } }),
       () => ok(fx.simulationRunFixtures[0], "Scenario saved"),
       500,
     ),
   duplicate: (id) =>
     withFallback(
       () => apiRequest(endpoints.simulations.duplicate(id), { method: "POST" }),
-      () => ok(fx.simulationRunFixtures.find((r) => r.id === id), "Scenario duplicated"),
+      () =>
+        ok(
+          fx.simulationRunFixtures.find((r) => r.id === id),
+          "Scenario duplicated",
+        ),
       500,
     ),
   promote: (id, notes) =>
@@ -319,19 +369,30 @@ export const documentService: DocumentService = {
   list: (query) =>
     withFallback<DocumentRecord[]>(
       () => apiRequest(endpoints.documents.list, { query: query as never }),
-      () => fx.documentFixtures,
+      () => {
+        const term = query?.search?.toLowerCase();
+        const rows = term
+          ? fx.documentFixtures.filter((d) => `${d.name} ${d.patient}`.toLowerCase().includes(term))
+          : fx.documentFixtures;
+        return query?.patientId ? rows.filter((d) => d.patientId === query.patientId) : rows;
+      },
     ),
   get: (id) =>
     withFallback<DocumentRecord | undefined>(
       () => apiRequest(endpoints.documents.detail(id)),
       () => fx.documentFixtures.find((d) => d.id === id),
     ),
-  upload: (file) =>
-    withFallback(
-      () => apiRequest(endpoints.documents.upload, { method: "POST", body: file }),
+  upload: ({ file, patientId, category }) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("patientId", patientId);
+    if (category) formData.append("category", category);
+    return withFallback(
+      () => apiRequest(endpoints.documents.upload, { method: "POST", body: formData }),
       () => ok(fx.documentFixtures[0], `${file.name} uploaded`),
       900,
-    ),
+    );
+  },
   versions: (id) =>
     withFallback(
       () => apiRequest(endpoints.documents.versions(id)),
@@ -342,30 +403,69 @@ export const documentService: DocumentService = {
       () => apiRequest(endpoints.documents.timeline(id)),
       () => fx.documentTimelineFixtures,
     ),
+  links: (id) =>
+    withFallback<DocumentLinks>(
+      () => apiRequest(endpoints.documents.links(id)),
+      () => {
+        const doc = fx.documentFixtures.find((d) => d.id === id);
+        return {
+          patientId: doc?.patientId ?? "",
+          patient: doc?.patient ?? "",
+          twinVersion: fx.documentLinkFixtures.twinVersion,
+          prediction: fx.documentLinkFixtures.prediction,
+          report: fx.documentLinkFixtures.report,
+        };
+      },
+    ),
+  download: (id) =>
+    withFallback<DocumentDownload>(
+      () => apiRequest(endpoints.documents.download(id)),
+      () => {
+        throw new ApiError("Download requires a real backend — no fixture file exists to serve.", 503, {
+          code: "MOCK_MODE",
+        });
+      },
+    ),
+  preview: (id) =>
+    withFallback<DocumentPreview>(
+      () => apiRequest(endpoints.documents.preview(id)),
+      () => ({ available: false, mimeType: fx.documentFixtures.find((d) => d.id === id)?.mimeType ?? "", url: null }),
+    ),
 };
+
+const mockOcrExtraction = (documentId: string, status: OcrExtraction["status"]): OcrExtraction => ({
+  documentId,
+  patientId: fx.documentFixtures.find((d) => d.id === documentId)?.patientId ?? "",
+  status,
+  fields: fx.ocrFieldFixtures,
+  // Mock mode only — no real OCR provider is configured server-side (see
+  // backend app/services/ocr_provider.py), so a real call never returns this.
+  model: "ocr-clinical-v3 (mock)",
+  extractedAt: new Date().toISOString(),
+});
 
 export const ocrService: OcrService = {
   extract: (documentId) =>
     withFallback(
       () => apiRequest(endpoints.ocr.extract(documentId), { method: "POST" }),
-      () => ({ documentId, fields: fx.ocrFieldFixtures, model: "ocr-clinical-v3", extractedAt: new Date().toISOString() }),
+      () => ok(mockOcrExtraction(documentId, "Extracted"), "Extraction complete — requires verification."),
       1200,
     ),
   fields: (documentId) =>
     withFallback(
       () => apiRequest(endpoints.ocr.fields(documentId)),
-      () => fx.ocrFieldFixtures,
+      () => mockOcrExtraction(documentId, "Extracted"),
     ),
   approve: (documentId, fields) =>
     withFallback(
       () => apiRequest(endpoints.ocr.approve(documentId), { method: "POST", body: { fields } }),
-      () => ok(undefined, "Extraction approved — digital twin updated"),
+      () => ok({ ...mockOcrExtraction(documentId, "Approved"), fields }, "Extraction approved — digital twin resynced."),
       800,
     ),
   reject: (documentId, reason) =>
     withFallback(
       () => apiRequest(endpoints.ocr.reject(documentId), { method: "POST", body: { reason } }),
-      () => ok(undefined, "Extraction rejected"),
+      () => ok(mockOcrExtraction(documentId, "Rejected"), "Extraction rejected."),
       500,
     ),
 };
@@ -374,31 +474,36 @@ export const ocrService: OcrService = {
 /* Reports                                                              */
 /* ------------------------------------------------------------------ */
 export const reportService: ReportService = {
-  list: () =>
+  list: (patientId) =>
     withFallback(
-      () => apiRequest(endpoints.reports.list),
-      () => fx.savedReportFixtures,
+      () => apiRequest(endpoints.reports.list, { query: (patientId ? { patientId } : undefined) as never }),
+      () => (patientId ? fx.savedReportFixtures.filter((r) => r.patientId === patientId) : fx.savedReportFixtures),
+    ),
+  get: (id) =>
+    withFallback<ReportDetail>(
+      () => apiRequest(endpoints.reports.detail(id)),
+      () => ({ ...fx.savedReportFixtures[0]!, content: fx.reportContentFixture }),
     ),
   versions: (id) =>
     withFallback(
       () => apiRequest(endpoints.reports.versions(id)),
       () => fx.reportVersionFixtures,
     ),
-  downloads: () =>
+  downloads: (reportId) =>
     withFallback(
-      () => apiRequest(endpoints.reports.downloads),
-      () => fx.downloadHistoryFixtures,
+      () => apiRequest(endpoints.reports.downloads, { query: (reportId ? { reportId } : undefined) as never }),
+      () => (reportId ? fx.downloadHistoryFixtures.filter((d) => d.report === reportId) : fx.downloadHistoryFixtures),
     ),
-  generate: (patientId) =>
+  generate: (patientId, type = "Clinical summary") =>
     withFallback(
-      () => apiRequest(endpoints.reports.generate, { method: "POST", body: { patientId } }),
+      () => apiRequest(endpoints.reports.generate, { method: "POST", body: { patientId, type } }),
       () => ok<SavedReport>(fx.savedReportFixtures[0]!, "Report generated"),
       900,
     ),
-  export: (format: ExportFormat) =>
+  export: (reportId, format: ExportFormat) =>
     withFallback(
-      () => apiRequest(endpoints.reports.export, { method: "POST", body: { format } }),
-      () => ok({ format }, `Export ready (${format.toUpperCase()})`),
+      () => apiRequest(endpoints.reports.export(reportId), { method: "POST", body: { format } }),
+      () => ok({ ...fx.savedReportFixtures[0]!, content: fx.reportContentFixture, format }, `${format.toUpperCase()} export recorded`),
       700,
     ),
 };
@@ -415,7 +520,11 @@ export const appointmentService: AppointmentService = {
   create: (payload) =>
     withFallback(
       () => apiRequest(endpoints.appointments.create, { method: "POST", body: payload }),
-      () => ok({ id: `AP-${Date.now()}`, status: "Scheduled", ...payload } as Appointment, "Appointment requested"),
+      () =>
+        ok(
+          { id: `AP-${Date.now()}`, status: "Scheduled", ...payload } as Appointment,
+          "Appointment requested",
+        ),
       600,
     ),
   cancel: (id) =>
@@ -462,83 +571,112 @@ export const notificationService: NotificationService = {
 /* ------------------------------------------------------------------ */
 /* Analytics, admin, research                                           */
 /* ------------------------------------------------------------------ */
+/**
+ * Analytics.
+ *
+ * The mock branches below are shaped like the real responses rather than the
+ * loose `MetricPoint[]` they used to return — the previous fallbacks handed
+ * back an unrelated fixture array (patient growth for the whole dashboard),
+ * which typechecked only because the contract was `MetricPoint[]`.
+ */
 export const analyticsService: AnalyticsService = {
   dashboard: () =>
-    withFallback(
+    withFallback<DashboardAnalytics>(
       () => apiRequest(endpoints.analytics.dashboard),
-      () => fx.patientGrowthFixtures,
+      () => ({
+        stats: [],
+        model: null,
+        patientGrowth: fx.patientGrowthFixtures as DashboardAnalytics["patientGrowth"],
+        riskDistribution: [],
+        stageDistribution: fx.stageDistributionFixtures as DashboardAnalytics["stageDistribution"],
+        treatmentComparison: [],
+        accuracy: { series: [], seriesKind: "cross-validation-folds", model: null },
+        recentActivity: [],
+        followUps: [],
+      }),
     ),
   cohort: () =>
-    withFallback(
+    withFallback<CohortAnalytics>(
       () => apiRequest(endpoints.analytics.cohort),
-      () => fx.stageDistributionFixtures,
+      () => ({
+        ageDistribution: [],
+        stageDistribution: fx.stageDistributionFixtures as CohortAnalytics["stageDistribution"],
+        riskDistribution: [],
+        treatmentComparison: [],
+        survivalByRisk: { points: [], cohortSizes: {}, caveat: "" },
+      }),
     ),
   accuracy: () =>
-    withFallback(
+    withFallback<AccuracyResult>(
       () => apiRequest(endpoints.analytics.accuracy),
-      () => fx.accuracyTrendFixtures,
+      () => ({ series: [], seriesKind: "cross-validation-folds", model: null }),
     ),
 };
 
 export const adminService: AdminService = {
-  hospitals: () => withFallback(() => apiRequest(endpoints.admin.hospitals), () => fx.hospitalFixtures),
-  createHospital: (payload) =>
+  hospitals: () =>
     withFallback(
-      () => apiRequest(endpoints.admin.hospitals, { method: "POST", body: payload }),
-      () => ok({ id: `h-${Date.now()}`, doctors: 0, patients: 0, ...payload }),
-      400,
+      () => apiRequest(endpoints.admin.hospitals),
+      () => fx.hospitalFixtures,
     ),
-  doctors: () => withFallback(() => apiRequest(endpoints.admin.doctors), () => fx.doctorDirectoryFixtures),
-  departments: () => withFallback(() => apiRequest(endpoints.admin.departments), () => fx.departmentFixtures),
-  users: () => withFallback(() => apiRequest(endpoints.admin.users), () => fx.platformUserFixtures),
-  createUser: (payload) =>
+  doctors: () =>
     withFallback(
-      () => apiRequest(endpoints.admin.users, { method: "POST", body: payload }),
-      () => ok({ id: `u-${Date.now()}`, name: payload.name, email: payload.email, role: payload.role as any }),
-      400,
+      () => apiRequest(endpoints.admin.doctors),
+      () => fx.doctorDirectoryFixtures,
     ),
-  auditLogs: () => withFallback(() => apiRequest(endpoints.admin.audit), () => fx.auditLogFixtures),
-  permissions: () => withFallback(() => apiRequest(endpoints.admin.permissions), () => fx.permissionMatrixFixtures),
-  updatePermissions: (permissions) =>
+  departments: () =>
     withFallback(
-      () => apiRequest(endpoints.admin.permissions, { method: "PUT", body: permissions }),
-      () => ok(undefined, "Permissions updated"),
-      400,
+      () => apiRequest(endpoints.admin.departments),
+      () => fx.departmentFixtures,
+    ),
+  users: () =>
+    withFallback(
+      () => apiRequest(endpoints.admin.users),
+      () => fx.platformUserFixtures,
+    ),
+  auditLogs: () =>
+    withFallback(
+      () => apiRequest(endpoints.admin.audit),
+      () => fx.auditLogFixtures,
+    ),
+  permissions: () =>
+    withFallback(
+      () => apiRequest(endpoints.admin.permissions),
+      () => fx.permissionMatrixFixtures,
     ),
 };
 
 export const researchService: ResearchService = {
-  models: () => withFallback(() => apiRequest(endpoints.research.models), () => fx.modelFixtures),
-  datasets: () => withFallback(() => apiRequest(endpoints.research.datasets), () => fx.datasetFixtures),
-  trainingRuns: () => withFallback(() => apiRequest(endpoints.research.training), () => fx.trainingRunFixtures),
-  modelVersions: () => withFallback(() => apiRequest(endpoints.research.versions), () => fx.modelVersionFixtures),
-  performance: () => withFallback(() => apiRequest(endpoints.research.performance), () => fx.performanceTrendFixtures),
-};
-
-export const searchService: SearchService = {
-  global: (query) =>
+  models: () =>
     withFallback(
-      () => apiRequest(endpoints.search.global, { query: { q: query } }),
-      () => ({
-        patients: fx.patientFixtures
-          .filter((p) => p.name.toLowerCase().includes(query.toLowerCase()))
-          .slice(0, 10)
-          .map((p) => ({ id: p.id, name: p.name, type: "patient" as const })),
-        documents: fx.documentFixtures
-          .filter((d) => d.name.toLowerCase().includes(query.toLowerCase()))
-          .slice(0, 10)
-          .map((d) => ({ id: d.id, name: d.name, type: "document" as const })),
-        reports: fx.savedReportFixtures
-          .filter((r) => r.title.toLowerCase().includes(query.toLowerCase()))
-          .slice(0, 10)
-          .map((r) => ({ id: r.id, name: r.title, type: "report" as const })),
-      }),
-      300,
+      () => apiRequest(endpoints.research.models),
+      () => fx.modelFixtures,
+    ),
+  datasets: () =>
+    withFallback(
+      () => apiRequest(endpoints.research.datasets),
+      () => fx.datasetFixtures,
+    ),
+  trainingRuns: () =>
+    withFallback(
+      () => apiRequest(endpoints.research.training),
+      () => fx.trainingRunFixtures,
+    ),
+  modelVersions: () =>
+    withFallback(
+      () => apiRequest(endpoints.research.versions),
+      () => fx.modelVersionFixtures,
+    ),
+  performance: () =>
+    withFallback(
+      () => apiRequest(endpoints.research.performance),
+      () => fx.performanceTrendFixtures,
     ),
 };
 
 export const services = {
   auth: authService,
+  users: userService,
   patients: patientService,
   twins: twinService,
   predictions: predictionService,
@@ -552,5 +690,4 @@ export const services = {
   analytics: analyticsService,
   admin: adminService,
   research: researchService,
-  search: searchService,
 };

@@ -2,7 +2,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
-import type { RiskLevel } from "@/types/models";
+import type { RiskLevel } from "@/services/data";
 
 const chipVariants = cva(
   "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
@@ -47,7 +47,12 @@ export const riskTone: Record<RiskLevel, ChipTone> = {
   high: "risk",
 };
 
-export function RiskChip({ level }: { level: RiskLevel }) {
+/**
+ * `level` is nullable because a patient record may carry no risk assessment,
+ * and "not assessed" must not render as "Low risk".
+ */
+export function RiskChip({ level }: { level: RiskLevel | null | undefined }) {
+  if (!level) return <StatusChip tone="neutral">Risk not assessed</StatusChip>;
   const label = { low: "Low risk", moderate: "Moderate risk", high: "High risk" }[level];
   return (
     <StatusChip tone={riskTone[level]} dot>

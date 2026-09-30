@@ -2,14 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import { EmptyState } from "@/components/common/EmptyState";
 import { PageHeader } from "@/components/common/PageHeader";
-import { StateNotice } from "@/components/common/StateNotice";
 import { StatCard } from "@/components/common/StatCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Brain, Gauge, LineChart as LineChartIcon, Target } from "lucide-react";
-import { usePerformanceTrend } from "@/hooks/api";
+import { Brain, Gauge, Target } from "lucide-react";
+import { performanceTrend } from "@/services/data";
+import { useResearchPerformance } from "@/hooks/api";
 
 export const Route = createFileRoute("/_research/research/performance")({
   head: () => ({
@@ -29,50 +27,9 @@ export const Route = createFileRoute("/_research/research/performance")({
 const axis = { stroke: "var(--color-muted-foreground)", fontSize: 12 };
 
 function PerformancePage() {
-  const { data, isLoading, isError, refetch } = usePerformanceTrend();
-  const performanceTrend = data ?? [];
-  const latest = performanceTrend[performanceTrend.length - 1];
-
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-[1200px] space-y-4">
-        <Skeleton className="h-9 w-64" />
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Skeleton className="h-24 rounded-2xl" />
-          <Skeleton className="h-24 rounded-2xl" />
-          <Skeleton className="h-24 rounded-2xl" />
-        </div>
-        <Skeleton className="h-80 rounded-2xl" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="mx-auto max-w-[1200px]">
-        <PageHeader title="Performance" description="Monthly evaluation on the held-out validation cohort." />
-        <StateNotice
-          state="prediction-unavailable"
-          title="Could not load performance data"
-          description="Something went wrong fetching model performance. Try again shortly."
-          action={
-            <button className="text-sm font-medium underline" onClick={() => refetch()}>
-              Retry
-            </button>
-          }
-        />
-      </div>
-    );
-  }
-
-  if (!latest) {
-    return (
-      <div className="mx-auto max-w-[1200px]">
-        <PageHeader title="Performance" description="Monthly evaluation on the held-out validation cohort." />
-        <EmptyState icon={LineChartIcon} title="No performance data yet" description="Evaluation results will appear here once a run completes." />
-      </div>
-    );
-  }
+  const { data = [] } = useResearchPerformance();
+  const points = data.length ? data : performanceTrend;
+  const latest = points[points.length - 1];
 
   return (
     <div className="mx-auto max-w-[1200px]">
@@ -91,7 +48,7 @@ function PerformancePage() {
         </CardHeader>
         <CardContent className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={performanceTrend} margin={{ left: -20 }}>
+            <LineChart data={points} margin={{ left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
               <XAxis dataKey="month" tickLine={false} axisLine={false} {...axis} />
               <YAxis domain={[0.7, 1]} tickLine={false} axisLine={false} {...axis} />

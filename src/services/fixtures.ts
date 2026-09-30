@@ -36,6 +36,7 @@ import type {
   PermissionRow,
   PlatformUser,
   PredictionRun,
+  ReportContent,
   SavedReport,
   Scenario,
   SimulationRun,
@@ -69,12 +70,86 @@ export const documentFixtures = extra.documents as DocumentRecord[];
 export const documentVersionFixtures = extra.documentVersions as DocumentVersion[];
 export const documentLinkFixtures = lifecycle.documentLinks;
 export const documentTimelineFixtures = lifecycle.documentTimeline as TimelineEvent[];
-export const ocrFieldFixtures = extra.ocrFields as OcrField[];
+/** Raw fixture rows use a display label as `field`; map the ones that match
+ * a real patient column onto its machine key (see backend FIELD_CATALOG in
+ * `routers/ocr.py`) so mock mode exercises the same approve/reject shape a
+ * real backend would. Anything with no clinical column stays label-only —
+ * informational (e.g. "Patient name"), never approvable. */
+const OCR_FIELD_KEY_BY_LABEL: Record<string, string> = {
+  "Tumor size (mm)": "tumor_size_mm",
+  "ER status": "er_status",
+  "PR status": "pr_status",
+  "HER2 status": "her2_status",
+  "Ki-67 (%)": "ki67",
+  "Nodes involved": "nodes_involved",
+};
+export const ocrFieldFixtures = (extra.ocrFields as { field: string; value: string; confidence: number }[]).map(
+  (row): OcrField => ({
+    field: OCR_FIELD_KEY_BY_LABEL[row.field] ?? row.field,
+    label: row.field,
+    value: row.value,
+    confidence: row.confidence,
+    status: "pending",
+  }),
+);
 
 /* Reports --------------------------------------------------------------- */
 export const savedReportFixtures = lifecycle.savedReports as SavedReport[];
 export const reportVersionFixtures = lifecycle.reportVersions as ReportVersion[];
 export const downloadHistoryFixtures = lifecycle.downloadHistory as unknown as DownloadRecord[];
+
+export const reportContentFixture: ReportContent = {
+  patient: {
+    name: patientFixtures[0]!.name,
+    patientId: patientFixtures[0]!.id,
+    age: patientFixtures[0]!.age,
+    stage: patientFixtures[0]!.stage,
+    tumorSizeMm: patientFixtures[0]!.tumorSizeMm,
+    erStatus: patientFixtures[0]!.erStatus,
+    prStatus: patientFixtures[0]!.prStatus,
+    her2Status: patientFixtures[0]!.her2Status,
+    currentTreatment: patientFixtures[0]!.currentTreatment,
+    status: patientFixtures[0]!.status,
+  },
+  digitalTwin: twinVersionFixtures[0]
+    ? {
+        version: twinVersionFixtures[0].version,
+        createdAt: twinVersionFixtures[0].createdAt,
+        status: twinVersionFixtures[0].status,
+        tumorSizeMm: twinVersionFixtures[0].tumorSizeMm,
+        survival: twinVersionFixtures[0].survival,
+        risk: twinVersionFixtures[0].risk,
+      }
+    : null,
+  prediction: predictionHistoryFixtures[0]
+    ? {
+        basis: "measured",
+        date: predictionHistoryFixtures[0].date,
+        twinVersion: predictionHistoryFixtures[0].twinVersion,
+        model: predictionHistoryFixtures[0].model,
+        survival: predictionHistoryFixtures[0].survival,
+        recurrence: predictionHistoryFixtures[0].recurrence,
+        riskBand: predictionHistoryFixtures[0].riskBand,
+        confidence: predictionHistoryFixtures[0].confidence,
+      }
+    : { basis: "none", caveat: "No prediction run has been recorded for this patient." },
+  simulations: {
+    basis: "prototype",
+    caveat: "Research/prototype kinetic simulation projection - not a clinically validated recommendation.",
+    runs: simulationRunFixtures.slice(0, 5).map((s) => ({
+      id: s.id,
+      date: s.date,
+      selected: s.selected,
+      decision: s.decision,
+      survival: s.survival,
+      response: s.response,
+      confidence: s.confidence,
+    })),
+  },
+  documents: { count: documentFixtures.filter((d) => d.patientId === patientFixtures[0]!.id).length },
+  timeline: (lifecycle.systemTimelineEvents as TimelineEvent[]).slice(0, 10),
+  notes: patientFixtures[0]!.notes ?? null,
+};
 
 /* Care coordination ----------------------------------------------------- */
 export const appointmentFixtures = extra.appointments as Appointment[];

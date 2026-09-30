@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { useEffect, useMemo, useState } from "react";
+import { PageErrorState, RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
-import { Download, FileSpreadsheet, FileText, Printer } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Printer, Sparkles } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
+import { EmptyState } from "@/components/common/EmptyState";
 import { RiskChip, StatusChip } from "@/components/common/StatusChip";
 import { Timeline } from "@/components/common/Timeline";
 import { Button } from "@/components/ui/button";
@@ -18,11 +19,11 @@ import {
   useExportReport,
   useGenerateReport,
   usePatients,
-  useReportVersions,
+  useReport,
   useReports,
-  useScenarios,
+  useReportVersions,
 } from "@/hooks/api";
-
+import type { ReportDetail, RiskLevel } from "@/types/models";
 
 export const Route = createFileRoute("/_shell/reports")({
   head: () => ({
@@ -37,34 +38,120 @@ export const Route = createFileRoute("/_shell/reports")({
   component: withPageStates(ReportsPage, { variant: "list" }),
 });
 
+const REPORT_TYPES = ["Clinical summary", "Tumor board packet", "Model audit", "Cohort summary"] as const;
+
+function reportToCsv(report: ReportDetail): string {
+  const c = report.content;
+  const lines: string[] = [];
+  lines.push(`Report,${report.title}`);
+  lines.push(`Version,${report.version}`);
+  lines.push(`Generated,${report.created}`);
+  lines.push("");
+  lines.push("Section,Field,Value");
+  lines.push(`Patient,Name,${c.patient.name}`);
+  lines.push(`Patient,Patient ID,${c.patient.patientId}`);
+  lines.push(`Patient,Stage,${c.patient.stage ?? ""}`);
+  lines.push(`Patient,Tumor size (mm),${c.patient.tumorSizeMm ?? ""}`);
+  lines.push(`Patient,Treatment,${c.patient.currentTreatment ?? ""}`);
+  if (c.digitalTwin) {
+    lines.push(`Digital twin,Version,${c.digitalTwin.version}`);
+    lines.push(`Digital twin,Status,${c.digitalTwin.status}`);
+    lines.push(`Digital twin,Survival,${c.digitalTwin.survival ?? ""}`);
+    lines.push(`Digital twin,Risk,${c.digitalTwin.risk ?? ""}`);
+  }
+  if (c.prediction.basis === "measured") {
+    lines.push(`Prediction,Survival,${c.prediction.survival ?? ""}`);
+    lines.push(`Prediction,Recurrence,${c.prediction.recurrence ?? ""}`);
+    lines.push(`Prediction,Risk band,${c.prediction.riskBand ?? ""}`);
+  } else {
+    lines.push(`Prediction,Status,${c.prediction.caveat}`);
+  }
+  lines.push(`Simulations,Basis,${c.simulations.caveat}`);
+  c.simulations.runs.forEach((run, i) => {
+    lines.push(`Simulations,Run ${i + 1} (${run.selected ?? "—"}),survival=${run.survival ?? ""} response=${run.response ?? ""}`);
+  });
+  lines.push(`Documents,Count,${c.documents.count}`);
+  return lines.join("\n");
+}
+
+function downloadBlob(content: string, mime: string, filename: string) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 function ReportsPage() {
-  const { data: patients = [], isLoading: patientsLoading } = usePatients();
+  const { data: patients = [] } = usePatients();
   const [patientId, setPatientId] = useState<string>("");
   const [filter, setFilter] = useState<string>("All");
-  const activePatientId = patientId || patients[0]?.id || "";
-  const p = patients.find((x) => x.id === activePatientId);
+  const [activeReportId, setActiveReportId] = useState<string | null>(null);
 
-  const { data: savedReports = [], isLoading: reportsLoading } = useReports();
-  const currentReportId = savedReports[0]?.id ?? "";
-  const { data: reportVersions = [], isLoading: versionsLoading } = useReportVersions(currentReportId);
-  const { data: downloadHistory = [], isLoading: downloadsLoading } = useDownloadHistory();
-  const { data: scenarios = [] } = useScenarios(activePatientId);
+  useEffect(() => {
+    if (!patientId && patients.length > 0) setPatientId(patients[0].id);
+  }, [patients, patientId]);
 
-  const exportMutation = useExportReport();
-  const generateMutation = useGenerateReport();
+  const { data: reports = [], isLoading: reportsLoading, isError: reportsError, refetch: refetchReports } = useReports();
+  const patientReports = useMemo(() => reports.filter((r) => r.patientId === patientId), [reports, patientId]);
 
-  const filtered = savedReports.filter((r) => filter === "All" || r.type === filter);
+  useEffect(() => {
+    if (patientReports.length > 0 && (!activeReportId || !patientReports.some((r) => r.id === activeReportId))) {
+      setActiveReportId(patientReports[0].id);
+    }
+    if (patientReports.length === 0) setActiveReportId(null);
+  }, [patientReports, activeReportId]);
 
-  const exportAs = (format: "pdf" | "csv") => exportMutation.mutate(format);
+  const { data: activeReport, isLoading: detailLoading } = useReport(activeReportId ?? "");
+  const { data: versions = [] } = useReportVersions(activeReportId ?? "");
+  const { data: downloads = [] } = useDownloadHistory();
 
-  const generate = () => generateMutation.mutate(activePatientId);
+  const generate = useGenerateReport();
+  const exportReport = useExportReport();
 
-  if (patientsLoading || !p) {
+  const filtered = filter === "All" ? reports : reports.filter((r) => r.type === filter);
+
+  const handleGenerate = (type: string = "Clinical summary") => {
+    if (!patientId) return;
+    generate.mutate({ patientId, type }, {
+      onSuccess: (result) => {
+        if (result.data?.id) setActiveReportId(result.data.id);
+      },
+    });
+  };
+
+  const handleExport = (format: "pdf" | "csv") => {
+    if (!activeReportId) return;
+    exportReport.mutate(
+      { reportId: activeReportId, format },
+      {
+        onSuccess: (result) => {
+          const report = result.data;
+          if (!report) return;
+          if (format === "csv") {
+            downloadBlob(reportToCsv(report), "text/csv", `${report.id}.csv`);
+          } else {
+            // No PDF library in this codebase — the browser's own print-to-PDF
+            // is the real, dependency-free mechanism (see Phase 8 scope note).
+            window.print();
+          }
+        },
+      },
+    );
+  };
+
+  if (reportsLoading) return <Skeleton className="h-[500px] rounded-2xl" />;
+  if (reportsError) {
     return (
-      <div className="mx-auto max-w-[1100px] space-y-4">
-        <Skeleton className="h-24 w-full rounded-xl" />
-        <Skeleton className="h-96 w-full rounded-xl" />
-      </div>
+      <PageErrorState
+        title="Couldn't load reports"
+        description="We could not reach the server to load clinical reports. Check your connection and try again."
+        onRetry={() => refetchReports()}
+      />
     );
   }
 
@@ -72,11 +159,11 @@ function ReportsPage() {
     <div className="mx-auto max-w-[1100px]">
       <PageHeader
         title="Reports"
-        description="A print-ready clinical summary combining the patient record, twin state and AI predictions."
+        description="A print-ready clinical summary combining the patient record, twin state and recorded predictions."
         crumbs={[{ label: "Home", to: "/" }, { label: "Reports" }]}
         actions={
           <>
-            <Select value={activePatientId} onValueChange={setPatientId}>
+            <Select value={patientId} onValueChange={setPatientId}>
               <SelectTrigger className="w-[220px]" aria-label="Select patient for report">
                 <SelectValue />
               </SelectTrigger>
@@ -88,140 +175,184 @@ function ReportsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={() => exportAs("pdf")} disabled={exportMutation.isPending}>
+            <Button variant="outline" onClick={() => handleGenerate()} disabled={generate.isPending || !patientId}>
+              <Sparkles className="size-4" aria-hidden="true" /> Generate
+            </Button>
+            <Button variant="outline" onClick={() => handleExport("pdf")} disabled={!activeReportId || exportReport.isPending}>
               <FileText className="size-4" aria-hidden="true" /> PDF
             </Button>
-            <Button variant="outline" onClick={() => exportAs("csv")} disabled={exportMutation.isPending}>
+            <Button variant="outline" onClick={() => handleExport("csv")} disabled={!activeReportId || exportReport.isPending}>
               <FileSpreadsheet className="size-4" aria-hidden="true" /> CSV
             </Button>
-            <Button onClick={() => window.print()}>
+            <Button onClick={() => window.print()} disabled={!activeReportId}>
               <Printer className="size-4" aria-hidden="true" /> Print
             </Button>
           </>
         }
       />
 
+      {detailLoading && activeReportId ? (
+        <Skeleton className="h-[420px] rounded-2xl" />
+      ) : !activeReport ? (
+        <Card className="p-8">
+          <EmptyState
+            icon={FileText}
+            title="No report generated yet"
+            description="Generate a clinical decision support report for this patient from their current record, digital twin and recorded predictions."
+          />
+        </Card>
+      ) : (
+        <Card className="p-8">
+          <header className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold">{activeReport.title}</h2>
+              <p className="text-sm text-muted-foreground">
+                Generated {activeReport.created} · v{activeReport.version}
+              </p>
+            </div>
+            <StatusChip tone="primary">Confidential</StatusChip>
+          </header>
 
-      <Card className="p-8">
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold">Clinical Decision Support Report</h2>
-            <p className="text-sm text-muted-foreground">Generated 30 Jul 2026 · OncoTwin model v2.4</p>
-          </div>
-          <StatusChip tone="primary">Confidential</StatusChip>
-        </header>
+          <Separator className="my-6" />
 
-        <Separator className="my-6" />
+          <section>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Patient summary</h3>
+            <dl className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {[
+                ["Name", activeReport.content.patient.name],
+                ["Patient ID", activeReport.content.patient.patientId],
+                ["Age", activeReport.content.patient.age == null ? "—" : `${activeReport.content.patient.age}`],
+                ["Stage", activeReport.content.patient.stage ? `Stage ${activeReport.content.patient.stage}` : "—"],
+                [
+                  "Tumor size",
+                  activeReport.content.patient.tumorSizeMm == null ? "—" : `${activeReport.content.patient.tumorSizeMm} mm`,
+                ],
+                [
+                  "ER / PR / HER2",
+                  [activeReport.content.patient.erStatus, activeReport.content.patient.prStatus, activeReport.content.patient.her2Status]
+                    .map((s) => s?.[0] ?? "—")
+                    .join(" / "),
+                ],
+                ["Treatment", activeReport.content.patient.currentTreatment || "—"],
+                ["Status", activeReport.content.patient.status ?? "—"],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <dt className="text-xs text-muted-foreground">{k}</dt>
+                  <dd className="mt-0.5 text-sm font-medium">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
 
-        <section>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Patient summary</h3>
-          <dl className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              ["Name", p.name],
-              ["Patient ID", p.id],
-              ["Age", `${p.age}`],
-              ["Stage", `Stage ${p.stage}`],
-              ["Tumor size", `${p.tumorSizeMm} mm`],
-              ["ER / PR / HER2", `${p.erStatus[0]} / ${p.prStatus[0]} / ${p.her2Status[0]}`],
-              ["Treatment", p.currentTreatment],
-              ["Status", p.status],
-            ].map(([k, v]) => (
-              <div key={k}>
-                <dt className="text-xs text-muted-foreground">{k}</dt>
-                <dd className="mt-0.5 text-sm font-medium">{v}</dd>
+          <Separator className="my-6" />
+
+          <section className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Digital twin summary</h3>
+              {activeReport.content.digitalTwin ? (
+                <div className="mt-3 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Twin status</span>
+                    <StatusChip tone="success">{activeReport.content.digitalTwin.status}</StatusChip>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Risk level</span>
+                    <RiskChip level={activeReport.content.digitalTwin.risk as RiskLevel | null} />
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Version</span>
+                    <span className="font-medium">{activeReport.content.digitalTwin.version}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-muted-foreground">No digital twin has been created for this patient yet.</p>
+              )}
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Prediction summary</h3>
+              {activeReport.content.prediction.basis === "measured" ? (
+                <div className="mt-3 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Recorded survival</span>
+                    <span className="font-medium">
+                      {activeReport.content.prediction.survival == null ? "—" : `${activeReport.content.prediction.survival}%`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Recurrence</span>
+                    <span className="font-medium">
+                      {activeReport.content.prediction.recurrence == null ? "—" : `${activeReport.content.prediction.recurrence}%`}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Recorded from the twin's stored state — no trained ML model is attached to this system.
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-muted-foreground">{activeReport.content.prediction.caveat}</p>
+              )}
+            </div>
+          </section>
+
+          <Separator className="my-6" />
+
+          <section>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Treatment simulations</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{activeReport.content.simulations.caveat}</p>
+            {activeReport.content.simulations.runs.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">No simulation runs recorded for this patient.</p>
+            ) : (
+              <div className="mt-3 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Selected regimen</TableHead>
+                      <TableHead>Decision</TableHead>
+                      <TableHead>Projected survival</TableHead>
+                      <TableHead>Confidence</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {activeReport.content.simulations.runs.map((run) => (
+                      <TableRow key={run.id}>
+                        <TableCell>{run.date}</TableCell>
+                        <TableCell className="font-medium">{run.selected ?? "—"}</TableCell>
+                        <TableCell>{run.decision ?? "—"}</TableCell>
+                        <TableCell>{run.survival == null ? "—" : `${run.survival}%`}</TableCell>
+                        <TableCell>{run.confidence == null ? "—" : `${run.confidence}%`}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            ))}
-          </dl>
-        </section>
+            )}
+          </section>
 
-        <Separator className="my-6" />
+          <Separator className="my-6" />
 
-        <section className="grid gap-6 sm:grid-cols-2">
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Digital twin summary</h3>
-            <div className="mt-3 space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Twin status</span>
-                <StatusChip tone="success">{p.twinStatus}</StatusChip>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Risk level</span>
-                <RiskChip level={p.risk} />
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Last recalculated</span>
-                <span className="font-medium">{p.lastUpdated}</span>
+          <section className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Timeline</h3>
+              <div className="mt-4">
+                {activeReport.content.timeline.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No recorded timeline events.</p>
+                ) : (
+                  <Timeline items={activeReport.content.timeline} />
+                )}
               </div>
             </div>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Prediction summary</h3>
-            <div className="mt-3 space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">5-year survival</span>
-                <span className="font-medium">{p.survivalProbability}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Recurrence risk</span>
-                <span className="font-medium">{100 - p.survivalProbability}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Model confidence</span>
-                <span className="font-medium">89%</span>
-              </div>
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Clinical notes</h3>
+              <p className="mt-3 text-sm text-muted-foreground">{activeReport.content.notes || "No notes on file."}</p>
+              <h3 className="mt-6 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Documents</h3>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {activeReport.content.documents.count} document{activeReport.content.documents.count === 1 ? "" : "s"} on file.
+              </p>
             </div>
-          </div>
-        </section>
-
-        <Separator className="my-6" />
-
-        <section>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Treatment comparison</h3>
-          <div className="mt-3 overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Scenario</TableHead>
-                  <TableHead>Response</TableHead>
-                  <TableHead>Tumor change</TableHead>
-                  <TableHead>5-y survival</TableHead>
-                  <TableHead>Side effects</TableHead>
-                  <TableHead>Confidence</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {scenarios.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-medium">
-                      {s.name} {s.recommended && <StatusChip tone="primary" className="ml-1">Recommended</StatusChip>}
-                    </TableCell>
-                    <TableCell>{s.predictedResponse}%</TableCell>
-                    <TableCell className="text-success">{s.tumorChange}%</TableCell>
-                    <TableCell>{s.survival5y}%</TableCell>
-                    <TableCell>{s.sideEffectRisk}%</TableCell>
-                    <TableCell>{s.confidence}%</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </section>
-
-        <Separator className="my-6" />
-
-        <section className="grid gap-6 sm:grid-cols-2">
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Timeline</h3>
-            <div className="mt-4">
-              <Timeline items={p.timeline} />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Clinical notes</h3>
-            <p className="mt-3 text-sm text-muted-foreground">{p.notes}</p>
-          </div>
-        </section>
-      </Card>
+          </section>
+        </Card>
+      )}
 
       <Card className="mt-4">
         <CardHeader>
@@ -230,7 +361,7 @@ function ReportsPage() {
           <div className="pt-3">
             <Tabs value={filter} onValueChange={setFilter}>
               <TabsList className="flex-wrap">
-                {["All", "Clinical summary", "Tumor board packet", "Model audit", "Cohort summary"].map((t) => (
+                {["All", ...REPORT_TYPES].map((t) => (
                   <TabsTrigger key={t} value={t}>
                     {t}
                   </TabsTrigger>
@@ -253,14 +384,7 @@ function ReportsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {reportsLoading && (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                    Loading reports…
-                  </TableCell>
-                </TableRow>
-              )}
-              {!reportsLoading && filtered.length === 0 && (
+              {filtered.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
                     No reports match this filter yet.
@@ -268,8 +392,7 @@ function ReportsPage() {
                 </TableRow>
               )}
               {filtered.map((r) => (
-
-                <TableRow key={r.id}>
+                <TableRow key={r.id} className="cursor-pointer" onClick={() => setActiveReportId(r.id)}>
                   <TableCell className="font-medium">{r.title}</TableCell>
                   <TableCell>{r.patient}</TableCell>
                   <TableCell>{r.type}</TableCell>
@@ -292,29 +415,21 @@ function ReportsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Version history</CardTitle>
-            <CardDescription>Revisions of the current clinical summary</CardDescription>
+            <CardDescription>Revisions of the selected report</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {versionsLoading ? (
-              <>
-                <Skeleton className="h-14 w-full rounded-xl" />
-                <Skeleton className="h-14 w-full rounded-xl" />
-              </>
-            ) : reportVersions.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">No versions yet.</p>
-            ) : (
-              reportVersions.map((v) => (
-                <div key={v.version} className="flex gap-3 rounded-xl border border-border p-3">
-                  <StatusChip tone={v.version === reportVersions[0].version ? "success" : "neutral"}>v{v.version}</StatusChip>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">{v.note}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {v.author} · {v.date}
-                    </p>
-                  </div>
+            {versions.length === 0 && <p className="text-sm text-muted-foreground">Select a report to see its version history.</p>}
+            {versions.map((v) => (
+              <div key={v.version} className="flex gap-3 rounded-xl border border-border p-3">
+                <StatusChip tone={v.version === versions[0]?.version ? "success" : "neutral"}>v{v.version}</StatusChip>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{v.note}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {v.author} · {v.date}
+                  </p>
                 </div>
-              ))
-            )}
+              </div>
+            ))}
           </CardContent>
         </Card>
 
@@ -324,47 +439,38 @@ function ReportsPage() {
             <CardDescription>Who exported what, and when</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {downloadsLoading ? (
-              <>
-                <Skeleton className="h-14 w-full rounded-xl" />
-                <Skeleton className="h-14 w-full rounded-xl" />
-              </>
-            ) : downloadHistory.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">No downloads yet.</p>
-            ) : (
-              downloadHistory.map((d) => (
-                <div key={d.id} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">
-                      {d.report} · {d.format}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {d.by} · {d.date}
-                    </p>
-                  </div>
-                  <Download className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            {downloads.length === 0 && <p className="text-sm text-muted-foreground">No exports recorded yet.</p>}
+            {downloads.map((d) => (
+              <div key={d.id} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">
+                    {d.report} · {d.format}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {d.by} · {d.at}
+                  </p>
                 </div>
-              ))
-            )}
+                <Download className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>
 
-
       <Card className="mt-4">
         <CardHeader>
           <CardTitle className="text-base">Report templates</CardTitle>
-          <CardDescription>Pre-configured exports for tumor boards and hospital administration</CardDescription>
+          <CardDescription>Generate a pre-configured report type for the selected patient</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-3">
-          {["Tumor board packet", "Monthly cohort summary", "Model performance audit"].map((t) => (
+          {(["Tumor board packet", "Cohort summary", "Model audit"] as const).map((t) => (
             <button
               key={t}
-              onClick={generate}
-              disabled={generateMutation.isPending}
-              className="hover-lift flex items-center gap-3 rounded-xl border border-border p-4 text-left disabled:pointer-events-none disabled:opacity-50"
+              onClick={() => handleGenerate(t)}
+              disabled={generate.isPending || !patientId}
+              className="hover-lift flex items-center gap-3 rounded-xl border border-border p-4 text-left disabled:opacity-50"
             >
-              <Download className="size-4 text-primary" aria-hidden="true" />
+              <Sparkles className="size-4 text-primary" aria-hidden="true" />
               <span className="text-sm font-medium">{t}</span>
             </button>
           ))}

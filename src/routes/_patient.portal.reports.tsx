@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { PageErrorState, PageSkeleton, RouteErrorState } from "@/components/common/PageState";
+import { PageErrorState, RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
-import { Download, Eye, FileText, Search } from "lucide-react";
+import { Download, FileText, Search } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatusChip } from "@/components/common/StatusChip";
@@ -9,7 +9,8 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useReports } from "@/hooks/api";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDocuments, useDownloadDocument } from "@/hooks/api";
 
 export const Route = createFileRoute("/_patient/portal/reports")({
   head: () => ({
@@ -23,24 +24,30 @@ export const Route = createFileRoute("/_patient/portal/reports")({
     ],
   }),
   errorComponent: RouteErrorState,
-  component: MyReports,
+  component: withPageStates(MyReports, { variant: "list" }),
 });
 
 function MyReports() {
   const [q, setQ] = useState("");
-  const reportsQuery = useReports();
+  const { data: documents = [], isLoading, isError, refetch } = useDocuments(q);
+  const download = useDownloadDocument();
 
-  if (reportsQuery.isLoading) return <PageSkeleton variant="list" />;
-  if (reportsQuery.isError) {
+  const handleDownload = async (id: string) => {
+    const result = await download.mutateAsync(id);
+    window.open(result.url, "_blank", "noopener,noreferrer");
+  };
+
+  if (isLoading) return <Skeleton className="h-[500px] rounded-2xl" />;
+
+  if (isError) {
     return (
-      <div className="mx-auto max-w-[900px] pt-4">
-        <PageErrorState onRetry={() => reportsQuery.refetch()} />
-      </div>
+      <PageErrorState
+        title="Couldn't load your reports"
+        description="We could not reach the server to load your documents. Check your connection and try again."
+        onRetry={() => refetch()}
+      />
     );
   }
-
-  const reports = reportsQuery.data ?? [];
-  const rows = reports.filter((d) => `${d.title} ${d.type}`.toLowerCase().includes(q.toLowerCase()));
 
   return (
     <div className="mx-auto max-w-[1100px]">
@@ -51,33 +58,36 @@ function MyReports() {
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search reports…" className="pl-9" aria-label="Search reports" />
       </div>
 
-      {rows.length === 0 ? (
+      {documents.length === 0 ? (
         <EmptyState icon={FileText} title="No reports found" description="Try a different search term or upload a new report." />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
-          {rows.map((d) => (
+          {documents.map((d) => (
             <Card key={d.id} className="h-full">
               <CardContent className="flex h-full items-center gap-4 py-5">
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
                   <FileText className="size-5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium leading-tight">{d.title}</p>
+                  <p className="truncate text-sm font-medium leading-tight">{d.name}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {d.type} · {d.created} · v{d.version}
+                    {d.category} · {d.date} · {d.size} · v{d.version}
                   </p>
                 </div>
                 <div className="ml-auto flex shrink-0 items-center gap-1">
                   <span className="hidden w-[112px] justify-start sm:flex">
-                    <StatusChip tone={d.status === "Final" ? "success" : d.status === "Draft" ? "warning" : "risk"}>
+                    <StatusChip tone={d.status === "Verified" ? "success" : d.status === "Pending OCR" ? "warning" : "risk"}>
                       {d.status}
                     </StatusChip>
                   </span>
 
-                  <Button variant="ghost" size="icon" aria-label={`Preview ${d.title}`}>
-                    <Eye className="size-4" aria-hidden="true" />
-                  </Button>
-                  <Button variant="ghost" size="icon" aria-label={`Download ${d.title}`}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Download ${d.name}`}
+                    onClick={() => handleDownload(d.id)}
+                    disabled={download.isPending}
+                  >
                     <Download className="size-4" aria-hidden="true" />
                   </Button>
                 </div>

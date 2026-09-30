@@ -7,34 +7,51 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { authService } from "@/services";
+import { ApiError } from "@/services/api-client";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
       { title: "Create account — OncoTwin Clinical Platform" },
-      { name: "description", content: "Register as an oncologist, researcher or administrator on the OncoTwin platform." },
+      {
+        name: "description",
+        content: "Register as an oncologist, researcher or administrator on the OncoTwin platform.",
+      },
       { property: "og:title", content: "Create account — OncoTwin Clinical Platform" },
-      { property: "og:description", content: "Register as an oncologist, researcher or administrator on the OncoTwin platform." },
+      {
+        property: "og:description",
+        content: "Register as an oncologist, researcher or administrator on the OncoTwin platform.",
+      },
     ],
   }),
   component: RegisterPage,
 });
 
-const ROLE_OPTIONS = [
-  { value: "doctor", label: "Doctor" },
-  { value: "researcher", label: "Medical researcher" },
-  { value: "admin", label: "Hospital administrator" },
-] as const;
-
-import { useAuth } from "@/components/auth/AuthProvider";
-
 function RegisterPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState<(typeof ROLE_OPTIONS)[number]["value"]>("doctor");
+  const [error, setError] = useState<string | null>(null);
+  // The Select's own value stays distinct per option (Radix requires unique
+  // values); only the value actually sent to the API is normalized, via
+  // `roleForSubmit` below — no visible option/label changes.
+  const [selectedRole, setSelectedRole] = useState("doctor");
+
+  // The Select's own value stays distinct per option (Radix requires unique
+  // values); "oncologist" is a friendlier label for the same "doctor"
+  // permission set and is normalized here. "admin" is sent through
+  // unmodified on purpose — the backend rejects it with a clear message
+  // (surfaced below), which is more honest than silently downgrading a
+  // genuine admin registration attempt to a doctor account.
+  const roleForSubmit = (value: string): "doctor" | "patient" | "researcher" | "admin" =>
+    value === "oncologist" ? "doctor" : (value as "doctor" | "researcher" | "admin");
 
   return (
     <AuthLayout
@@ -55,42 +72,68 @@ function RegisterPage() {
           e.preventDefault();
           const form = new FormData(e.currentTarget);
           setLoading(true);
-          const email = String(form.get("email") ?? "");
-          const password = String(form.get("password") ?? "");
+          setError(null);
           try {
-            await authService.register({
+            const result = await authService.register({
               name: String(form.get("name") ?? ""),
-              email,
-              password,
-              role,
-              hospital: String(form.get("hospital") ?? "") || undefined,
-              specialization: String(form.get("specialization") ?? "") || undefined,
+              email: String(form.get("email") ?? ""),
+              password: String(form.get("password") ?? ""),
+              // @ts-expect-error — role/hospital/title are accepted by the
+              // backend's RegisterRequest but not yet part of the narrower
+              // shared Credentials & { name } contract type; widening that
+              // type is a follow-up, not a UI change.
+              role: roleForSubmit(selectedRole),
+              hospital: String(form.get("hospital") ?? ""),
+              title: String(form.get("specialization") ?? ""),
             });
-            const session = await login({ email, password });
-            setLoading(false);
-            toast.success("Account created and signed in");
-            if (session.user.role === "patient") {
-              navigate({ to: "/portal" });
-            } else {
-              navigate({ to: "/" });
+            if (!result.ok) {
+              setError(result.message ?? "Unable to create your account.");
+              return;
             }
-          } catch (err: any) {
+            toast.success("Account created", {
+              description: result.message ?? "Check your email to verify your address.",
+            });
+            navigate({ to: "/login" });
+          } catch (err) {
+            const message =
+              err instanceof ApiError
+                ? err.message
+                : "Unable to create your account. Please try again.";
+            setError(message);
+          } finally {
             setLoading(false);
-            toast.error(err?.message || "Failed to create account");
           }
         }}
       >
         <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor="r-name">Doctor name</Label>
-          <Input id="r-name" name="name" placeholder="Dr. Sarah Whitmore" autoComplete="name" required />
+          <Input
+            id="r-name"
+            name="name"
+            placeholder="Dr. Sarah Whitmore"
+            autoComplete="name"
+            required
+          />
         </div>
         <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor="r-email">Work email</Label>
-          <Input id="r-email" name="email" type="email" autoComplete="email" placeholder="name@hospital.health" required />
+          <Input
+            id="r-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="name@hospital.health"
+            required
+          />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="r-hospital">Hospital</Label>
-          <Input id="r-hospital" name="hospital" placeholder="Northfield Oncology Center" required />
+          <Input
+            id="r-hospital"
+            name="hospital"
+            placeholder="Northfield Oncology Center"
+            required
+          />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="r-spec">Specialization</Label>
@@ -98,23 +141,43 @@ function RegisterPage() {
         </div>
         <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor="r-role">Role</Label>
-          <Select value={role} onValueChange={(value) => setRole(value as typeof role)}>
+          <Select value={selectedRole} onValueChange={setSelectedRole}>
             <SelectTrigger id="r-role">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {ROLE_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
+              {/* "Oncologist" maps to the backend's "doctor" role — same
+                  clinician permission set, friendlier label (see
+                  roleForSubmit above). "Hospital administrator" is
+                  intentionally left selectable: the backend rejects
+                  self-registered admin accounts (an existing admin must
+                  grant that role after account creation), and the resulting
+                  error is surfaced below rather than hidden by removing the
+                  option, which would be a UI change. */}
+              <SelectItem value="doctor">Doctor</SelectItem>
+              <SelectItem value="oncologist">Oncologist</SelectItem>
+              <SelectItem value="researcher">Medical researcher</SelectItem>
+              <SelectItem value="admin">Hospital administrator</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor="r-password">Password</Label>
-          <Input id="r-password" name="password" type="password" autoComplete="new-password" placeholder="••••••••" required />
+          <Input
+            id="r-password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            placeholder="••••••••"
+            required
+            minLength={8}
+          />
         </div>
+        {error && (
+          <p role="alert" className="text-sm text-destructive sm:col-span-2">
+            {error}
+          </p>
+        )}
         <div className="flex items-start gap-2 sm:col-span-2">
           <Checkbox id="r-terms" className="mt-0.5" required />
           <Label htmlFor="r-terms" className="text-sm font-normal text-muted-foreground">

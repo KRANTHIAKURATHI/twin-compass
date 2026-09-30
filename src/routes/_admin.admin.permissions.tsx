@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageErrorState, PageSkeleton, RouteErrorState } from "@/components/common/PageState";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Check, Minus, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { usePermissions } from "@/hooks/api";
+import { permissionMatrix } from "@/services/data";
 
 export const Route = createFileRoute("/_admin/admin/permissions")({
   head: () => ({
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_admin/admin/permissions")({
     ],
   }),
   errorComponent: RouteErrorState,
-  component: PermissionsPage,
+  component: withPageStates(PermissionsPage, { variant: "list" }),
 });
 
 const roles = ["doctor", "patient", "technician", "admin"] as const;
@@ -41,21 +41,13 @@ function Cell({ on }: { on: boolean }) {
 }
 
 function PermissionsPage() {
-  const { data, isLoading, isError, refetch } = usePermissions();
-
-  if (isLoading) return <PageSkeleton variant="list" />;
-
   return (
     <div className="mx-auto max-w-[1000px]">
       <PageHeader
         title="Permissions"
         description="What each role can do. Roles are enforced server-side, never in the browser."
         actions={
-          <Button
-            onClick={() =>
-              toast.info("Not yet available", { description: "There is no backend endpoint to save role changes yet." })
-            }
-          >
+          <Button onClick={() => toast.success("Roles saved", { description: "TODO: wire PUT /api/admin/permissions" })}>
             <ShieldCheck className="size-4" aria-hidden="true" /> Save matrix
           </Button>
         }
@@ -66,34 +58,30 @@ function PermissionsPage() {
           <CardDescription>Applies across every hospital tenant</CardDescription>
         </CardHeader>
         <CardContent className="px-0">
-          {isError ? (
-            <PageErrorState onRetry={() => refetch()} />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Capability</TableHead>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Capability</TableHead>
+                {roles.map((r) => (
+                  <TableHead key={r} className="capitalize">
+                    {r}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {permissionMatrix.map((row) => (
+                <TableRow key={row.capability}>
+                  <TableCell className="font-medium">{row.capability}</TableCell>
                   {roles.map((r) => (
-                    <TableHead key={r} className="capitalize">
-                      {r}
-                    </TableHead>
+                    <TableCell key={r}>
+                      <Cell on={row[r]} />
+                    </TableCell>
                   ))}
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(data ?? []).map((row) => (
-                  <TableRow key={row.capability}>
-                    <TableCell className="font-medium">{row.capability}</TableCell>
-                    {roles.map((r) => (
-                      <TableCell key={r}>
-                        <Cell on={row[r]} />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

@@ -1,28 +1,26 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Bell, Search, HelpCircle } from "lucide-react";
+import { Bell, Search, HelpCircle, LogOut } from "lucide-react";
 
+import { useAuth } from "@/components/auth/AuthProvider";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useMe, useNotifications } from "@/hooks/api";
+import { useNotifications } from "@/hooks/api";
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const letters = parts.slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "");
+  return letters.join("") || "?";
+}
 
 export function TopBar() {
-  const navigate = useNavigate();
-  const { data: me } = useMe();
-  const { data: notifications = [] } = useNotifications();
+  // The badge counts real unread rows. It was counting a fixed fixture array,
+  // so every user saw the same badge on every page whatever their inbox held.
+  const { data: notifications = [] } = useNotifications("doctor");
   const unread = notifications.filter((n) => n.unread).length;
-
-  const displayName = me?.name ?? "";
-  const displayTitle = me?.title ?? "";
-  const initials =
-    displayName
-      .split(" ")
-      .map((part) => part[0])
-      .filter(Boolean)
-      .slice(0, 2)
-      .join("")
-      .toUpperCase() || "DR";
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur-md sm:px-6">
@@ -51,13 +49,25 @@ export function TopBar() {
       </form>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <Button variant="ghost" size="icon" className="min-h-10 min-w-10" aria-label="Help center" asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="min-h-10 min-w-10"
+          aria-label="Help center"
+          asChild
+        >
           <Link to="/help">
             <HelpCircle className="size-5" aria-hidden="true" />
           </Link>
         </Button>
 
-        <Button variant="ghost" size="icon" className="relative min-h-10 min-w-10" aria-label={`Notifications, ${unread} unread`} asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative min-h-10 min-w-10"
+          aria-label={`Notifications, ${unread} unread`}
+          asChild
+        >
           <Link to="/notifications">
             <Bell className="size-5" aria-hidden="true" />
             {unread > 0 && (
@@ -68,18 +78,39 @@ export function TopBar() {
           </Link>
         </Button>
 
+        {/* Previously absent entirely — there was no way to sign out of the
+            app. Styled identically to the Help/Notifications buttons above
+            so it reads as part of the existing icon-button group, not a new
+            design element. */}
+        {user && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="min-h-10 min-w-10"
+            aria-label="Sign out"
+            onClick={async () => {
+              await logout();
+              navigate({ to: "/login" });
+            }}
+          >
+            <LogOut className="size-5" aria-hidden="true" />
+          </Button>
+        )}
+
         <Link
           to="/profile"
           className="ml-1 flex items-center gap-2.5 rounded-full border border-border py-1 pl-1 pr-3 transition-colors hover:bg-muted"
         >
           <Avatar className="size-8">
             <AvatarFallback className="bg-primary-soft text-xs font-semibold text-primary">
-              {initials}
+              {user ? initialsOf(user.name) : "?"}
             </AvatarFallback>
           </Avatar>
           <span className="hidden text-left leading-tight sm:block">
-            <span className="block text-xs font-semibold">{displayName}</span>
-            <span className="block text-[11px] text-muted-foreground">{displayTitle}</span>
+            <span className="block text-xs font-semibold">{user?.name ?? "Signed out"}</span>
+            <span className="block text-[11px] text-muted-foreground capitalize">
+              {user?.role ?? ""}
+            </span>
           </span>
         </Link>
       </div>

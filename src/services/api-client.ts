@@ -7,7 +7,8 @@
  * the env var is the only change needed to go live.
  */
 
-export const API_BASE_URL: string = (import.meta.env["VITE_API_BASE_URL"] as string | undefined) ?? "";
+export const API_BASE_URL: string =
+  (import.meta.env["VITE_API_BASE_URL"] as string | undefined) ?? "";
 
 /** True while no backend is configured. Services fall back to fixtures. */
 export const USING_MOCKS = API_BASE_URL.length === 0;
@@ -18,7 +19,11 @@ export class ApiError extends Error {
   /** Field-level errors, ready to feed into react-hook-form `setError`. */
   fieldErrors?: Record<string, string>;
 
-  constructor(message: string, status = 500, options?: { code?: string; fieldErrors?: Record<string, string> }) {
+  constructor(
+    message: string,
+    status = 500,
+    options?: { code?: string; fieldErrors?: Record<string, string> },
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
@@ -30,19 +35,15 @@ export class ApiError extends Error {
 type TokenGetter = () => string | null;
 
 let getToken: TokenGetter = () => null;
+let refreshSession: (() => Promise<string | null>) | null = null;
 
 /** Plug the auth provider in without touching call sites. */
 export function setAuthTokenGetter(fn: TokenGetter) {
   getToken = fn;
 }
 
-type UnauthorizedHandler = () => void;
-
-let onUnauthorized: UnauthorizedHandler = () => {};
-
-/** Plug in a handler that clears the session and redirects to login on a 401. */
-export function setUnauthorizedHandler(fn: UnauthorizedHandler) {
-  onUnauthorized = fn;
+export function setAuthRefreshHandler(fn: (() => Promise<string | null>) | null) {
+  refreshSession = fn;
 }
 
 export interface RequestOptions {
@@ -75,27 +76,60 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     });
   }
 
-  const token = getToken();
-  const response = await fetch(buildUrl(path, options.query), {
+  // A FormData body (real file uploads) must go over the wire with its own
+  // multipart boundary. Setting Content-Type manually here would omit that
+  // boundary and the backend would fail to parse the parts, so the browser
+  // sets it instead — this is the one body type that skips JSON.stringify.
+  const isFormData = options.body instanceof FormData;
+
+  const request = (token: string | null) => fetch(buildUrl(path, options.query), {
     method: options.method ?? "GET",
     signal: options.signal,
+    // Required for the httpOnly refresh-token cookie (set by POST
+    // /auth/login and /auth/refresh) to be sent on subsequent requests and
+    // stored on the login/refresh response — without this, cross-origin
+    // requests (Vite dev server -> API) silently drop the cookie.
+    credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body:
+      options.body === undefined
+        ? undefined
+        : isFormData
+          ? (options.body as FormData)
+          : JSON.stringify(options.body),
   });
+  let response = await request(getToken());
+
+  if (response.status === 401 && path !== "/auth/refresh" && refreshSession) {
+    const refreshedToken = await refreshSession();
+    if (refreshedToken) response = await request(refreshedToken);
+  }
 
   const isJson = response.headers.get("content-type")?.includes("application/json");
-  const payload = isJson ? ((await response.json().catch(() => null)) as Record<string, any> | null) : null;
+  const payload = isJson
+    ? ((await response.json().catch(() => null)) as Record<string, any> | null)
+    : null;
 
   if (!response.ok) {
-    if (response.status === 401) onUnauthorized();
-    throw new ApiError(payload?.["message"] ?? payload?.["detail"] ?? response.statusText, response.status, {
-      code: payload?.["code"],
-      fieldErrors: payload?.["errors"] ?? payload?.["fieldErrors"],
-    });
+    // Backend envelope (System Architecture Blueprint Section 12.1 /
+    // FastAPI Backend Architecture Blueprint Section 16), consistent across
+    // every module: { "error": { "code", "message", "field", "request_id" } }.
+    const envelope = payload?.["error"] as
+      { code?: string; message?: string; field?: string; request_id?: string } | undefined;
+    throw new ApiError(
+      envelope?.["message"] ?? payload?.["message"] ?? response.statusText,
+      response.status,
+      {
+        code: envelope?.["code"] ?? payload?.["code"],
+        fieldErrors: envelope?.["field"]
+          ? { [envelope["field"]]: envelope["message"] }
+          : (payload?.["errors"] ?? payload?.["fieldErrors"]),
+      },
+    );
   }
 
   return payload as T;

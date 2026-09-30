@@ -23,14 +23,14 @@ export const imagingStudies = [
 ];
 
 export const documents = [
-  { id: "DOC-1", name: "MRI_Breast_2026_06.pdf", category: "MRI", patient: "Amelia Hart", date: "2026-06-20", size: "8.2 MB", version: 3, status: "Verified" },
-  { id: "DOC-2", name: "CT_Chest_2026_04.pdf", category: "CT", patient: "Amelia Hart", date: "2026-04-02", size: "6.1 MB", version: 1, status: "Verified" },
-  { id: "DOC-3", name: "PET_WholeBody_2026_01.pdf", category: "PET", patient: "Noor Rahman", date: "2026-01-18", size: "11.4 MB", version: 2, status: "Pending OCR" },
-  { id: "DOC-4", name: "Biopsy_Pathology_Panel.pdf", category: "Biopsy", patient: "Priya Raghavan", date: "2025-04-02", size: "820 KB", version: 1, status: "Verified" },
-  { id: "DOC-5", name: "Bloodwork_Q2_2026.pdf", category: "Blood", patient: "Elena Costa", date: "2026-05-08", size: "142 KB", version: 4, status: "Needs review" },
-  { id: "DOC-6", name: "MRI_Followup_2026_02.pdf", category: "MRI", patient: "Grace Okafor", date: "2026-02-11", size: "7.7 MB", version: 1, status: "Verified" },
-  { id: "DOC-7", name: "Biopsy_Core_Left.pdf", category: "Biopsy", patient: "Sofia Marchetti", date: "2025-09-30", size: "980 KB", version: 2, status: "Verified" },
-  { id: "DOC-8", name: "CBC_Panel_June.pdf", category: "Blood", patient: "Hana Yamamoto", date: "2026-06-28", size: "96 KB", version: 1, status: "Pending OCR" },
+  { id: "DOC-1", name: "MRI_Breast_2026_06.pdf", category: "MRI", patient: "Amelia Hart", patientId: "PT-1042", date: "2026-06-20", size: "8.2 MB", sizeBytes: 8_600_000, mimeType: "application/pdf", version: 3, status: "Verified" },
+  { id: "DOC-2", name: "CT_Chest_2026_04.pdf", category: "CT", patient: "Amelia Hart", patientId: "PT-1042", date: "2026-04-02", size: "6.1 MB", sizeBytes: 6_400_000, mimeType: "application/pdf", version: 1, status: "Verified" },
+  { id: "DOC-3", name: "PET_WholeBody_2026_01.pdf", category: "PET", patient: "Noor Rahman", patientId: "PT-1099", date: "2026-01-18", size: "11.4 MB", sizeBytes: 11_900_000, mimeType: "application/pdf", version: 2, status: "Pending OCR" },
+  { id: "DOC-4", name: "Biopsy_Pathology_Panel.pdf", category: "Biopsy", patient: "Priya Raghavan", patientId: "PT-1056", date: "2025-04-02", size: "820 KB", sizeBytes: 840_000, mimeType: "application/pdf", version: 1, status: "Verified" },
+  { id: "DOC-5", name: "Bloodwork_Q2_2026.pdf", category: "Blood", patient: "Elena Costa", patientId: "PT-1101", date: "2026-05-08", size: "142 KB", sizeBytes: 145_000, mimeType: "application/pdf", version: 4, status: "Needs review" },
+  { id: "DOC-6", name: "MRI_Followup_2026_02.pdf", category: "MRI", patient: "Grace Okafor", patientId: "PT-1070", date: "2026-02-11", size: "7.7 MB", sizeBytes: 8_100_000, mimeType: "application/pdf", version: 1, status: "Verified" },
+  { id: "DOC-7", name: "Biopsy_Core_Left.pdf", category: "Biopsy", patient: "Sofia Marchetti", patientId: "PT-1102", date: "2025-09-30", size: "980 KB", sizeBytes: 1_003_000, mimeType: "application/pdf", version: 2, status: "Verified" },
+  { id: "DOC-8", name: "CBC_Panel_June.pdf", category: "Blood", patient: "Hana Yamamoto", patientId: "PT-1084", date: "2026-06-28", size: "96 KB", sizeBytes: 98_000, mimeType: "application/pdf", version: 1, status: "Pending OCR" },
 ];
 
 export const documentVersions = [

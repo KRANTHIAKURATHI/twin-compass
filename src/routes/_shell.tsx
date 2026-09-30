@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
 
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -10,6 +10,12 @@ export const Route = createFileRoute("/_shell")({
 });
 
 function ShellLayout() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isAccountPage = ["/profile", "/settings", "/help"].includes(pathname);
+  const allowedRoles = isAccountPage
+    ? (["doctor", "patient", "researcher", "admin"] as const)
+    : (["doctor", "admin"] as const);
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-surface">
@@ -18,9 +24,9 @@ function ShellLayout() {
           <TopBar />
           <main className="animate-in fade-in flex-1 px-4 py-6 duration-300 sm:px-6 lg:px-8">
             {/* Required: nested routes render here. */}
-            <RequireRole roles={["doctor", "admin"]}>
-        <Outlet />
-      </RequireRole>
+            <RequireRole roles={[...allowedRoles]}>
+              <Outlet />
+            </RequireRole>
           </main>
         </SidebarInset>
       </div>

@@ -17,7 +17,6 @@ import {
   adminService,
   analyticsService,
   appointmentService,
-  authService,
   documentService,
   notificationService,
   ocrService,
@@ -25,13 +24,12 @@ import {
   predictionService,
   reportService,
   researchService,
-  searchService,
   simulationService,
   treatmentService,
   twinService,
 } from "@/services";
 import { queryKeys } from "@/hooks/query-keys";
-import type { Appointment, AuthUser, MutationResult, OcrField, Patient, PatientInput, ScenarioDraft } from "@/types/models";
+import type { MutationResult, OcrField, Patient, PatientInput, ScenarioDraft } from "@/types/models";
 
 type QueryOpts<T> = Omit<UseQueryOptions<T, Error, T, readonly unknown[]>, "queryKey" | "queryFn">;
 
@@ -74,25 +72,6 @@ export function useApiMutation<TVars, TData = MutationResult>(
     },
   });
 }
-
-/* ------------------------------- Auth ------------------------------- */
-export const useMe = () => useApiQuery(queryKeys.auth, () => authService.me());
-
-export const useUpdateProfile = () =>
-  useApiMutation(
-    (payload: Partial<Pick<AuthUser, "name" | "title" | "hospital" | "avatarUrl">>) => authService.updateMe(payload),
-    { successMessage: "Profile updated", invalidate: [queryKeys.auth] },
-  );
-
-export const useChangePassword = () =>
-  useApiMutation(
-    (payload: { currentPassword: string; newPassword: string }) => authService.changePassword(payload),
-    { successMessage: "Password updated" },
-  );
-
-/* ------------------------------ Search ------------------------------ */
-export const useGlobalSearch = (query: string) =>
-  useApiQuery(["search", query], () => searchService.global(query), { enabled: query.trim().length > 0 });
 
 /* ---------------------------- Patients ----------------------------- */
 export const usePatients = (search?: string) =>
@@ -141,6 +120,10 @@ export const useDeletePatient = () =>
 
 /* ------------------------------ Twins ------------------------------ */
 export const useTwins = () => useApiQuery(queryKeys.twins.list, () => twinService.list());
+export const useTwin = (patientId: string) =>
+  useApiQuery(queryKeys.twins.detail(patientId), () => twinService.get(patientId), {
+    enabled: Boolean(patientId),
+  });
 export const useTwinVersions = (patientId: string) =>
   useApiQuery(queryKeys.twins.versions(patientId), () => twinService.versions(patientId));
 export const useTwinSnapshots = (patientId: string) =>
@@ -171,8 +154,15 @@ export const usePredictionHistory = (patientId: string) =>
   useApiQuery(queryKeys.predictions.history(patientId), () => predictionService.history(patientId));
 export const useConfidenceTrend = (patientId: string) =>
   useApiQuery(queryKeys.predictions.trend(patientId), () => predictionService.confidenceTrend(patientId));
+/** Measured tumour size per twin version — real history, not a forecast. */
+export const useTumorSizeHistory = (patientId: string) =>
+  useApiQuery(queryKeys.predictions.progression(patientId), () => predictionService.progression(patientId), {
+    enabled: Boolean(patientId),
+  });
 export const useExplainability = (patientId: string) =>
-  useApiQuery(queryKeys.predictions.explain(patientId), () => predictionService.explain(patientId));
+  useApiQuery(queryKeys.predictions.explain(patientId), () => predictionService.explain(patientId), {
+    enabled: Boolean(patientId),
+  });
 
 export const useRunPrediction = () =>
   useApiMutation((patientId: string) => predictionService.run(patientId), {
@@ -181,7 +171,11 @@ export const useRunPrediction = () =>
   });
 
 /* --------------------------- Simulations --------------------------- */
-export const useSimulationRuns = () => useApiQuery(queryKeys.simulations.list, () => simulationService.list());
+export const useSimulationRuns = (patientId?: string) =>
+  useApiQuery(
+    patientId ? queryKeys.simulations.scenarios(patientId) : queryKeys.simulations.list,
+    () => simulationService.list(patientId),
+  );
 export const useSimulationRun = (id: string) =>
   useApiQuery(queryKeys.simulations.detail(id), () => simulationService.get(id), { enabled: Boolean(id) });
 export const useScenarios = (patientId: string) =>
@@ -192,11 +186,25 @@ export const useRunSimulation = () =>
     simulationService.run(vars.patientId, vars.draft),
   );
 
+export const useResearchModels = () =>
+  useApiQuery(["research", "models"], () => researchService.models());
+export const useResearchDatasets = () =>
+  useApiQuery(["research", "datasets"], () => researchService.datasets());
+export const useResearchTrainingRuns = () =>
+  useApiQuery(["research", "training-runs"], () => researchService.trainingRuns());
+export const useResearchModelVersions = () =>
+  useApiQuery(["research", "model-versions"], () => researchService.modelVersions());
+export const useResearchPerformance = () =>
+  useApiQuery(["research", "performance"], () => researchService.performance());
+
 export const useSaveScenario = () =>
-  useApiMutation((vars: { patientId: string; draft: ScenarioDraft }) => simulationService.save(vars.patientId, vars.draft), {
-    successMessage: "Scenario saved",
-    invalidate: [queryKeys.simulations.all],
-  });
+  useApiMutation(
+    (vars: { patientId: string; draft: ScenarioDraft }) => simulationService.save(vars.patientId, vars.draft),
+    {
+      successMessage: "Scenario saved",
+      invalidate: [queryKeys.simulations.all],
+    },
+  );
 
 export const useDuplicateScenario = () =>
   useApiMutation((id: string) => simulationService.duplicate(id), {
@@ -211,17 +219,39 @@ export const usePromoteSimulation = () =>
   });
 
 /* --------------------------- Documents ----------------------------- */
-export const useDocuments = (search?: string) =>
-  useApiQuery(queryKeys.documents.list(search), () => documentService.list({ search }));
+export const useDocuments = (search?: string, patientId?: string) =>
+  useApiQuery(queryKeys.documents.list(search), () => documentService.list({ search, patientId }));
+export const useDocument = (id: string) =>
+  useApiQuery(queryKeys.documents.detail(id), () => documentService.get(id), { enabled: Boolean(id) });
 export const useDocumentVersions = (id: string) =>
-  useApiQuery(queryKeys.documents.versions(id), () => documentService.versions(id));
+  useApiQuery(queryKeys.documents.versions(id), () => documentService.versions(id), { enabled: Boolean(id) });
 export const useDocumentTimeline = (id: string) =>
-  useApiQuery(queryKeys.documents.timeline(id), () => documentService.timeline(id));
+  useApiQuery(queryKeys.documents.timeline(id), () => documentService.timeline(id), { enabled: Boolean(id) });
+export const useDocumentLinks = (id: string) =>
+  useApiQuery(queryKeys.documents.links(id), () => documentService.links(id), { enabled: Boolean(id) });
 
 export const useUploadDocument = () =>
-  useApiMutation((file: { name: string; size: number; patientId?: string }) => documentService.upload(file), {
-    successMessage: (_d, v) => `${v.name} uploaded`,
-    invalidate: [queryKeys.documents.all],
+  useApiMutation(
+    (payload: { file: File; patientId: string; category?: string }) => documentService.upload(payload),
+    {
+      successMessage: (_d, v) => `${v.file.name} uploaded`,
+      invalidate: [queryKeys.documents.all],
+    },
+  );
+
+/**
+ * Download and preview are click-triggered actions, not cached queries — each
+ * click needs a fresh signed URL. Errors surface as toasts, same as any other
+ * mutation, since there's no dedicated read state to show them in.
+ */
+export const useDownloadDocument = () =>
+  useApiMutation((id: string) => documentService.download(id), {
+    errorMessage: "Could not create a download link",
+  });
+
+export const usePreviewDocument = () =>
+  useApiMutation((id: string) => documentService.preview(id), {
+    errorMessage: "Could not load preview",
   });
 
 /* ------------------------------- OCR ------------------------------- */
@@ -230,48 +260,56 @@ export const useOcrFields = (documentId: string) =>
     enabled: Boolean(documentId),
   });
 
-export const useExtractOcr = () => useApiMutation((documentId: string) => ocrService.extract(documentId));
+export const useExtractOcr = () =>
+  useApiMutation((documentId: string) => ocrService.extract(documentId), {
+    successMessage: "Extraction complete — requires verification",
+    invalidate: [queryKeys.documents.all, ["ocr"]],
+  });
 
 export const useApproveOcr = () =>
   useApiMutation((vars: { documentId: string; fields: OcrField[] }) => ocrService.approve(vars.documentId, vars.fields), {
-    successMessage: "Extraction approved — digital twin updated",
-    invalidate: [queryKeys.documents.all, queryKeys.twins.all],
+    successMessage: "Extraction approved — digital twin resynced",
+    invalidate: [queryKeys.documents.all, queryKeys.twins.all, ["ocr"]],
   });
 
 export const useRejectOcr = () =>
-  useApiMutation((vars: { documentId: string; reason: string }) => ocrService.reject(vars.documentId, vars.reason), {
+  useApiMutation((vars: { documentId: string; reason?: string }) => ocrService.reject(vars.documentId, vars.reason), {
     successMessage: "Extraction rejected",
-    invalidate: [queryKeys.documents.all],
+    invalidate: [queryKeys.documents.all, ["ocr"]],
   });
 
 /* ----------------------------- Reports ----------------------------- */
-export const useReports = () => useApiQuery(queryKeys.reports.list, () => reportService.list());
+export const useReports = (patientId?: string) =>
+  useApiQuery(queryKeys.reports.list(patientId), () => reportService.list(patientId));
+export const useReport = (id: string) =>
+  useApiQuery(queryKeys.reports.detail(id), () => reportService.get(id), { enabled: Boolean(id) });
 export const useReportVersions = (id: string) =>
-  useApiQuery(queryKeys.reports.versions(id), () => reportService.versions(id));
-export const useDownloadHistory = () => useApiQuery(queryKeys.reports.downloads, () => reportService.downloads());
+  useApiQuery(queryKeys.reports.versions(id), () => reportService.versions(id), { enabled: Boolean(id) });
+export const useDownloadHistory = (reportId?: string) =>
+  useApiQuery(queryKeys.reports.downloads(reportId), () => reportService.downloads(reportId));
 
 export const useGenerateReport = () =>
-  useApiMutation((patientId: string) => reportService.generate(patientId), {
-    successMessage: "Report generated",
-    invalidate: [queryKeys.reports.all],
-  });
+  useApiMutation(
+    (vars: { patientId: string; type?: string }) => reportService.generate(vars.patientId, vars.type),
+    {
+      successMessage: (data) => data.message ?? "Report generated",
+      invalidate: [queryKeys.reports.all],
+    },
+  );
 
 export const useExportReport = () =>
-  useApiMutation((format: "pdf" | "csv") => reportService.export(format), {
-    successMessage: (_d, v) => `Export ready (${v.toUpperCase()})`,
-    invalidate: [queryKeys.reports.downloads],
-  });
+  useApiMutation(
+    (vars: { reportId: string; format: "pdf" | "csv" }) => reportService.export(vars.reportId, vars.format),
+    {
+      successMessage: (_d, v) => `${v.format.toUpperCase()} export recorded`,
+      invalidate: [queryKeys.reports.all],
+    },
+  );
 
 /* -------------------------- Coordination --------------------------- */
 export const useAppointments = () => useApiQuery(queryKeys.appointments, () => appointmentService.list());
 export const useTreatmentPlan = (patientId: string) =>
   useApiQuery(queryKeys.treatment(patientId), () => treatmentService.plan(patientId));
-
-export const useCreateAppointment = () =>
-  useApiMutation((payload: Omit<Appointment, "id" | "status">) => appointmentService.create(payload), {
-    successMessage: "Appointment requested",
-    invalidate: [queryKeys.appointments],
-  });
 
 export const useCancelAppointment = () =>
   useApiMutation((id: string) => appointmentService.cancel(id), {
@@ -300,11 +338,6 @@ export const useCohortAnalytics = () => useApiQuery(queryKeys.analytics.cohort, 
 export const useAccuracyAnalytics = () => useApiQuery(queryKeys.analytics.accuracy, () => analyticsService.accuracy());
 
 export const useHospitals = () => useApiQuery(queryKeys.admin.hospitals, () => adminService.hospitals());
-export const useCreateHospital = () =>
-  useApiMutation((payload: Omit<Hospital, "id" | "doctors" | "patients">) => adminService.createHospital(payload), {
-    successMessage: "Hospital tenant created",
-    invalidate: [queryKeys.admin.hospitals],
-  });
 export const useDoctors = () => useApiQuery(queryKeys.admin.doctors, () => adminService.doctors());
 export const useDepartments = () => useApiQuery(queryKeys.admin.departments, () => adminService.departments());
 export const usePlatformUsers = () => useApiQuery(queryKeys.admin.users, () => adminService.users());

@@ -6,15 +6,24 @@ import { ArrowUpDown, Filter, Plus, Search, Trash2, Pencil, Users } from "lucide
 import { PageHeader } from "@/components/common/PageHeader";
 import { RiskChip, StatusChip, type ChipTone } from "@/components/common/StatusChip";
 import { EmptyState } from "@/components/common/EmptyState";
-import { StateNotice } from "@/components/common/StateNotice";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { PatientStatus } from "@/types/models";
-import { useDeletePatient, usePatients } from "@/hooks/api";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { Patient, PatientStatus } from "@/types/models";
+import { useCreatePatient, useDeletePatient, usePatients } from "@/hooks/api";
 
 export const Route = createFileRoute("/_shell/patients/")({
   head: () => ({
@@ -38,50 +47,42 @@ const statusTone: Record<PatientStatus, ChipTone> = {
 
 const PAGE_SIZE = 8;
 
+/** `—` rather than `0` for anything the record simply does not carry. */
+const show = (value: unknown, suffix = "") =>
+  value === null || value === undefined || value === "" ? "—" : `${value}${suffix}`;
+
+const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleDateString() : "—");
+
+/** `+` / `−` only when the status is actually recorded. */
+const receptor = (value?: string | null) => (value === "Positive" ? "+" : value === "Negative" ? "−" : "—");
+
 function PatientsPage() {
+  const { data: sourcePatients = [], isLoading } = usePatients();
+  const createPatient = useCreatePatient();
+  const deletePatient = useDeletePatient();
   const [query, setQuery] = useState("");
   const [stage, setStage] = useState("all");
   const [status, setStatus] = useState("all");
   const [sortAsc, setSortAsc] = useState(true);
   const [page, setPage] = useState(1);
-
-  const { data: patientsData, isLoading, isError } = usePatients(query);
-  const deletePatient = useDeletePatient();
-  const patients = patientsData ?? [];
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newStage, setNewStage] = useState("II");
+  const [newHer2, setNewHer2] = useState("Negative");
 
   const filtered = useMemo(() => {
-    const rows = patients.filter(
-      (p) => (stage === "all" || p.stage === stage) && (status === "all" || p.status === status),
-    );
+    const rows = sourcePatients.filter((p) => {
+      const q = query.trim().toLowerCase();
+      const matchQ = !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+      return matchQ && (stage === "all" || p.stage === stage) && (status === "all" || p.status === status);
+    });
     return [...rows].sort((a, b) => (sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)));
-  }, [patients, stage, status, sortAsc]);
+  }, [query, stage, status, sortAsc, sourcePatients]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const current = Math.min(page, pageCount);
   const rows = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
 
-  const remove = (id: string) => deletePatient.mutate(id);
-
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-[1400px] space-y-4">
-        <Skeleton className="h-9 w-64" />
-        <Skeleton className="h-96 rounded-2xl" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="mx-auto max-w-[1400px]">
-        <StateNotice
-          state="prediction-unavailable"
-          title="Could not load patients"
-          description="Something went wrong fetching the patient list. Try again shortly."
-        />
-      </div>
-    );
-  }
+  const remove = (p: Patient) => deletePatient.mutate(p.id);
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -90,11 +91,87 @@ function PatientsPage() {
         description="All patients under your care, with biomarkers, treatment and twin status."
         crumbs={[{ label: "Home", to: "/" }, { label: "Patients" }]}
         actions={
-          <Button asChild>
-            <Link to="/patients/new">
-              <Plus className="size-4" aria-hidden="true" /> Add patient
-            </Link>
-          </Button>
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="size-4" aria-hidden="true" /> Add patient
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Create patient</DialogTitle>
+                <DialogDescription>Register a new patient and generate their digital twin.</DialogDescription>
+              </DialogHeader>
+              <form
+                className="grid gap-4 sm:grid-cols-2"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const form = new FormData(e.currentTarget);
+                  const age = form.get("age");
+                  const tumor = form.get("tumorSize");
+                  // Every field on the form is sent. Blank optional inputs are
+                  // omitted rather than written as 0, so an unknown tumour
+                  // size stays unknown instead of becoming a measurement.
+                  await createPatient.mutateAsync({
+                    name: String(form.get("name") ?? "").trim(),
+                    ...(age ? { age: Number(age) } : {}),
+                    ...(tumor ? { tumorSizeMm: Number(tumor) } : {}),
+                    stage: newStage as Patient["stage"],
+                    her2Status: newHer2 as Patient["her2Status"],
+                  });
+                  setCreateOpen(false);
+                }}
+              >
+                <div className="grid gap-2 sm:col-span-2">
+                  <Label htmlFor="p-name">Full name</Label>
+                  <Input id="p-name" name="name" placeholder="Jane Doe" required />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="p-age">Age</Label>
+                  <Input id="p-age" name="age" type="number" min={18} max={110} placeholder="52" required />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="p-tumor">Tumor size (mm)</Label>
+                  <Input id="p-tumor" name="tumorSize" type="number" min={1} placeholder="22" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="p-stage">Cancer stage</Label>
+                  <Select value={newStage} onValueChange={setNewStage}>
+                    <SelectTrigger id="p-stage">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["0", "I", "II", "III", "IV"].map((s) => (
+                        <SelectItem key={s} value={s}>
+                          Stage {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="p-her2">HER2 status</Label>
+                  <Select value={newHer2} onValueChange={setNewHer2}>
+                    <SelectTrigger id="p-her2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Positive">Positive</SelectItem>
+                      <SelectItem value="Negative">Negative</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <DialogFooter className="sm:col-span-2">
+                  <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createPatient.isPending}>
+                    {createPatient.isPending ? "Creating…" : "Create patient"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         }
       />
 
@@ -147,18 +224,35 @@ function PatientsPage() {
           </div>
         </div>
 
-        {rows.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-2 p-4">
+            <Skeleton className="h-10 rounded-lg" />
+            <Skeleton className="h-10 rounded-lg" />
+            <Skeleton className="h-10 rounded-lg" />
+          </div>
+        ) : rows.length === 0 ? (
           <div className="p-6">
-            <EmptyState
-              icon={Users}
-              title="No patients match your filters"
-              description="Try adjusting your search terms or clearing the stage and status filters."
-              action={
-                <Button variant="outline" onClick={() => { setQuery(""); setStage("all"); setStatus("all"); }}>
-                  Clear filters
-                </Button>
-              }
-            />
+            {/* "Nothing recorded" and "nothing matches" are different problems
+                and need different next steps. */}
+            {sourcePatients.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="No patients recorded"
+                description="No patient records exist yet. Use “Add patient” to create the first one."
+                action={<Button onClick={() => setCreateOpen(true)}>Add patient</Button>}
+              />
+            ) : (
+              <EmptyState
+                icon={Users}
+                title="No patients match your filters"
+                description="Try adjusting your search terms or clearing the stage and status filters."
+                action={
+                  <Button variant="outline" onClick={() => { setQuery(""); setStage("all"); setStatus("all"); }}>
+                    Clear filters
+                  </Button>
+                }
+              />
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -193,28 +287,32 @@ function PatientsPage() {
                         {p.name}
                       </Link>
                     </TableCell>
-                    <TableCell>{p.age}</TableCell>
+                    <TableCell>{show(p.age)}</TableCell>
                     <TableCell>
-                      <StatusChip tone="neutral">Stage {p.stage}</StatusChip>
+                      <StatusChip tone="neutral">{p.stage ? `Stage ${p.stage}` : "Stage —"}</StatusChip>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">{p.tumorSizeMm} mm</TableCell>
+                    <TableCell className="whitespace-nowrap">{show(p.tumorSizeMm, " mm")}</TableCell>
                     <TableCell className={p.erStatus === "Positive" ? "text-success" : "text-muted-foreground"}>
-                      {p.erStatus === "Positive" ? "+" : "−"}
+                      {receptor(p.erStatus)}
                     </TableCell>
                     <TableCell className={p.prStatus === "Positive" ? "text-success" : "text-muted-foreground"}>
-                      {p.prStatus === "Positive" ? "+" : "−"}
+                      {receptor(p.prStatus)}
                     </TableCell>
                     <TableCell className={p.her2Status === "Positive" ? "text-warning-foreground" : "text-muted-foreground"}>
-                      {p.her2Status === "Positive" ? "+" : "−"}
+                      {receptor(p.her2Status)}
                     </TableCell>
-                    <TableCell className="max-w-[180px] truncate text-sm">{p.currentTreatment}</TableCell>
+                    <TableCell className="max-w-[180px] truncate text-sm">{show(p.currentTreatment)}</TableCell>
                     <TableCell>
-                      <StatusChip tone={statusTone[p.status]}>{p.status}</StatusChip>
+                      {p.status ? (
+                        <StatusChip tone={statusTone[p.status] ?? "neutral"}>{p.status}</StatusChip>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
-                    <TableCell>
-                      <RiskChip level={p.risk} />
+                    <TableCell>{p.risk ? <RiskChip level={p.risk} /> : <span className="text-muted-foreground">—</span>}</TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {formatDate(p.lastUpdated)}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{p.lastUpdated}</TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" aria-label={`Edit ${p.name}`} asChild>
@@ -222,7 +320,7 @@ function PatientsPage() {
                             <Pencil className="size-4" aria-hidden="true" />
                           </Link>
                         </Button>
-                        <Button variant="ghost" size="icon" aria-label={`Delete ${p.name}`} onClick={() => remove(p.id)}>
+                        <Button variant="ghost" size="icon" aria-label={`Delete ${p.name}`} onClick={() => remove(p)}>
                           <Trash2 className="size-4 text-risk" aria-hidden="true" />
                         </Button>
                       </div>

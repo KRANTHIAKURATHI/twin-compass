@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PageErrorState, PageSkeleton, RouteErrorState } from "@/components/common/PageState";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Activity, CalendarDays, FileText, HeartPulse, Syringe } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -10,7 +10,8 @@ import { Timeline } from "@/components/common/Timeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { useAppointments, useConfidenceTrend, usePatients, useTreatmentPlan } from "@/hooks/api";
+import { patients, progressionForecast } from "@/services/data";
+import { appointments, treatmentPlan } from "@/services/data";
 
 export const Route = createFileRoute("/_patient/portal/")({
   head: () => ({
@@ -24,30 +25,13 @@ export const Route = createFileRoute("/_patient/portal/")({
     ],
   }),
   errorComponent: RouteErrorState,
-  component: PatientDashboard,
+  component: withPageStates(PatientDashboard, { variant: "cards" }),
 });
 
+const me = patients[0];
+
 function PatientDashboard() {
-  const patientsQuery = usePatients();
-  const me = patientsQuery.data?.[0];
-
-  const appointmentsQuery = useAppointments();
-  const treatmentQuery = useTreatmentPlan(me?.id ?? "");
-  const confidenceTrendQuery = useConfidenceTrend(me?.id ?? "");
-
-  if (patientsQuery.isLoading) return <PageSkeleton variant="cards" />;
-  if (patientsQuery.isError || !me) {
-    return (
-      <div className="mx-auto max-w-[900px] pt-4">
-        <PageErrorState onRetry={() => patientsQuery.refetch()} />
-      </div>
-    );
-  }
-
-  const appointments = appointmentsQuery.data ?? [];
-  const next = appointments.find((a) => a.status !== "Completed");
-  const treatmentPlan = treatmentQuery.data;
-  const confidenceTrend = confidenceTrendQuery.data ?? [];
+  const next = appointments.find((a) => a.status !== "Completed")!;
 
   return (
     <div className="mx-auto max-w-[1200px]">
@@ -62,42 +46,34 @@ function PatientDashboard() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Treatment cycle"
-          value={treatmentPlan ? `${treatmentPlan.cycle} of ${treatmentPlan.totalCycles}` : "—"}
-          icon={Syringe}
-        />
-        <StatCard label="Next appointment" value={next?.date ?? "None scheduled"} icon={CalendarDays} tone="success" />
-        <StatCard label="Plan adherence" value={treatmentPlan ? `${treatmentPlan.adherence}%` : "—"} icon={HeartPulse} tone="success" />
+        <StatCard label="Treatment cycle" value={`${treatmentPlan.cycle} of ${treatmentPlan.totalCycles}`} icon={Syringe} />
+        <StatCard label="Next appointment" value={next.date} icon={CalendarDays} tone="success" />
+        <StatCard label="Plan adherence" value={`${treatmentPlan.adherence}%`} icon={HeartPulse} tone="success" />
         <StatCard label="Reports on file" value={String(me.reports.length)} icon={FileText} tone="primary" />
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Prediction confidence trend</CardTitle>
-            <CardDescription>Model confidence in your latest predictions over time</CardDescription>
+            <CardTitle>Your progress</CardTitle>
+            <CardDescription>Tumor measurement trend from your imaging reports (mm)</CardDescription>
           </CardHeader>
           <CardContent className="h-64">
-            {confidenceTrend.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No trend data yet.</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={confidenceTrend} margin={{ left: -20 }}>
-                  <defs>
-                    <linearGradient id="pTreated" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--color-chart-2)" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="var(--color-chart-2)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                  <XAxis dataKey="date" tickLine={false} axisLine={false} stroke="var(--color-muted-foreground)" fontSize={12} />
-                  <YAxis tickLine={false} axisLine={false} stroke="var(--color-muted-foreground)" fontSize={12} />
-                  <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--color-border)", background: "var(--color-card)", fontSize: 12 }} />
-                  <Area type="monotone" dataKey="confidence" stroke="var(--color-chart-2)" strokeWidth={2} fill="url(#pTreated)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={progressionForecast} margin={{ left: -20 }}>
+                <defs>
+                  <linearGradient id="pTreated" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--color-chart-2)" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="var(--color-chart-2)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} stroke="var(--color-muted-foreground)" fontSize={12} />
+                <YAxis tickLine={false} axisLine={false} stroke="var(--color-muted-foreground)" fontSize={12} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--color-border)", background: "var(--color-card)", fontSize: 12 }} />
+                <Area type="monotone" dataKey="treated" stroke="var(--color-chart-2)" strokeWidth={2} fill="url(#pTreated)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
@@ -108,39 +84,29 @@ function PatientDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {treatmentQuery.isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading care plan…</p>
-            ) : !treatmentPlan ? (
-              <p className="text-sm text-muted-foreground">No treatment plan on file yet.</p>
-            ) : (
-              <>
-                <div>
-                  <p className="text-sm font-medium">{treatmentPlan.regimen}</p>
-                  <p className="text-xs text-muted-foreground">Started {treatmentPlan.startedOn}</p>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Cycles completed</span>
-                    <span className="font-semibold">
-                      {treatmentPlan.cycle}/{treatmentPlan.totalCycles}
-                    </span>
-                  </div>
-                  <Progress value={(treatmentPlan.cycle / treatmentPlan.totalCycles) * 100} className="mt-2 h-2" />
-                </div>
-              </>
-            )}
-            {next && (
-              <div className="rounded-xl border border-border p-3">
-                <p className="text-xs text-muted-foreground">Next session</p>
-                <p className="text-sm font-medium">{next.title}</p>
-                <p className="text-xs text-muted-foreground">
-                  {next.date} · {next.time} · {next.location}
-                </p>
-                <StatusChip tone="primary" className="mt-2">
-                  {next.status}
-                </StatusChip>
+            <div>
+              <p className="text-sm font-medium">{treatmentPlan.regimen}</p>
+              <p className="text-xs text-muted-foreground">Started {treatmentPlan.startedOn}</p>
+            </div>
+            <div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Cycles completed</span>
+                <span className="font-semibold">
+                  {treatmentPlan.cycle}/{treatmentPlan.totalCycles}
+                </span>
               </div>
-            )}
+              <Progress value={(treatmentPlan.cycle / treatmentPlan.totalCycles) * 100} className="mt-2 h-2" />
+            </div>
+            <div className="rounded-xl border border-border p-3">
+              <p className="text-xs text-muted-foreground">Next session</p>
+              <p className="text-sm font-medium">{next.title}</p>
+              <p className="text-xs text-muted-foreground">
+                {next.date} · {next.time} · {next.location}
+              </p>
+              <StatusChip tone="primary" className="mt-2">
+                {next.status}
+              </StatusChip>
+            </div>
             <Button variant="outline" className="w-full" asChild>
               <Link to="/portal/treatment">View my treatment</Link>
             </Button>

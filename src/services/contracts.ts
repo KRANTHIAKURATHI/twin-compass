@@ -6,26 +6,31 @@
  * adapter can implement the same interfaces later with zero UI changes.
  */
 import type {
+  AccuracyResult,
   Appointment,
   AuditLogEntry,
   AuthSession,
   AuthUser,
+  CohortAnalytics,
   ConfidencePoint,
   Credentials,
+  DashboardAnalytics,
   Dataset,
   Department,
+  DocumentDownload,
+  DocumentLinks,
+  DocumentPreview,
   DocumentRecord,
   DocumentVersion,
   DoctorProfile,
   DownloadRecord,
+  ExplainabilityResult,
   ExportFormat,
-  FeatureImportance,
   Hospital,
   ImagingStudy,
   LabResult,
   ListQuery,
   MLModel,
-  MetricPoint,
   ModelVersion,
   MutationResult,
   NotificationItem,
@@ -37,6 +42,7 @@ import type {
   PermissionRow,
   PlatformUser,
   PredictionRun,
+  ReportDetail,
   ReportVersion,
   SavedReport,
   Scenario,
@@ -45,34 +51,32 @@ import type {
   TimelineEvent,
   TrainingRun,
   TreatmentPlan,
+  TumorSizePoint,
   TwinSnapshot,
   TwinVersion,
 } from "@/types/models";
 
 export interface AuthService {
   login(credentials: Credentials): Promise<AuthSession>;
-  register(
-    payload: Credentials & {
-      name: string;
-      role?: "doctor" | "patient" | "researcher" | "admin";
-      hospital?: string;
-      specialization?: string;
-    },
-  ): Promise<MutationResult<AuthUser>>;
+  register(payload: Credentials & { name: string }): Promise<MutationResult<AuthUser>>;
   logout(): Promise<MutationResult>;
+  /** Exchanges the httpOnly refresh cookie for a new access token. */
+  refresh(): Promise<AuthSession>;
   forgotPassword(email: string): Promise<MutationResult>;
   resetPassword(payload: { token: string; password: string }): Promise<MutationResult>;
   me(): Promise<AuthUser>;
-  updateMe(payload: Partial<Pick<AuthUser, "name" | "title" | "hospital" | "avatarUrl">>): Promise<AuthUser>;
-  changePassword(payload: { currentPassword: string; newPassword: string }): Promise<MutationResult>;
 }
 
-export interface SearchService {
-  global(query: string): Promise<{
-    patients: { id: string; name: string; type: "patient" }[];
-    documents: { id: string; name: string; type: "document" }[];
-    reports: { id: string; name: string; type: "report" }[];
-  }>;
+export interface UserService {
+  // PATCH /users/profile — self-editable, non-privileged fields only (no
+  // email/role change here; those need separate, more sensitive flows).
+  updateProfile(payload: {
+    name?: string;
+    title?: string;
+    hospital?: string;
+    department?: string;
+    avatarUrl?: string;
+  }): Promise<AuthUser>;
 }
 
 export interface PatientService {
@@ -86,8 +90,33 @@ export interface PatientService {
   timeline(patientId: string): Promise<TimelineEvent[]>;
 }
 
+/** One row of the digital-twin list — a patient plus its active version. */
+export interface TwinListEntry {
+  patientId: string;
+  patient: string;
+  /** null when the patient has no twin_versions row yet. */
+  version: string | null;
+  status: string;
+  createdAt: string | null;
+  author: string;
+  summary: string;
+  tumorSizeMm: number | null;
+  survival: number | null;
+  risk: string | null;
+  model: string;
+}
+
+export interface TwinDetail {
+  patientId: string;
+  patient: string;
+  twinStatus: string;
+  active: TwinVersion | null;
+  versions: TwinVersion[];
+}
+
 export interface TwinService {
-  list(): Promise<Patient[]>;
+  list(): Promise<TwinListEntry[]>;
+  get(patientId: string): Promise<TwinDetail>;
   versions(patientId: string): Promise<TwinVersion[]>;
   snapshots(patientId: string): Promise<TwinSnapshot[]>;
   resync(patientId: string): Promise<MutationResult>;
@@ -96,44 +125,69 @@ export interface TwinService {
 }
 
 export interface PredictionService {
-  forPatient(patientId: string): Promise<PredictionRun | undefined>;
+  /** null — not undefined — when no run has ever been recorded. */
+  forPatient(patientId: string): Promise<PredictionRun | null>;
   history(patientId: string): Promise<PredictionRun[]>;
   confidenceTrend(patientId: string): Promise<ConfidencePoint[]>;
-  explain(patientId: string): Promise<FeatureImportance[]>;
+  /** Measured tumour size per twin version. Empty until versions exist. */
+  progression(patientId: string): Promise<TumorSizePoint[]>;
+  explain(patientId: string): Promise<ExplainabilityResult>;
   run(patientId: string): Promise<MutationResult<PredictionRun>>;
 }
 
 export interface SimulationService {
-  list(): Promise<SimulationRun[]>;
+  /** Filtered server-side when `patientId` is given. */
+  list(patientId?: string): Promise<SimulationRun[]>;
   get(id: string): Promise<SimulationRun | undefined>;
+  /**
+   * Scenarios recorded by this patient's most recent run, or `[]` if they have
+   * never had one. Deliberately does not invent scenarios for an unrun
+   * patient — the simulator shows an empty state and a Run button instead.
+   */
   scenarios(patientId: string): Promise<Scenario[]>;
-  run(patientId: string, draft?: ScenarioDraft): Promise<{ patientId: string; scenarios: Scenario[] }>;
+  /**
+   * Executes a run and returns the record it created. `id` is the new
+   * `simulation_runs` row — the simulator needs it to promote the selected
+   * scenario, and without it the Promote button had nothing to act on.
+   */
+  run(
+    patientId: string,
+    draft?: ScenarioDraft,
+  ): Promise<{ id: string; patientId: string; scenarios: Scenario[] }>;
   save(patientId: string, draft: ScenarioDraft): Promise<MutationResult<SimulationRun>>;
   duplicate(id: string): Promise<MutationResult<SimulationRun>>;
   promote(id: string, notes?: string): Promise<MutationResult>;
 }
 
 export interface DocumentService {
-  list(query?: ListQuery): Promise<DocumentRecord[]>;
+  list(query?: ListQuery & { patientId?: string }): Promise<DocumentRecord[]>;
   get(id: string): Promise<DocumentRecord | undefined>;
-  upload(file: { name: string; size: number; patientId?: string }): Promise<MutationResult<DocumentRecord>>;
+  upload(payload: {
+    file: File;
+    patientId: string;
+    category?: string;
+  }): Promise<MutationResult<DocumentRecord>>;
   versions(id: string): Promise<DocumentVersion[]>;
   timeline(id: string): Promise<TimelineEvent[]>;
+  links(id: string): Promise<DocumentLinks>;
+  download(id: string): Promise<DocumentDownload>;
+  preview(id: string): Promise<DocumentPreview>;
 }
 
 export interface OcrService {
-  extract(documentId: string): Promise<OcrExtraction>;
-  fields(documentId: string): Promise<OcrField[]>;
-  approve(documentId: string, fields: OcrField[]): Promise<MutationResult>;
-  reject(documentId: string, reason: string): Promise<MutationResult>;
+  extract(documentId: string): Promise<MutationResult<OcrExtraction>>;
+  fields(documentId: string): Promise<OcrExtraction>;
+  approve(documentId: string, fields: OcrField[]): Promise<MutationResult<OcrExtraction>>;
+  reject(documentId: string, reason?: string): Promise<MutationResult<OcrExtraction>>;
 }
 
 export interface ReportService {
-  list(): Promise<SavedReport[]>;
+  list(patientId?: string): Promise<SavedReport[]>;
+  get(id: string): Promise<ReportDetail>;
   versions(id: string): Promise<ReportVersion[]>;
-  downloads(): Promise<DownloadRecord[]>;
-  generate(patientId: string): Promise<MutationResult<SavedReport>>;
-  export(format: ExportFormat): Promise<MutationResult<{ format: ExportFormat }>>;
+  downloads(reportId?: string): Promise<DownloadRecord[]>;
+  generate(patientId: string, type?: string): Promise<MutationResult<SavedReport>>;
+  export(reportId: string, format: ExportFormat): Promise<MutationResult<ReportDetail & { format: ExportFormat }>>;
 }
 
 export interface AppointmentService {
@@ -154,21 +208,18 @@ export interface NotificationService {
 }
 
 export interface AnalyticsService {
-  dashboard(): Promise<MetricPoint[]>;
-  cohort(): Promise<MetricPoint[]>;
-  accuracy(): Promise<MetricPoint[]>;
+  dashboard(): Promise<DashboardAnalytics>;
+  cohort(): Promise<CohortAnalytics>;
+  accuracy(): Promise<AccuracyResult>;
 }
 
 export interface AdminService {
   hospitals(): Promise<Hospital[]>;
-  createHospital(payload: Omit<Hospital, "id" | "doctors" | "patients">): Promise<MutationResult<Hospital>>;
   doctors(): Promise<DoctorProfile[]>;
   departments(): Promise<Department[]>;
   users(): Promise<PlatformUser[]>;
-  createUser(payload: { name: string; email: string; password?: string; role: string; hospital?: string; specialization?: string }): Promise<MutationResult<AuthUser>>;
   auditLogs(): Promise<AuditLogEntry[]>;
   permissions(): Promise<PermissionRow[]>;
-  updatePermissions(permissions: PermissionRow[]): Promise<MutationResult>;
 }
 
 export interface ResearchService {

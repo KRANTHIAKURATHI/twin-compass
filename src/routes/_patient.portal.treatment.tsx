@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageErrorState, PageSkeleton, RouteErrorState } from "@/components/common/PageState";
+import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Pill, ShieldAlert, Syringe } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
@@ -7,7 +7,7 @@ import { StatusChip } from "@/components/common/StatusChip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { usePatients, useTreatmentPlan } from "@/hooks/api";
+import { treatmentPlan } from "@/services/data";
 
 export const Route = createFileRoute("/_patient/portal/treatment")({
   head: () => ({
@@ -21,33 +21,10 @@ export const Route = createFileRoute("/_patient/portal/treatment")({
     ],
   }),
   errorComponent: RouteErrorState,
-  component: MyTreatment,
+  component: withPageStates(MyTreatment, { variant: "list" }),
 });
 
 function MyTreatment() {
-  const patientsQuery = usePatients();
-  const me = patientsQuery.data?.[0];
-  const treatmentQuery = useTreatmentPlan(me?.id ?? "");
-
-  if (patientsQuery.isLoading || (Boolean(me?.id) && treatmentQuery.isLoading)) return <PageSkeleton variant="list" />;
-  if (patientsQuery.isError || treatmentQuery.isError || !me) {
-    return (
-      <div className="mx-auto max-w-[900px] pt-4">
-        <PageErrorState onRetry={() => (patientsQuery.isError ? patientsQuery.refetch() : treatmentQuery.refetch())} />
-      </div>
-    );
-  }
-
-  const treatmentPlan = treatmentQuery.data;
-  if (!treatmentPlan) {
-    return (
-      <div className="mx-auto max-w-[1100px]">
-        <PageHeader title="My Treatment" description="Everything about your current care plan, explained in plain language." />
-        <p className="py-10 text-center text-sm text-muted-foreground">No treatment plan is on file yet.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto max-w-[1100px]">
       <PageHeader title="My Treatment" description="Everything about your current care plan, explained in plain language." />
