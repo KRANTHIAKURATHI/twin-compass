@@ -14,8 +14,13 @@ import { AUTH_ENFORCED, useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import type { UserRole } from "@/types/models";
 
+const ROLE_HOME = { doctor: "/", patient: "/portal", researcher: "/research", admin: "/admin" } as const;
+
 export function RequireRole({ roles, children }: { roles: UserRole[]; children: ReactNode }) {
-  const { isLoading, isAuthenticated, hasAnyRole } = useAuth();
+  const { isLoading, isAuthenticated, hasAnyRole, user, role, setRole } = useAuth();
+  // "Viewing as" only changes the UI role; the account's own role (user.role)
+  // is what the backend enforces, so "dashboard" means that role's home.
+  const accountRole = user?.role ?? role;
 
   if (!AUTH_ENFORCED) return <>{children}</>;
   if (isLoading) return null;
@@ -30,7 +35,15 @@ export function RequireRole({ roles, children }: { roles: UserRole[]; children: 
             Your account doesn't have access to this area. Contact an administrator if you believe this is a mistake.
           </p>
           <Button asChild className="mt-6">
-            <Link to={isAuthenticated ? "/" : "/login"}>{isAuthenticated ? "Go to dashboard" : "Sign in"}</Link>
+            <Link
+              to={isAuthenticated ? ROLE_HOME[accountRole] : "/login"}
+              onClick={() => {
+                if (isAuthenticated && role !== accountRole) setRole(accountRole);
+              }}
+            >
+              {/* resets the UI-only view role so the guard no longer blocks */}
+              {isAuthenticated ? "Go to dashboard" : "Sign in"}
+            </Link>
           </Button>
         </div>
       </div>
