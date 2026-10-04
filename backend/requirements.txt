@@ -24,6 +24,15 @@ bcrypt==4.2.1
 # Optional at runtime: only imported when AUTH_PROVIDER=supabase.
 supabase==2.11.0
 
+# --- ML runtime (app/ml/artifacts/model.joblib) ---------------------------------
+# scikit-learn must match the version the artifact was trained with (1.9.0,
+# recorded inside model.joblib); a different version can fail to unpickle or
+# silently change behaviour. Re-train (python -m app.ml.train) before changing it.
+scikit-learn==1.9.0
+numpy==2.5.3
+scipy==1.18.1
+joblib==1.6.0
+
 # --- Misc ---------------------------------------------------------------------
 slowapi==0.1.9
 httpx==0.28.1

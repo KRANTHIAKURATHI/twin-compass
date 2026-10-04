@@ -62,6 +62,13 @@ class UpstreamServiceError(AppError):
     code = "UPSTREAM_SERVICE_ERROR"
 
 
+class ModelUnavailableError(AppError):
+    """The prediction model (dependencies or artifact) cannot be loaded."""
+
+    status_code = 503
+    code = "MODEL_UNAVAILABLE"
+
+
 class RateLimitedError(AppError):
     status_code = 429
     code = "RATE_LIMITED"

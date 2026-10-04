@@ -1,11 +1,14 @@
 """
 Predictions router.
 
-An honesty note that governs this whole module: **this codebase contains no
-trained model.** `patients.survival_probability` and `patients.risk` are
-values stored on the record by whatever wrote it; nothing here infers them.
+An honesty note that governs this whole module: the only trained model here is
+a WDBC Random Forest malignancy classifier (`app.ml`), used by
+`POST /predictions/run` alone. It does not predict survival or recurrence;
+those are heuristic formulas over its output and are labelled as such.
+`patients.survival_probability` and `patients.risk` are values stored on the
+record by whatever wrote it; nothing else here infers them.
 
-So every number this router returns is one of two things, and the response
+Every other number this router returns is one of two things, and the response
 labels which:
 
   * `measured`  - read straight out of the database (a recorded prediction
@@ -14,21 +17,21 @@ labels which:
                   database (see `/explainability` and the survival curve in
                   the analytics router).
 
-Nothing is a forecast, because there is nothing here that can forecast. When
-a real model is attached, `POST /predictions/run` is the seam to change: it
-currently records the twin's stored state as a prediction run, and would
-instead record the model's output.
+Nothing else is a forecast, because nothing else here can forecast.
 """
 from __future__ import annotations
 
 import statistics
 import uuid
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
+import anyio.to_thread
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import ModelUnavailableError
 from app.db.session import get_db_session
 from app.dependencies.auth import CurrentUser, require_roles
 from app.schemas.clinical import PredictionRequest
@@ -297,38 +300,67 @@ async def explainability(
     }
 
 
+def _run_model(patient: dict[str, object]) -> tuple[dict[str, object], str]:
+    """Runs the `app.ml` model synchronously (call from a worker thread).
+
+    `app.ml` is imported here, not at module level, so missing ML dependencies
+    or a missing artifact surface as a 503 on this endpoint instead of
+    preventing the whole API from starting.
+    """
+    try:
+        from app.ml.interface import get_prediction_model, patient_to_model_fields
+
+        # `None` fields are dropped so the model's documented per-field
+        # defaults apply, exactly as for a field that was never recorded.
+        fields = {
+            k: v for k, v in patient_to_model_fields(SimpleNamespace(**patient)).items() if v is not None
+        }
+        model = get_prediction_model()
+        result = model.predict(fields)
+        meta = model.metadata
+    except (ImportError, RuntimeError, OSError) as exc:
+        raise ModelUnavailableError(
+            "The prediction model is unavailable (missing dependency or model artifact)."
+        ) from exc
+    # The label states what the numbers are: a WDBC Random Forest malignancy
+    # classifier plus heuristic survival/recurrence formulas - not a validated
+    # survival or recurrence model.
+    label = f"{meta.name} {meta.version} (RF malignancy classifier; heuristic survival/recurrence)"
+    return result, label
+
+
 @router.post("/predictions/run", status_code=201)
 async def run_prediction(
     payload: PredictionRequest,
     session: AsyncSession = Depends(get_db_session),
     _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
 ) -> dict[str, object]:
-    """Record a prediction run from the twin's current stored state.
+    """Record a prediction run produced by the existing `app.ml` model.
 
-    No inference happens: survival and risk are copied from the active twin
-    version (falling back to the patient record), and `model` names that
-    provenance so a reader is never misled into thinking a model ran.
-    Confidence is omitted - there is no model to be confident.
+    The Random Forest is trained on WDBC and predicts benign vs malignant. The
+    patient's clinical fields reach it through `clinical_severity()` and
+    interpolation between the WDBC class centroids; survival, recurrence and
+    the risk band are heuristic formulas over that output. They are stored in
+    the existing columns but are NOT outputs of a survival/recurrence model,
+    and the run's `model` label says so. `confidence` is the classifier's
+    top-class probability, not confidence in survival or recurrence.
+
+    If the model cannot be loaded the request fails with 503; nothing is
+    recorded and no snapshot value is substituted.
     """
     patient = await resolve_patient(session, payload.patient_id)
     pid = str(patient["id"])
     active = (
         await session.execute(
             text(
-                "SELECT version, survival, risk, model FROM twin_versions WHERE patient_id = :pid "
+                "SELECT version FROM twin_versions WHERE patient_id = :pid "
                 "ORDER BY (status = 'Active') DESC, created_at DESC LIMIT 1"
             ),
             {"pid": pid},
         )
     ).mappings().first()
 
-    # Nothing is defaulted here. A patient with no recorded survival used to
-    # have 0.0 written into the run - which reads as a 0% five-year survival and
-    # a 100% recurrence risk - and one with no recorded risk band was stored as
-    # "low", turning an absent assessment into a reassuring clinical claim.
-    raw_survival = active["survival"] if active else patient["survival_probability"]
-    survival = float(raw_survival) if raw_survival is not None else None
-    risk = (active["risk"] if active else patient["risk"]) or None
+    result, model_label = await anyio.to_thread.run_sync(_run_model, dict(patient))
     now = datetime.now(timezone.utc).isoformat()
     run_id = str(uuid.uuid4())
 
@@ -348,17 +380,16 @@ async def run_prediction(
             "pid": pid,
             "date": now,
             "twin_version": (active["version"] if active else None) or "none",
-            "model": "Twin state snapshot (no model attached)",
-            "survival": round(survival * 100, 1) if survival is not None else None,
-            # Complement of recorded survival - a restatement of the stored
-            # number, not a separately estimated recurrence risk. With no
-            # survival on file there is nothing to take the complement of.
-            "recurrence": round((1.0 - survival) * 100, 1) if survival is not None else None,
+            "model": model_label,
+            # Heuristic formulas over the classifier output (see
+            # `app.ml.model.predict_from_severity`), stored as percentages.
+            "survival": round(result["survival"] * 100, 1),
+            "recurrence": round(result["recurrence"] * 100, 1),
             # The column is named `response`; the value is a risk band. See the
             # note in _prediction_response.
-            "response": risk,
-            "confidence": None,
-            "status": "Complete",
+            "response": result["risk"],
+            "confidence": round(result["confidence"] * 100, 1),
+            "status": result["status"],
         },
     )
     await session.execute(
@@ -373,7 +404,7 @@ async def run_prediction(
             "pid": pid,
             "date": now,
             "title": "Prediction run recorded",
-            "detail": f"Recorded from twin state ({(active['version'] if active else 'no twin version')}).",
+            "detail": f"{model_label}; twin version {(active['version'] if active else 'none')}.",
         },
     )
     await session.commit()

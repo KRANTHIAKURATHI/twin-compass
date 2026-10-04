@@ -18,16 +18,14 @@ validation on the run endpoint.
 
 Behaviour that requires a real Postgres/Supabase instance and is NOT covered
 here - flagged rather than faked:
-  * a recorded run reflecting the active twin version's stored state
+  * (the run endpoint's model call and 503 path ARE covered, against portable
+    SQL on SQLite, in test_predictions_run_model.py)
   * null-through behaviour for unset survival/confidence (not coerced to 0)
   * prediction history ordering (most recent first) and patient isolation
   * confidence-trend omitting runs with no recorded confidence
   * progression reading real twin_versions measurements
   * explainability's cohort-size floor (insufficient below 3 records) and
     the reliability threshold at 10 records
-  * model unavailability: there is no trained model in this codebase, so
-    "model unavailable" is not a distinct failure mode - every run records
-    twin state and labels itself "Twin state snapshot (no model attached)"
 These require an integration suite run against real Postgres/Supabase.
 """
 from __future__ import annotations
