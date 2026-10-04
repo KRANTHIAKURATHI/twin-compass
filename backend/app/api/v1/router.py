@@ -12,6 +12,7 @@ from app.api.v1.routers.auth import router as auth_router
 from app.api.v1.routers.auth import users_router
 from app.api.v1.routers.clinical import router as clinical_router
 from app.api.v1.routers.documents import router as documents_router
+from app.api.v1.routers.notifications import router as notifications_router
 from app.api.v1.routers.ocr import router as ocr_router
 from app.api.v1.routers.predictions import router as predictions_router
 from app.api.v1.routers.reports import router as reports_router
@@ -27,3 +28,4 @@ api_router.include_router(documents_router)
 api_router.include_router(ocr_router)
 api_router.include_router(analytics_router)
 api_router.include_router(reports_router)
+api_router.include_router(notifications_router)
