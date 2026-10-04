@@ -81,7 +81,7 @@ const fromApi = (s: Scenario): DisplayScenario => ({
   basis: s.basis ?? null,
   // Defaults to verified so an older run - recorded before the projection
   // carried provenance - is not stamped with a warning nobody can act on.
-  parametersVerified: s.provenance?.parametersVerified ?? true,
+  parametersVerified: s.provenance?.parametersVerified ?? false,
 });
 
 /** `—` rather than `0` for anything that was never evaluated. */
@@ -215,7 +215,7 @@ function SimulatorPage() {
       projectedSizeMm: null,
       cycles: null,
       basis: "Queued — this is the regimen the next run will evaluate.",
-      parametersVerified: true,
+      parametersVerified: false,
     });
     toast.success("Queued for the next run", {
       description: "Replaces any previously queued scenario — only one custom regimen is evaluated per run.",

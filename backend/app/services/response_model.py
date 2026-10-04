@@ -5,7 +5,7 @@ WHAT THIS IS
 A deterministic pharmacodynamic model. It takes the twin's recorded state -
 tumour diameter, proliferation index, receptor subtype - applies a regimen's
 published effect parameters, and projects the tumour forward using Skipper's
-log-kill hypothesis against Gompertzian regrowth between cycles.
+log-kill hypothesis with exponential regrowth between cycles.
 
 WHAT THIS IS NOT
 ----------------
@@ -216,7 +216,7 @@ def project_scenarios(
         "regimenFamily": family,
         "source": effect.source if effect else None,
         "parametersVerified": PARAMETERS_VERIFIED,
-        "model": "Log-kill projection over Gompertzian regrowth",
+        "model": "Log-kill projection with exponential regrowth (unvalidated parameters)",
         "unavailableReason": reason,
     }
 
