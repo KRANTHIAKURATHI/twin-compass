@@ -49,3 +49,6 @@ __pycache__/
 # Build output
 dist/
 build/
+# Local archives
+*.zip
+*.zip
