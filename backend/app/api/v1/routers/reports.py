@@ -10,8 +10,9 @@ table or explicitly marked absent.
 
 Scientific honesty, carried through from `routers/predictions.py`:
   * `prediction.basis` is `"measured"` (a real recorded run exists) or
-    `"none"` - never a fabricated forecast. There is no trained ML model in
-    this codebase.
+    `"none"` - never a fabricated forecast. A recorded run comes from the
+    Random Forest malignancy classifier; its survival/recurrence figures are
+    heuristic estimates, not clinically validated predictions.
   * Every simulation entry is labelled `"prototype"` - a research kinetic
     projection, not a clinically validated recommendation.
 
@@ -50,7 +51,8 @@ def _now() -> str:
 
 _REPORT_SELECT = """
     SELECT r.id, r.patient_id, r.type, r.title, r.version, r.status,
-           r.generated_at, r.content, p.patient_code, p.name AS patient_name
+           COALESCE(r.generated_at, r.created) AS generated_at, r.content,
+           p.patient_code, p.name AS patient_name
     FROM reports r
     JOIN patients p ON p.id = r.patient_id
 """
@@ -80,6 +82,29 @@ async def _report_response(session: AsyncSession, row) -> dict[str, object]:
     }
 
 
+def _report_content(row) -> dict[str, object]:
+    """The frozen content, or - for a legacy row that never recorded any - an
+    empty contract-shaped body. Nothing is reconstructed: a report generated
+    before content was stored has no recorded clinical snapshot to show."""
+    if row["content"]:
+        return row["content"]
+    note = "Legacy report: no frozen content was recorded when it was created."
+    return {
+        "patient": {
+            "name": row["patient_name"], "patientId": row["patient_code"], "age": None, "stage": None,
+            "tumorSizeMm": None, "erStatus": None, "prStatus": None, "her2Status": None,
+            "currentTreatment": None, "status": None,
+        },
+        "digitalTwin": None,
+        "prediction": {"basis": "none", "caveat": note},
+        "simulations": {"basis": "prototype", "caveat": note, "runs": []},
+        "documents": {"count": 0},
+        "timeline": [],
+        "notes": None,
+        "generationNote": note,
+    }
+
+
 async def _get_report_row(session: AsyncSession, report_id: str):
     row = (
         await session.execute(text(f"{_REPORT_SELECT} WHERE r.id = :id"), {"id": report_id})
@@ -101,10 +126,45 @@ async def list_reports(
         where = "WHERE p.patient_code = :patient_id OR p.id::text = :patient_id"
         params["patient_id"] = patientId
     result = await session.execute(
-        text(f"{_REPORT_SELECT} {where} ORDER BY r.generated_at DESC"), params
+        text(f"{_REPORT_SELECT} {where} ORDER BY COALESCE(r.generated_at, r.created) DESC"), params
     )
     rows = result.mappings().all()
     return [await _report_response(session, row) for row in rows]
+
+
+@router.get("/reports/downloads")
+async def download_history(
+    reportId: str | None = None,
+    session: AsyncSession = Depends(get_db_session),
+    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+) -> list[dict[str, object]]:
+    where = ""
+    params: dict[str, object] = {}
+    if reportId:
+        where = "WHERE d.report_id = :report_id"
+        params["report_id"] = reportId
+    result = await session.execute(
+        text(
+            f"""
+            SELECT d.id, d.report_id, d.format, d.downloaded_at, pr.email AS by_email
+            FROM report_downloads d
+            LEFT JOIN profiles pr ON CAST(pr.id AS text) = d.downloaded_by
+            {where}
+            ORDER BY d.downloaded_at DESC
+            """
+        ),
+        params,
+    )
+    return [
+        {
+            "id": row["id"],
+            "report": row["report_id"],
+            "format": row["format"].upper(),
+            "by": row["by_email"] or "",
+            "at": row["downloaded_at"],
+        }
+        for row in result.mappings()
+    ]
 
 
 @router.get("/reports/{report_id}")
@@ -115,7 +175,7 @@ async def get_report(
 ) -> dict[str, object]:
     row = await _get_report_row(session, report_id)
     base = await _report_response(session, row)
-    return {**base, "content": row["content"]}
+    return {**base, "content": _report_content(row)}
 
 
 @router.get("/reports/{report_id}/versions")
@@ -130,9 +190,10 @@ async def report_versions(
     result = await session.execute(
         text(
             """
-            SELECT r.version, r.generated_at, r.content, pr.email AS author_email
+            SELECT r.version, COALESCE(r.generated_at, r.created) AS generated_at, r.content,
+                   pr.email AS author_email
             FROM reports r
-            LEFT JOIN profiles pr ON pr.id = r.generated_by
+            LEFT JOIN profiles pr ON CAST(pr.id AS text) = r.generated_by
             WHERE r.patient_id = :pid AND r.type = :type
             ORDER BY r.version DESC
             """
@@ -152,41 +213,6 @@ async def report_versions(
             }
         )
     return versions
-
-
-@router.get("/reports/downloads")
-async def download_history(
-    reportId: str | None = None,
-    session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
-) -> list[dict[str, object]]:
-    where = ""
-    params: dict[str, object] = {}
-    if reportId:
-        where = "WHERE d.report_id = :report_id"
-        params["report_id"] = reportId
-    result = await session.execute(
-        text(
-            f"""
-            SELECT d.id, d.report_id, d.format, d.downloaded_at, pr.email AS by_email
-            FROM report_downloads d
-            LEFT JOIN profiles pr ON pr.id = d.downloaded_by
-            {where}
-            ORDER BY d.downloaded_at DESC
-            """
-        ),
-        params,
-    )
-    return [
-        {
-            "id": row["id"],
-            "report": row["report_id"],
-            "format": row["format"].upper(),
-            "by": row["by_email"] or "",
-            "at": row["downloaded_at"],
-        }
-        for row in result.mappings()
-    ]
 
 
 async def _next_version(session: AsyncSession, patient_uuid: str, report_type: str) -> int:
@@ -298,7 +324,7 @@ async def generate_report(
             if prediction is not None
             else {
                 "basis": "none",
-                "caveat": "No prediction run has been recorded for this patient. This system has no trained ML model attached.",
+                "caveat": "No prediction run has been recorded for this patient.",
             }
         ),
         "simulations": {
@@ -336,14 +362,17 @@ async def generate_report(
         text(
             """
             INSERT INTO reports
-                (id, patient_id, type, title, version, status, generated_by, generated_at, content, created_at)
+                (id, patient_id, patient_name, type, title, version, status, generated_by, generated_at,
+                 content, created_at, created)
             VALUES
-                (:id, :pid, :type, :title, :version, 'Final', :generated_by, :generated_at, CAST(:content AS jsonb), :generated_at)
+                (:id, :pid, :patient_name, :type, :title, :version, 'Final', :generated_by, :generated_at,
+                 CAST(:content AS jsonb), :generated_at, :generated_at)
             """
         ),
         {
             "id": report_id,
             "pid": pid,
+            "patient_name": patient["name"],
             "type": payload.type,
             "title": title,
             "version": version,
@@ -405,6 +434,6 @@ async def export_report(
     base = await _report_response(session, row)
     return {
         "ok": True,
-        "data": {**base, "content": row["content"], "format": fmt},
+        "data": {**base, "content": _report_content(row), "format": fmt},
         "message": f"{fmt.upper()} export recorded.",
     }
