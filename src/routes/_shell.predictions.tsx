@@ -28,9 +28,9 @@ export const Route = createFileRoute("/_shell/predictions")({
   head: () => ({
     meta: [
       { title: "AI Predictions — OncoTwin" },
-      { name: "description", content: "Disease progression, treatment response, survival probability and recurrence risk predictions." },
+      { name: "description", content: "Malignancy classification with heuristic survival and recurrence estimates (research prototype, not clinically validated)." },
       { property: "og:title", content: "AI Predictions — OncoTwin" },
-      { property: "og:description", content: "Disease progression, treatment response, survival probability and recurrence risk predictions." },
+      { property: "og:description", content: "Malignancy classification with heuristic survival and recurrence estimates (research prototype, not clinically validated)." },
     ],
   }),
   errorComponent: RouteErrorState,
@@ -92,24 +92,25 @@ function buildCards(
     },
     {
       icon: Gauge,
-      title: "Survival probability",
-      value: run?.survival != null ? `${run.survival}% at 5 years` : "—",
+      title: "Survival estimate",
+      value: run?.survival != null ? `${run.survival}%` : "—",
       status: run ? (run.survival != null ? "Recorded" : "Not recorded") : "No run yet",
       tone: run?.survival != null ? "primary" : "neutral",
       confidence: run?.confidence ?? null,
       explanation: run
-        ? `From run ${run.id.slice(0, 8)} — ${run.model}.`
+        ? "Heuristic estimate — not a validated 5-year survival prediction"
         : "No prediction run has been recorded for this patient.",
     },
     {
       icon: Repeat,
-      title: "Recurrence risk",
+      title: "Recurrence estimate",
       value: run?.recurrence != null ? `${run.recurrence}%` : "—",
       status: run ? (run.recurrence != null ? "Recorded" : "Not recorded") : "No run yet",
       tone: run?.recurrence != null ? "warning" : "neutral",
       confidence: run?.confidence ?? null,
-      // Stated plainly so nobody reads this as a second, independent estimate.
-      explanation: "The complement of the recorded survival probability, not a separate estimate.",
+      explanation: run
+        ? "Heuristic estimate — not independently validated"
+        : "No prediction run has been recorded for this patient.",
     },
     {
       icon: HeartPulse,
@@ -228,7 +229,7 @@ function PredictionsPage() {
             description={`Run recorded ${formatDate(latest.date)} — ${
               latest.riskBand ? `${latest.riskBand} risk` : "risk not assessed"
             }, ${
-              latest.confidence != null ? `${latest.confidence}% confidence` : "no confidence recorded"
+              latest.confidence != null ? `${latest.confidence}% classifier confidence` : "no confidence recorded"
             }.`}
           />
         ) : (
@@ -266,10 +267,13 @@ function PredictionsPage() {
               {p.confidence != null && (
                 <div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Confidence</span>
+                    <span>Classifier confidence</span>
                     <span className="font-medium text-foreground">{p.confidence}%</span>
                   </div>
                   <Progress value={p.confidence} className="mt-1.5 h-1.5" />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Random Forest malignancy-classification probability
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -319,16 +323,17 @@ function PredictionsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recorded survival by risk band</CardTitle>
+            <CardTitle>Recorded survival estimate by risk band</CardTitle>
             <CardDescription>
               {survival?.caveat ??
-                "Average of the survival probability stored on each patient record, grouped by risk band."}
+                "Average of the survival estimate stored on each patient record, grouped by risk band."}{" "}
+              Recorded heuristic estimates — not clinically validated.
             </CardDescription>
           </CardHeader>
           <CardContent className="h-72">
             {!survival?.points.length ? (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                No survival probabilities recorded yet.
+                No survival estimates recorded yet.
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -373,13 +378,16 @@ function PredictionsPage() {
       <section className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.4fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Confidence trend</CardTitle>
-            <CardDescription>Confidence of each recorded run, oldest first</CardDescription>
+            <CardTitle>Classifier confidence trend</CardTitle>
+            <CardDescription>
+              Random Forest malignancy-classification probability of each recorded run, oldest first — not
+              confidence in survival or recurrence.
+            </CardDescription>
           </CardHeader>
           <CardContent className="h-64">
             {confidenceTrend.length === 0 ? (
               <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
-                No run has recorded a confidence value. Runs taken from twin state carry none, because no model
+                No run has recorded a classifier confidence value. Runs taken from twin state carry none, because no model
                 produced them.
               </div>
             ) : (
@@ -422,9 +430,9 @@ function PredictionsPage() {
                       <TableHead>Run</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Twin</TableHead>
-                      <TableHead>Survival</TableHead>
-                      <TableHead>Recurrence</TableHead>
-                      <TableHead>Confidence</TableHead>
+                      <TableHead>Survival estimate</TableHead>
+                      <TableHead>Recurrence estimate</TableHead>
+                      <TableHead>Classifier confidence</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
