@@ -82,6 +82,10 @@ class Settings(BaseSettings):
     REFRESH_COOKIE_NAME: str = "oncotwin_refresh_token"
     REFRESH_COOKIE_MAX_AGE_SECONDS: int = 60 * 60 * 24 * 30
     REFRESH_COOKIE_SECURE: bool = True  # False only makes sense over plain HTTP locally
+    # "lax" only works when the frontend and API share a registrable domain. When
+    # they are on different sites (e.g. *.vercel.app calling *.onrender.com) the
+    # browser drops a Lax cookie set by the cross-site response, so the deployment
+    # must set "none" (which requires REFRESH_COOKIE_SECURE=true).
     REFRESH_COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
 
     # --- Password policy ----------------------------------------------------
@@ -180,6 +184,10 @@ class Settings(BaseSettings):
 
         if self.ENVIRONMENT == "prod" and not self.REFRESH_COOKIE_SECURE:
             raise ValueError("REFRESH_COOKIE_SECURE must stay true in production.")
+        if self.REFRESH_COOKIE_SAMESITE == "none" and not self.REFRESH_COOKIE_SECURE:
+            # Browsers silently drop a SameSite=None cookie that is not Secure,
+            # which would look exactly like "the refresh cookie never arrives".
+            raise ValueError("REFRESH_COOKIE_SAMESITE=none requires REFRESH_COOKIE_SECURE=true.")
         return self
 
     @property

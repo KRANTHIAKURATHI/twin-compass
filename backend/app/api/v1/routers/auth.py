@@ -13,8 +13,9 @@ Implements exactly the eight endpoints the frontend's endpoint registry
     GET  /auth/me
     PATCH /users/profile
 
-Refresh-token handling: the refresh token is set as an httpOnly, Secure,
-SameSite=Lax cookie on login/refresh and cleared on logout. It is never
+Refresh-token handling: the refresh token is set as an httpOnly, Secure
+cookie (SameSite=Lax by default; SameSite=None when the frontend and API are
+on different sites - see REFRESH_COOKIE_SAMESITE in core/config.py) on login/refresh and cleared on logout. It is never
 present in any JSON response body, so it can't be read or exfiltrated by
 JavaScript (mitigates XSS-driven token theft) and Supabase's
 SameSite=Lax + `credentials: "include"` combination is the primary CSRF
@@ -67,7 +68,16 @@ def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
 
 
 def _clear_refresh_cookie(response: Response) -> None:
-    response.delete_cookie(key=settings.REFRESH_COOKIE_NAME, path="/")
+    # Attributes must match the ones the cookie was set with: a deletion that
+    # omits SameSite/Secure is treated as SameSite=Lax by the browser and is
+    # ignored when it arrives on a cross-site response, so logout would not clear it.
+    response.delete_cookie(
+        key=settings.REFRESH_COOKIE_NAME,
+        path="/",
+        httponly=True,
+        secure=settings.REFRESH_COOKIE_SECURE,
+        samesite=settings.REFRESH_COOKIE_SAMESITE,
+    )
 
 
 @router.post("/auth/register", response_model=MutationResult[AuthUser], status_code=status.HTTP_201_CREATED)
