@@ -101,7 +101,8 @@ def _document_response(row) -> dict[str, object]:
 
 _DOCUMENT_SELECT = """
     SELECT d.id, d.name, d.category, d.mime_type, d.size_bytes, d.storage_path,
-           d.version, d.status, d.created_at, p.patient_code, p.name AS patient_name
+           d.version, d.status, COALESCE(d.created_at, d.date) AS created_at,
+           p.patient_code, p.name AS patient_name
     FROM documents d
     JOIN patients p ON p.id = d.patient_id
 """
@@ -122,7 +123,10 @@ async def list_documents(
     if search:
         where.append("(d.name ILIKE :search OR p.name ILIKE :search)")
         params["search"] = f"%{search}%"
-    query = f"{_DOCUMENT_SELECT} WHERE {' AND '.join(where)} ORDER BY d.created_at DESC"
+    query = (
+        f"{_DOCUMENT_SELECT} WHERE {' AND '.join(where)} "
+        "ORDER BY COALESCE(d.created_at, d.date) DESC"
+    )
     result = await session.execute(text(query), params)
     return [_document_response(row) for row in result.mappings()]
 
@@ -246,7 +250,8 @@ async def document_versions(
     await _get_document_row(session, document_id)  # 404s if missing/isolated
     result = await session.execute(
         text(
-            "SELECT version, created_at, author, note FROM document_versions "
+            "SELECT version, COALESCE(created_at, date) AS created_at, author, note "
+            "FROM document_versions "
             "WHERE document_id = :id ORDER BY version DESC"
         ),
         {"id": document_id},
@@ -308,6 +313,9 @@ async def download_document(
     _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
 ) -> dict[str, object]:
     row = await _get_document_row(session, document_id)
+    if not row["storage_path"]:
+        # Rows created before file storage existed have metadata only.
+        raise HTTPException(status_code=404, detail="No stored file for this document.")
     url = await storage.create_signed_url(row["storage_path"])
     return {"url": url, "expiresIn": get_settings().DOCUMENT_SIGNED_URL_TTL_SECONDS}
 
@@ -323,7 +331,7 @@ async def preview_document(
 ) -> dict[str, object]:
     row = await _get_document_row(session, document_id)
     mime_type = row["mime_type"] or ""
-    if mime_type not in _PREVIEWABLE_MIME_TYPES:
+    if mime_type not in _PREVIEWABLE_MIME_TYPES or not row["storage_path"]:
         return {"available": False, "mimeType": mime_type, "url": None}
     url = await storage.create_signed_url(row["storage_path"])
     return {"available": True, "mimeType": mime_type, "url": url}
