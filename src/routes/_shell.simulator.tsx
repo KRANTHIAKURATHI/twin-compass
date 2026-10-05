@@ -25,9 +25,9 @@ export const Route = createFileRoute("/_shell/simulator")({
   head: () => ({
     meta: [
       { title: "Treatment Simulator — OncoTwin" },
-      { name: "description", content: "Compare treatment scenarios side by side with predicted response, risk and survival." },
+      { name: "description", content: "Compare treatment scenarios side by side with projected response, risk and survival estimate." },
       { property: "og:title", content: "Treatment Simulator — OncoTwin" },
-      { property: "og:description", content: "Compare treatment scenarios side by side with predicted response, risk and survival." },
+      { property: "og:description", content: "Compare treatment scenarios side by side with projected response, risk and survival estimate." },
     ],
   }),
   errorComponent: RouteErrorState,
@@ -257,7 +257,7 @@ function SimulatorPage() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Treatment Simulator"
-        description="Run the digital twin forward under different regimens and compare predicted outcomes."
+        description="Run the digital twin forward under different regimens and compare projected outcomes (kinetic projection; parameters unverified — pending clinical review)."
         crumbs={[{ label: "Home", to: "/" }, { label: "Treatment Simulator" }]}
         actions={
           <>
@@ -363,7 +363,7 @@ function SimulatorPage() {
                 )}
                 <div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Predicted response</span>
+                    <span className="text-muted-foreground">Projected response</span>
                     <span className="font-semibold">{show(s.predictedResponse, "%")}</span>
                   </div>
                   <Progress value={s.predictedResponse ?? 0} className="mt-2 h-2" />
@@ -385,7 +385,7 @@ function SimulatorPage() {
                   </div>
                   <div className="rounded-lg bg-muted/60 p-2.5">
                     <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <ShieldCheck className="size-3" aria-hidden="true" /> 5-y survival
+                      <ShieldCheck className="size-3" aria-hidden="true" /> Survival estimate
                     </p>
                     <p className="mt-0.5 font-semibold">{show(s.survival5y, "%")}</p>
                   </div>
@@ -409,7 +409,7 @@ function SimulatorPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <RiskChip level={s.risk} />
                   <StatusChip tone={s.confidence === null ? "neutral" : "primary"}>
-                    {s.confidence === null ? "No confidence recorded" : `${s.confidence}% confidence`}
+                    {s.confidence === null ? "No confidence — kinetic projection" : `${s.confidence}% confidence`}
                   </StatusChip>
                 </div>
 
@@ -532,7 +532,7 @@ function SimulatorPage() {
                       <TableHead>Scenario</TableHead>
                       <TableHead>Response</TableHead>
                       <TableHead>Tumor change</TableHead>
-                      <TableHead>5-y survival</TableHead>
+                      <TableHead>Survival estimate</TableHead>
                       <TableHead>Side effects</TableHead>
                       <TableHead>Confidence</TableHead>
                       <TableHead>Risk</TableHead>

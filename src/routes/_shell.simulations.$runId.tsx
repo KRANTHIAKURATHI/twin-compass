@@ -50,6 +50,19 @@ function SimulationDetail() {
   // when none matched, which showed rows that were never part of the run.
   const rows = run.scenarios ?? [];
   const selectedName = run.selected;
+  // A run whose regimen had no parameters (or whose twin lacked the inputs)
+  // stores every outcome as null. The reason itself is not persisted, so say
+  // only what the record shows rather than guessing at one cause.
+  const noProjection =
+    rows.length > 0 &&
+    rows.every(
+      (s) =>
+        s.predictedResponse == null &&
+        s.tumorChange == null &&
+        s.survival5y == null &&
+        s.sideEffectRisk == null &&
+        s.recoveryWeeks == null,
+    );
 
   return (
     <div className="mx-auto max-w-[1100px]">
@@ -77,9 +90,9 @@ function SimulationDetail() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         {[
-          ["Recorded response", show(run.response, "%")],
-          ["5-year survival", show(run.survival, "%")],
-          ["Recorded confidence", show(run.confidence, "%")],
+          ["Projected response", show(run.response, "%")],
+          ["Survival estimate", show(run.survival, "%")],
+          ["Confidence", show(run.confidence, "%")],
         ].map(([label, value]) => (
           <Card key={label}>
             <CardContent className="py-6">
@@ -89,6 +102,18 @@ function SimulationDetail() {
           </Card>
         ))}
       </div>
+
+      {noProjection ? (
+        <p className="mt-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+          The projection could not be calculated for this run: no parameters exist for the regimen on file, or the twin
+          lacked the receptor status or tumor size it needs. No values have been invented.
+        </p>
+      ) : (
+        <p className="mt-4 text-xs text-muted-foreground">
+          Kinetic projection (log-kill with exponential regrowth).{" "}
+          <span className="font-semibold text-warning">Parameters unverified — pending clinical review.</span>
+        </p>
+      )}
 
       <Card className="mt-4">
         <CardHeader>
@@ -107,7 +132,7 @@ function SimulationDetail() {
                   <TableHead>Scenario</TableHead>
                   <TableHead>Response</TableHead>
                   <TableHead>Tumor change</TableHead>
-                  <TableHead>5-y survival</TableHead>
+                  <TableHead>Survival estimate</TableHead>
                   <TableHead>Side effects</TableHead>
                   <TableHead>Confidence</TableHead>
                 </TableRow>
