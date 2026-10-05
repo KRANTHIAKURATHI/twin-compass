@@ -113,14 +113,15 @@ register_exception_handlers(app)
 app.include_router(api_router)
 
 
-@app.get("/health", tags=["ops"])
+@app.api_route("/health", methods=["GET", "HEAD"], tags=["ops"])
 async def health() -> dict[str, str]:
     """Liveness only - deliberately does no I/O so it stays useful when the
-    database is the thing that is down."""
+    database is the thing that is down. HEAD is allowed because uptime monitors
+    and load balancers probe with it."""
     return {"status": "ok"}
 
 
-@app.get("/health/ready", tags=["ops"])
+@app.api_route("/health/ready", methods=["GET", "HEAD"], tags=["ops"])
 async def readiness() -> dict[str, object]:
     """Readiness: reports the configured mode and whether the database answers."""
     from sqlalchemy import text
