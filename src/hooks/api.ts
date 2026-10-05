@@ -84,7 +84,7 @@ export const usePatientLabs = (id: string) => useApiQuery(queryKeys.patients.lab
 export const usePatientImaging = (id: string) =>
   useApiQuery(queryKeys.patients.imaging(id), () => patientService.imaging(id));
 export const usePatientTimeline = (id: string) =>
-  useApiQuery(queryKeys.patients.timeline(id), () => patientService.timeline(id));
+  useApiQuery(queryKeys.patients.timeline(id), () => patientService.timeline(id), { enabled: Boolean(id) });
 
 export const useCreatePatient = () =>
   useApiMutation((payload: PatientInput) => patientService.create(payload), {
@@ -125,9 +125,13 @@ export const useTwin = (patientId: string) =>
     enabled: Boolean(patientId),
   });
 export const useTwinVersions = (patientId: string) =>
-  useApiQuery(queryKeys.twins.versions(patientId), () => twinService.versions(patientId));
+  useApiQuery(queryKeys.twins.versions(patientId), () => twinService.versions(patientId), {
+    enabled: Boolean(patientId),
+  });
 export const useTwinSnapshots = (patientId: string) =>
-  useApiQuery(queryKeys.twins.snapshots(patientId), () => twinService.snapshots(patientId));
+  useApiQuery(queryKeys.twins.snapshots(patientId), () => twinService.snapshots(patientId), {
+    enabled: Boolean(patientId),
+  });
 
 export const useResyncTwin = () =>
   useApiMutation((patientId: string) => twinService.resync(patientId), {

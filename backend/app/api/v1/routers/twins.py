@@ -52,6 +52,20 @@ async def _versions_for(session: AsyncSession, patient_uuid: str) -> list[dict[s
     return [_version_response(row) for row in result.mappings()]
 
 
+def _twin_status(version: object, version_status: object, patient_twin_status: object) -> str:
+    """A patient with no twin_versions row has no twin, whatever
+    `patients.twin_status` says (its column default is "Synced")."""
+    if not version:
+        return "Not created"
+    return str(version_status or patient_twin_status or "Not created")
+
+
+def _twin_survival(version: object, version_survival: object) -> object:
+    """Only a twin version records survival. `patients.survival_probability`
+    is a column default until then, so a twin-less patient has none."""
+    return version_survival if version else None
+
+
 def _next_version(versions: list[dict[str, object]]) -> str:
     """`v3` after `v2`. Falls back to counting when a label is non-numeric."""
     numbers = []
@@ -96,12 +110,12 @@ async def list_twins(
                 # A patient with no twin_versions row genuinely has no twin
                 # yet; say so rather than inventing a version label.
                 "version": row["version"],
-                "status": row["status"] or row["twin_status"] or "Not created",
+                "status": _twin_status(row["version"], row["status"], row["twin_status"]),
                 "createdAt": row["created_at"],
                 "author": row["author"] or "",
                 "summary": row["summary"] or "",
                 "tumorSizeMm": row["tumor_size_mm"] if row["version"] else row["patient_tumor"],
-                "survival": row["survival"] if row["version"] else row["survival_probability"],
+                "survival": _twin_survival(row["version"], row["survival"]),
                 "risk": row["risk"] or row["patient_risk"] or "low",
                 "model": row["model"] or "",
             }
@@ -121,7 +135,7 @@ async def get_twin(
     return {
         "patientId": patient["patient_code"],
         "patient": patient["name"],
-        "twinStatus": patient["twin_status"] or "Not created",
+        "twinStatus": (patient["twin_status"] or "Not created") if versions else "Not created",
         "active": active,
         "versions": versions,
     }

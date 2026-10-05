@@ -230,9 +230,11 @@ function DigitalTwinsPage() {
 
                 <div className="mt-5">
                   <div className="flex items-center justify-between text-sm">
-                    {/* "Recorded", not "predicted": this number is stored on the
-                        twin version, not produced by a model at view time. */}
-                    <span className="text-muted-foreground">Recorded 5-year survival</span>
+                    {/* Stored on the twin version (a heuristic estimate, not a validated
+                        prediction); a patient with no version has none to show. */}
+                    <span className="text-muted-foreground">
+                      Survival estimate <span className="text-xs">(heuristic, unvalidated)</span>
+                    </span>
                     <span className="font-semibold">
                       {twinRow?.survival != null ? `${Math.round(twinRow.survival * 100)}%` : "—"}
                     </span>
@@ -459,7 +461,7 @@ function DigitalTwinsPage() {
                     ["Model", (v: (typeof compared)[number]) => show(v.model)],
                     ["Tumor size", (v: (typeof compared)[number]) => show(v.tumorSizeMm, " mm")],
                     [
-                      "5-year survival",
+                      "Survival estimate",
                       (v: (typeof compared)[number]) => (v.survival != null ? `${Math.round(v.survival * 100)}%` : "—"),
                     ],
                     ["Risk", (v: (typeof compared)[number]) => show(v.risk)],
