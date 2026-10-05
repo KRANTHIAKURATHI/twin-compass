@@ -60,8 +60,10 @@ function reportToCsv(report: ReportDetail): string {
     lines.push(`Digital twin,Risk,${c.digitalTwin.risk ?? ""}`);
   }
   if (c.prediction.basis === "measured") {
-    lines.push(`Prediction,Survival,${c.prediction.survival ?? ""}`);
-    lines.push(`Prediction,Recurrence,${c.prediction.recurrence ?? ""}`);
+    lines.push(`Prediction,Survival estimate (heuristic; not validated),${c.prediction.survival ?? ""}`);
+    lines.push(`Prediction,Recurrence estimate (heuristic; not validated),${c.prediction.recurrence ?? ""}`);
+    lines.push(`Prediction,Classifier confidence (RF malignancy probability),${c.prediction.confidence ?? ""}`);
+    lines.push(`Prediction,Model,${c.prediction.model ?? ""}`);
     lines.push(`Prediction,Risk band,${c.prediction.riskBand ?? ""}`);
   } else {
     lines.push(`Prediction,Status,${c.prediction.caveat}`);
@@ -272,21 +274,38 @@ function ReportsPage() {
               <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Prediction summary</h3>
               {activeReport.content.prediction.basis === "measured" ? (
                 <div className="mt-3 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Recorded survival</span>
-                    <span className="font-medium">
-                      {activeReport.content.prediction.survival == null ? "—" : `${activeReport.content.prediction.survival}%`}
-                    </span>
+                  <div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Survival estimate</span>
+                      <span className="font-medium">
+                        {activeReport.content.prediction.survival == null ? "—" : `${activeReport.content.prediction.survival}%`}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Heuristic estimate — not a validated 5-year survival prediction
+                    </p>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Recurrence</span>
-                    <span className="font-medium">
-                      {activeReport.content.prediction.recurrence == null ? "—" : `${activeReport.content.prediction.recurrence}%`}
-                    </span>
+                  <div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Recurrence estimate</span>
+                      <span className="font-medium">
+                        {activeReport.content.prediction.recurrence == null ? "—" : `${activeReport.content.prediction.recurrence}%`}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Heuristic estimate — not independently validated</p>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Recorded from the twin's stored state — no trained ML model is attached to this system.
-                  </p>
+                  <div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Classifier confidence</span>
+                      <span className="font-medium">
+                        {activeReport.content.prediction.confidence == null ? "—" : `${activeReport.content.prediction.confidence}%`}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Random Forest malignancy-classification probability</p>
+                  </div>
+                  {activeReport.content.prediction.model && (
+                    <p className="text-xs text-muted-foreground">Model: {activeReport.content.prediction.model}</p>
+                  )}
                 </div>
               ) : (
                 <p className="mt-3 text-sm text-muted-foreground">{activeReport.content.prediction.caveat}</p>

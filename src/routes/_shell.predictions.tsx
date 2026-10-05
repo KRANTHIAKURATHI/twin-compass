@@ -323,7 +323,7 @@ function PredictionsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recorded survival estimate by risk band</CardTitle>
+            <CardTitle>Survival estimate by risk band</CardTitle>
             <CardDescription>
               {survival?.caveat ??
                 "Average of the survival estimate stored on each patient record, grouped by risk band."}{" "}
