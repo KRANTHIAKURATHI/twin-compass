@@ -94,7 +94,7 @@ function buildCards(
       icon: Gauge,
       title: "Survival estimate",
       value: run?.survival != null ? `${run.survival}%` : "—",
-      status: run ? (run.survival != null ? "Recorded" : "Not recorded") : "No run yet",
+      status: run ? (run.survival != null ? "Estimated" : "Not recorded") : "No run yet",
       tone: run?.survival != null ? "primary" : "neutral",
       confidence: run?.confidence ?? null,
       explanation: run
@@ -105,7 +105,7 @@ function buildCards(
       icon: Repeat,
       title: "Recurrence estimate",
       value: run?.recurrence != null ? `${run.recurrence}%` : "—",
-      status: run ? (run.recurrence != null ? "Recorded" : "Not recorded") : "No run yet",
+      status: run ? (run.recurrence != null ? "Estimated" : "Not recorded") : "No run yet",
       tone: run?.recurrence != null ? "warning" : "neutral",
       confidence: run?.confidence ?? null,
       explanation: run
