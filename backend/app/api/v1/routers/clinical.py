@@ -7,8 +7,10 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import ConflictError
 from app.db.session import get_db_session
 from app.dependencies.auth import CurrentUser, require_roles
 from app.schemas.clinical import PatientInput, SimulationRequest
@@ -462,15 +464,41 @@ async def create_patient(
 ) -> dict[str, object]:
     next_code = (
         await session.execute(
-            text("SELECT COALESCE(MAX(CAST(SUBSTRING(patient_code FROM 4) AS INTEGER)), 999) + 1 FROM patients WHERE patient_code LIKE 'PT-%'")
+            text("SELECT COALESCE(MAX(CAST(SUBSTR(patient_code, 4) AS INTEGER)), 999) + 1 FROM patients WHERE patient_code LIKE 'PT-%'")
         )
     ).scalar_one()
+    # `patients.created_by` still references the legacy `users` table, but the
+    # active login identity is a `profiles` id. Only store it when it resolves
+    # there (so the FK holds); otherwise leave it NULL and record the actor in
+    # `audit_logs` instead. The FK itself is intentionally untouched.
+    actor_id = str(current_user.id)
+    legacy_user = (await session.execute(text("SELECT id FROM users WHERE id = :uid"), {"uid": actor_id})).scalar()
     values = payload.model_dump(exclude_none=True)
-    values.update({"id": str(uuid.uuid4()), "patient_code": f"PT-{next_code}", "created_by": str(current_user.id)})
+    values.update({"id": str(uuid.uuid4()), "patient_code": f"PT-{next_code}"})
+    if legacy_user is not None:
+        values["created_by"] = legacy_user
     columns = ", ".join(values)
     params = ", ".join(f":{key}" for key in values)
-    await session.execute(text(f"INSERT INTO patients ({columns}) VALUES ({params})"), values)
-    await session.commit()
+    try:
+        await session.execute(text(f"INSERT INTO patients ({columns}) VALUES ({params})"), values)
+        await session.execute(
+            text(
+                "INSERT INTO audit_logs (id, time, actor, actor_role, action, target, after) "
+                "VALUES (:id, :time, :actor, :role, 'patient.created', :target, :after)"
+            ),
+            {
+                "id": str(uuid.uuid4()),
+                "time": datetime.now(timezone.utc).isoformat(),
+                "actor": current_user.email or actor_id,
+                "role": str(current_user.role),
+                "target": values["patient_code"],
+                "after": json.dumps({"actorId": actor_id, "patientId": values["id"]}),
+            },
+        )
+        await session.commit()
+    except IntegrityError as exc:
+        await session.rollback()
+        raise ConflictError("The patient could not be saved because it conflicts with existing data.") from exc
     row = (await session.execute(text(f"SELECT {PATIENT_COLUMNS} FROM patients WHERE patient_code = :code"), {"code": values["patient_code"]})).mappings().one()
     return {"ok": True, "data": _patient_response(row), "message": "Patient created."}
 
