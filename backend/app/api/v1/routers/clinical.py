@@ -368,35 +368,47 @@ async def promote_simulation(
         raise HTTPException(status_code=404, detail="Simulation run not found.")
 
     scenarios = simulation["scenarios"] or []
+    if isinstance(scenarios, str):  # driver returned the jsonb column as text
+        scenarios = json.loads(scenarios)
     # The UI sends the scenario currently selected on the shown run; it can
     # differ from what was recorded at run time if the clinician chose again.
     requested = (payload or {}).get("selectedScenario")
     selected = _resolve_promoted(scenarios, simulation["selected"], requested)
     regimen = selected.get("regimen") if selected else simulation["selected"]
-    plan_id = str(uuid.uuid4())
     started_on = datetime.now(timezone.utc).date().isoformat()
     next_dose = datetime.now(timezone.utc).date().isoformat()
-    await session.execute(
-        text(
-            """
-            INSERT INTO treatment_plans
-                (id, patient_id, regimen, cycle, total_cycles, started_on, next_dose,
-                 adherence, side_effects, medications)
-            VALUES
-                (:id, :patient_id, :regimen, 1, 6, :started_on, :next_dose, 0,
-                 CAST(:side_effects AS jsonb), CAST(:medications AS jsonb))
-            """
-        ),
-        {
-            "id": plan_id,
-            "patient_id": simulation["patient_id"],
-            "regimen": regimen,
-            "started_on": started_on,
-            "next_dose": next_dose,
-            "side_effects": json.dumps([]),
-            "medications": json.dumps([]),
-        },
-    )
+    # treatment_plans.patient_id is UNIQUE: a patient has one plan. Promoting
+    # replaces that plan's regimen in the same statement (and transaction as the
+    # run's decision below) rather than inserting a second row.
+    plan_id = (
+        await session.execute(
+            text(
+                """
+                INSERT INTO treatment_plans
+                    (id, patient_id, regimen, cycle, total_cycles, started_on, next_dose,
+                     adherence, side_effects, medications)
+                VALUES
+                    (:id, :patient_id, :regimen, 1, 6, :started_on, :next_dose, 0,
+                     CAST(:side_effects AS jsonb), CAST(:medications AS jsonb))
+                ON CONFLICT (patient_id) DO UPDATE SET
+                    regimen = EXCLUDED.regimen, cycle = EXCLUDED.cycle,
+                    total_cycles = EXCLUDED.total_cycles, started_on = EXCLUDED.started_on,
+                    next_dose = EXCLUDED.next_dose, adherence = EXCLUDED.adherence,
+                    side_effects = EXCLUDED.side_effects, medications = EXCLUDED.medications
+                RETURNING id
+                """
+            ),
+            {
+                "id": str(uuid.uuid4()),
+                "patient_id": simulation["patient_id"],
+                "regimen": regimen,
+                "started_on": started_on,
+                "next_dose": next_dose,
+                "side_effects": json.dumps([]),
+                "medications": json.dumps([]),
+            },
+        )
+    ).scalar_one()
     notes = (payload or {}).get("notes") or "Promoted to treatment plan."
     if selected is not None and selected.get("name") != simulation["selected"]:
         # Keep the run's headline figures describing the scenario that was promoted.
