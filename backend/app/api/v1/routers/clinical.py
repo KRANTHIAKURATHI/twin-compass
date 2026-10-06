@@ -123,6 +123,28 @@ def _simulation_response(row) -> dict[str, object]:
     }
 
 
+def _pick_scenario(scenarios: list[dict[str, object]], name: str | None) -> dict[str, object] | None:
+    """The scenario called `name`, else the first one (the current plan).
+
+    An absent or unrecognised name is not an error: the projection is the same
+    either way, so the run still records a sensible default rather than failing.
+    """
+    if name:
+        for scenario in scenarios:
+            if scenario.get("name") == name:
+                return scenario
+    return scenarios[0] if scenarios else None
+
+
+def _resolve_promoted(
+    scenarios: list[dict[str, object]], stored_selected: str | None, requested: str | None
+) -> dict[str, object] | None:
+    """The scenario a promotion should act on: the one requested if the run
+    holds it, else the one the run recorded as selected, else none."""
+    by_name = {s.get("name"): s for s in scenarios}
+    return by_name.get(requested) if requested in by_name else by_name.get(stored_selected)
+
+
 @router.get("/simulations")
 async def list_simulations(
     session: AsyncSession = Depends(get_db_session),
@@ -346,7 +368,10 @@ async def promote_simulation(
         raise HTTPException(status_code=404, detail="Simulation run not found.")
 
     scenarios = simulation["scenarios"] or []
-    selected = next((item for item in scenarios if item.get("name") == simulation["selected"]), None)
+    # The UI sends the scenario currently selected on the shown run; it can
+    # differ from what was recorded at run time if the clinician chose again.
+    requested = (payload or {}).get("selectedScenario")
+    selected = _resolve_promoted(scenarios, simulation["selected"], requested)
     regimen = selected.get("regimen") if selected else simulation["selected"]
     plan_id = str(uuid.uuid4())
     started_on = datetime.now(timezone.utc).date().isoformat()
@@ -372,10 +397,27 @@ async def promote_simulation(
             "medications": json.dumps([]),
         },
     )
-    await session.execute(
-        text("UPDATE simulation_runs SET decision = 'Promoted to plan', notes = :notes WHERE id = :id"),
-        {"id": simulation_id, "notes": (payload or {}).get("notes") or "Promoted to treatment plan."},
-    )
+    notes = (payload or {}).get("notes") or "Promoted to treatment plan."
+    if selected is not None and selected.get("name") != simulation["selected"]:
+        # Keep the run's headline figures describing the scenario that was promoted.
+        await session.execute(
+            text(
+                "UPDATE simulation_runs SET decision = 'Promoted to plan', notes = :notes, "
+                "selected = :selected, survival = :survival, response = :response WHERE id = :id"
+            ),
+            {
+                "id": simulation_id,
+                "notes": notes,
+                "selected": selected["name"],
+                "survival": selected.get("survival5y"),
+                "response": selected.get("predictedResponse"),
+            },
+        )
+    else:
+        await session.execute(
+            text("UPDATE simulation_runs SET decision = 'Promoted to plan', notes = :notes WHERE id = :id"),
+            {"id": simulation_id, "notes": notes},
+        )
     await session.commit()
     return {"ok": True, "data": {"id": plan_id}, "message": "Simulation promoted to treatment plan."}
 
@@ -734,7 +776,8 @@ async def run_simulation(
     # It is not a recommendation: the projection ranks tumour kill, which is only
     # one of the things a clinician weighs against toxicity and the patient's own
     # priorities, so the choice stays with them.
-    selected = scenarios[0]
+    selected = _pick_scenario(scenarios, payload.selected_scenario)
+    assert selected is not None  # project_scenarios always returns the variants
     now = datetime.now(timezone.utc).isoformat()
     run_id = str(uuid.uuid4())
     await session.execute(

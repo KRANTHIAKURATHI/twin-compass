@@ -46,6 +46,7 @@ import type {
   ReportVersion,
   SavedReport,
   Scenario,
+  RunSimulationInput,
   ScenarioDraft,
   SimulationRun,
   TimelineEvent,
@@ -152,11 +153,11 @@ export interface SimulationService {
    */
   run(
     patientId: string,
-    draft?: ScenarioDraft,
+    draft?: RunSimulationInput,
   ): Promise<{ id: string; patientId: string; scenarios: Scenario[] }>;
   save(patientId: string, draft: ScenarioDraft): Promise<MutationResult<SimulationRun>>;
   duplicate(id: string): Promise<MutationResult<SimulationRun>>;
-  promote(id: string, notes?: string): Promise<MutationResult>;
+  promote(id: string, notes?: string, selectedScenario?: string): Promise<MutationResult>;
 }
 
 export interface DocumentService {

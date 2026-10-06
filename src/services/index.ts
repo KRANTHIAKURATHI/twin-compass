@@ -354,9 +354,13 @@ export const simulationService: SimulationService = {
         ),
       500,
     ),
-  promote: (id, notes) =>
+  promote: (id, notes, selectedScenario) =>
     withFallback(
-      () => apiRequest(endpoints.simulations.promote(id), { method: "POST", body: { notes } }),
+      () =>
+        apiRequest(endpoints.simulations.promote(id), {
+          method: "POST",
+          body: { notes, ...(selectedScenario ? { selectedScenario } : {}) },
+        }),
       () => ok(undefined, `${id} promoted to treatment plan`),
       700,
     ),

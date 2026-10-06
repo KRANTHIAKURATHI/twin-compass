@@ -19,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { usePatients, usePromoteSimulation, useRunSimulation, useSimulationRuns } from "@/hooks/api";
-import type { RiskLevel, Scenario } from "@/types/models";
+import type { RiskLevel, RunSimulationInput, Scenario } from "@/types/models";
 
 export const Route = createFileRoute("/_shell/simulator")({
   head: () => ({
@@ -60,6 +60,8 @@ type DisplayScenario = {
   cycles: number | null;
   basis: string | null;
   parametersVerified: boolean;
+  /** The base regimen the run was projected for, when the run recorded it. */
+  requestedRegimen: string | null;
 };
 
 const fromApi = (s: Scenario): DisplayScenario => ({
@@ -82,6 +84,7 @@ const fromApi = (s: Scenario): DisplayScenario => ({
   // Defaults to verified so an older run - recorded before the projection
   // carried provenance - is not stamped with a warning nobody can act on.
   parametersVerified: s.provenance?.parametersVerified ?? false,
+  requestedRegimen: s.provenance?.requestedRegimen ?? null,
 });
 
 /** `—` rather than `0` for anything that was never evaluated. */
@@ -165,27 +168,35 @@ function SimulatorPage() {
   }
 
   const run = async () => {
-    const result = await runSimulation.mutateAsync({
-      patientId,
-      // A saved draft names the regimen the next run should evaluate — this is
-      // what makes the scenario builder do something rather than only decorate
-      // the comparison table.
-      draft: builder.regimen.trim()
-        ? {
-            name: builder.name.trim() || builder.regimen.trim(),
-            regimen: builder.regimen.trim(),
-            dosage: builder.dosage.trim(),
-            durationWeeks: Number(builder.duration) || 0,
-            notes: builder.notes.trim(),
-          }
-        : undefined,
-    });
+    // Only a scenario that was actually projected can be selected; the pending
+    // builder draft has no result and is not sent.
+    const selectedName = selected?.evaluated ? selected.name : undefined;
+    // A saved draft names the regimen the next run should evaluate — this is
+    // what makes the scenario builder do something rather than only decorate
+    // the comparison table. Without one, re-run the base regimen of the
+    // scenarios on screen so the patient's recorded regimen is not required.
+    const baseRegimen = shown?.find((s) => s.requestedRegimen)?.requestedRegimen ?? undefined;
+    const draft: RunSimulationInput = builder.regimen.trim()
+      ? {
+          name: builder.name.trim() || builder.regimen.trim(),
+          regimen: builder.regimen.trim(),
+          dosage: builder.dosage.trim(),
+          durationWeeks: Number(builder.duration) || 0,
+          notes: builder.notes.trim(),
+        }
+      : baseRegimen
+        ? { regimen: baseRegimen }
+        : {};
+    if (selectedName) draft.selectedScenario = selectedName;
+    const result = await runSimulation.mutateAsync({ patientId, draft });
     // The run's own result is what gets displayed. It used to be awaited and
     // thrown away, leaving the fixed catalogue on screen regardless of outcome.
     setRunId(result.id);
-    setRunScenarios(result.scenarios.map(fromApi));
+    const next = result.scenarios.map(fromApi);
+    setRunScenarios(next);
     setPendingDraft(null);
-    setSelectedScenario(null);
+    // Keep the choice across the run: the backend recorded the same scenario.
+    setSelectedScenario(next.find((s) => s.name === selectedName)?.id ?? null);
   };
 
   const saveScenario = () => {
@@ -216,6 +227,7 @@ function SimulatorPage() {
       cycles: null,
       basis: "Queued — this is the regimen the next run will evaluate.",
       parametersVerified: false,
+      requestedRegimen: null,
     });
     toast.success("Queued for the next run", {
       description: "Replaces any previously queued scenario — only one custom regimen is evaluated per run.",
@@ -243,6 +255,7 @@ function SimulatorPage() {
     await promoteSimulation.mutateAsync({
       id: activeRunId,
       notes: promoteNotes.trim() || `Promoted ${selected.name}.`,
+      selectedScenario: selected.name,
     });
     setPromoteOpen(false);
     setPromoteNotes("");

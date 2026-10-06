@@ -288,6 +288,9 @@ export interface ScenarioProvenance {
   parametersVerified: boolean;
   model: string | null;
   unavailableReason: string | null;
+  /** The regimen the run was projected for; absent on runs recorded before it was persisted. */
+  requestedRegimen?: string | null;
+  durationWeeks?: number | null;
 }
 
 export interface ScenarioDraft {
@@ -297,6 +300,13 @@ export interface ScenarioDraft {
   durationWeeks: number;
   notes: string;
 }
+
+/**
+ * Run request body besides `patientId`. Every field is optional: with no
+ * regimen the backend uses the patient's recorded one. `selectedScenario` is a
+ * scenario name; absent or unknown means the first scenario.
+ */
+export type RunSimulationInput = Partial<ScenarioDraft> & { selectedScenario?: string };
 
 export interface SimulationRun {
   id: ID;

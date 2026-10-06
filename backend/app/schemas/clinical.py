@@ -10,6 +10,9 @@ class SimulationRequest(BaseModel):
     dosage: str | None = None
     duration_weeks: int | None = Field(default=None, validation_alias="durationWeeks")
     notes: str | None = None
+    # The scenario the clinician picked on the comparison, by name. Optional:
+    # absent or unknown falls back to the first scenario (the current plan).
+    selected_scenario: str | None = Field(default=None, validation_alias="selectedScenario")
 
     model_config = {"populate_by_name": True}
 

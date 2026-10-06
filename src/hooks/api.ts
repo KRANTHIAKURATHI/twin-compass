@@ -29,7 +29,7 @@ import {
   twinService,
 } from "@/services";
 import { queryKeys } from "@/hooks/query-keys";
-import type { MutationResult, OcrField, Patient, PatientInput, ScenarioDraft } from "@/types/models";
+import type { MutationResult, OcrField, Patient, PatientInput, RunSimulationInput, ScenarioDraft } from "@/types/models";
 
 type QueryOpts<T> = Omit<UseQueryOptions<T, Error, T, readonly unknown[]>, "queryKey" | "queryFn">;
 
@@ -186,7 +186,7 @@ export const useScenarios = (patientId: string) =>
   useApiQuery(queryKeys.simulations.scenarios(patientId), () => simulationService.scenarios(patientId));
 
 export const useRunSimulation = () =>
-  useApiMutation((vars: { patientId: string; draft?: ScenarioDraft }) =>
+  useApiMutation((vars: { patientId: string; draft?: RunSimulationInput }) =>
     simulationService.run(vars.patientId, vars.draft),
   );
 
@@ -217,7 +217,9 @@ export const useDuplicateScenario = () =>
   });
 
 export const usePromoteSimulation = () =>
-  useApiMutation((vars: { id: string; notes?: string }) => simulationService.promote(vars.id, vars.notes), {
+  useApiMutation((vars: { id: string; notes?: string; selectedScenario?: string }) =>
+      simulationService.promote(vars.id, vars.notes, vars.selectedScenario),
+    {
     successMessage: "Promoted to treatment plan",
     invalidate: [queryKeys.simulations.all, queryKeys.patients.all],
   });
