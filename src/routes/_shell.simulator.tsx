@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { resolveRunRegimen } from "@/lib/simulationRegimen";
 import { cn } from "@/lib/utils";
 import { usePatients, usePromoteSimulation, useRunSimulation, useSimulationRuns } from "@/hooks/api";
 import type { RiskLevel, RunSimulationInput, Scenario } from "@/types/models";
@@ -173,20 +174,29 @@ function SimulatorPage() {
     const selectedName = selected?.evaluated ? selected.name : undefined;
     // A saved draft names the regimen the next run should evaluate — this is
     // what makes the scenario builder do something rather than only decorate
-    // the comparison table. Without one, re-run the base regimen of the
-    // scenarios on screen so the patient's recorded regimen is not required.
-    const baseRegimen = shown?.find((s) => s.requestedRegimen)?.requestedRegimen ?? undefined;
+    // the comparison table. Without one, re-run a real regimen recorded on the
+    // scenarios on screen, then the patient's recorded treatment. A placeholder
+    // such as "Current treatment" is never sent, and none is invented.
+    const regimen = resolveRunRegimen(
+      builder.regimen,
+      (shown ?? []).map((s) => s.requestedRegimen),
+      patient?.currentTreatment,
+    );
+    if (!regimen) {
+      toast.error("No regimen to simulate", {
+        description: "Enter a real regimen in Scenario Builder (the patient record has none).",
+      });
+      return;
+    }
     const draft: RunSimulationInput = builder.regimen.trim()
       ? {
-          name: builder.name.trim() || builder.regimen.trim(),
-          regimen: builder.regimen.trim(),
+          name: builder.name.trim() || regimen,
+          regimen,
           dosage: builder.dosage.trim(),
           durationWeeks: Number(builder.duration) || 0,
           notes: builder.notes.trim(),
         }
-      : baseRegimen
-        ? { regimen: baseRegimen }
-        : {};
+      : { regimen };
     if (selectedName) draft.selectedScenario = selectedName;
     const result = await runSimulation.mutateAsync({ patientId, draft });
     // The run's own result is what gets displayed. It used to be awaited and
