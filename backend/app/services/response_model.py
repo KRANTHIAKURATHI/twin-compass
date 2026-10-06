@@ -43,6 +43,10 @@ from dataclasses import dataclass
 # Flipped only after a clinician has reviewed REGIMEN_PARAMETERS against primary
 # sources. The UI surfaces this directly, so a reader always knows.
 PARAMETERS_VERIFIED = False
+# A software identifier for the hardcoded parameter table, recorded on every run
+# so a stored result can be tied to the table that produced it. It says nothing
+# about clinical validity: PARAMETERS_VERIFIED is the flag for that.
+PARAMETERS_VERSION = "kinetic-regimen-parameters-v1"
 
 SUBTYPE_HER2 = "HER2-positive"
 SUBTYPE_HR = "HR-positive/HER2-negative"
@@ -218,6 +222,20 @@ def project_scenarios(
         "parametersVerified": PARAMETERS_VERIFIED,
         "model": "Log-kill projection with exponential regrowth (unvalidated parameters)",
         "unavailableReason": reason,
+        # The exact values this projection ran on, so a stored run can be read
+        # back without consulting a twin that may have changed since.
+        "inputs": {
+            "tumorSizeMm": tumor_size_mm,
+            "ki67": ki67,
+            "ER": er_status,
+            "PR": pr_status,
+            "HER2": her2_status,
+            "baselineSurvival": survival_probability,
+            "baselineRisk": risk,
+        },
+        "requestedRegimen": regimen,
+        "durationWeeks": duration_weeks,
+        "parametersVersion": PARAMETERS_VERSION,
     }
 
     scenarios: list[dict[str, object]] = []

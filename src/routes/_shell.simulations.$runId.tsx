@@ -53,6 +53,11 @@ function SimulationDetail() {
   // A run whose regimen had no parameters (or whose twin lacked the inputs)
   // stores every outcome as null. The reason itself is not persisted, so say
   // only what the record shows rather than guessing at one cause.
+  // The reason the backend recorded when the projection could not run, shown
+  // verbatim; absent on runs stored before it was persisted.
+  const storedReason = rows
+    .map((s) => (s as { provenance?: { unavailableReason?: string | null } }).provenance?.unavailableReason)
+    .find((r): r is string => Boolean(r));
   const noProjection =
     rows.length > 0 &&
     rows.every(
@@ -105,8 +110,10 @@ function SimulationDetail() {
 
       {noProjection ? (
         <p className="mt-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
-          The projection could not be calculated for this run: no parameters exist for the regimen on file, or the twin
-          lacked the receptor status or tumor size it needs. No values have been invented.
+          {storedReason
+            ? `The projection could not be calculated for this run: ${storedReason}`
+            : "The projection could not be calculated for this run: no parameters exist for the regimen on file, or the twin lacked the receptor status or tumor size it needs."}{" "}
+          No values have been invented.
         </p>
       ) : (
         <p className="mt-4 text-xs text-muted-foreground">

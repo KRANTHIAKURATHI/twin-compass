@@ -171,3 +171,47 @@ def test_every_scenario_states_its_basis() -> None:
         # The parameter table is unverified until a clinician signs it off, and
         # the UI reads this flag to say so on every card.
         assert scenario["provenance"]["parametersVerified"] is False
+
+
+def test_provenance_records_the_exact_inputs_and_request() -> None:
+    scenarios, provenance = project_scenarios(regimen="AC-T + Trastuzumab", duration_weeks=18, **HER2_TWIN)
+    assert provenance["inputs"] == {
+        "tumorSizeMm": 22.0,
+        "ki67": 20.0,
+        "ER": "Positive",
+        "PR": "Positive",
+        "HER2": "Positive",
+        "baselineSurvival": 0.9269,
+        "baselineRisk": "low",
+    }
+    assert provenance["requestedRegimen"] == "AC-T + Trastuzumab"
+    assert provenance["durationWeeks"] == 18
+    assert provenance["parametersVersion"] == "kinetic-regimen-parameters-v1"
+    # Existing provenance fields are preserved alongside the new ones.
+    assert provenance["parametersVerified"] is False and provenance["subtype"] == SUBTYPE_HER2
+    assert all(s["provenance"] == provenance for s in scenarios)
+
+
+def test_provenance_survives_the_json_round_trip_used_for_persistence() -> None:
+    import json
+
+    # `run_simulation` stores `json.dumps(scenarios)` in simulation_runs.scenarios.
+    scenarios, _ = project_scenarios(regimen="Protocol X", **HER2_TWIN)
+    stored = json.loads(json.dumps(scenarios))
+    prov = stored[0]["provenance"]
+    assert "Protocol X" in prov["unavailableReason"]
+    assert prov["requestedRegimen"] == "Protocol X" and prov["durationWeeks"] is None
+    assert prov["inputs"]["ki67"] == 20.0 and prov["parametersVersion"] == "kinetic-regimen-parameters-v1"
+
+
+def test_missing_inputs_are_recorded_as_null_not_invented() -> None:
+    _, provenance = project_scenarios(regimen="AC-T", **{**HER2_TWIN, "ki67": None, "survival_probability": None})
+    assert provenance["inputs"]["ki67"] is None and provenance["inputs"]["baselineSurvival"] is None
+
+
+def test_new_provenance_does_not_change_the_projection_numbers() -> None:
+    scenario = project_scenarios(regimen="AC-T + Trastuzumab", **HER2_TWIN)[0][0]
+    stripped = {k: v for k, v in scenario.items() if k != "provenance"}
+    again = project_scenarios(regimen="AC-T + Trastuzumab", **HER2_TWIN)[0][0]
+    assert stripped == {k: v for k, v in again.items() if k != "provenance"}
+    assert all(scenario[f] is not None for f in OUTCOME_FIELDS)
