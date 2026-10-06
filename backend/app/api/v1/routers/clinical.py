@@ -26,6 +26,17 @@ PATIENT_COLUMNS = (
     "status, risk, survival_probability, last_updated, diagnosed_on, twin_status, history, notes"
 )
 
+# The list shows the regimen of the patient's treatment plan (the one a
+# promoted simulation writes) and falls back to the recorded treatment. Read
+# only: nothing is copied between tables, and detail/edit still use
+# patients.current_treatment. treatment_plans.patient_id is UNIQUE, so the
+# subquery yields at most one row per patient.
+PATIENT_LIST_COLUMNS = PATIENT_COLUMNS.replace(
+    "current_treatment",
+    "COALESCE(NULLIF((SELECT tp.regimen FROM treatment_plans tp WHERE tp.patient_id = patients.id), ''), "
+    "current_treatment) AS current_treatment",
+)
+
 
 def _patient_response(row) -> dict[str, object]:
     """Project a patient row for the API.
@@ -503,7 +514,7 @@ async def list_patients(
     search_clause = "AND (name ILIKE :search OR patient_code ILIKE :search)" if search else ""
     result = await session.execute(
         text(
-            f"SELECT {PATIENT_COLUMNS} FROM patients WHERE deleted_at IS NULL {search_clause} ORDER BY patient_code"
+            f"SELECT {PATIENT_LIST_COLUMNS} FROM patients WHERE deleted_at IS NULL {search_clause} ORDER BY patient_code"
         ),
         {"search": f"%{search}%"} if search else {},
     )
