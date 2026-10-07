@@ -1,0 +1,1530 @@
+{
+  "clinical": {
+    "clinical_features": [
+      "age",
+      "er",
+      "pr",
+      "her2",
+      "grade",
+      "stage"
+    ],
+    "genes": []
+  },
+  "expression": {
+    "clinical_features": [],
+    "genes": [
+      {
+        "ensembl_id": "ENSG00000175356",
+        "annotation": "SCUBE2",
+        "coefficient": -0.10948563644861303
+      },
+      {
+        "ensembl_id": "ENSG00000231752",
+        "annotation": "EMBP1",
+        "coefficient": 0.20240934700074661
+      },
+      {
+        "ensembl_id": "ENSG00000148773",
+        "annotation": "MKI67",
+        "coefficient": 0.08769487624158467
+      },
+      {
+        "ensembl_id": "ENSG00000090382",
+        "annotation": "LYZ",
+        "coefficient": 0.03716337085617178
+      },
+      {
+        "ensembl_id": "ENSG00000117228",
+        "annotation": "GBP1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000177602",
+        "annotation": "GSG2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000140105",
+        "annotation": "WARS",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000109861",
+        "annotation": "CTSC",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000124610",
+        "annotation": "HIST1H1A",
+        "coefficient": 0.011403564115171788
+      },
+      {
+        "ensembl_id": "ENSG00000091831",
+        "annotation": "ESR1",
+        "coefficient": -0.02424530484039855
+      },
+      {
+        "ensembl_id": "ENSG00000139618",
+        "annotation": "BRCA2",
+        "coefficient": 0.025853919873608834
+      },
+      {
+        "ensembl_id": "ENSG00000124795",
+        "annotation": "DEK",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000139725",
+        "annotation": "RHOF",
+        "coefficient": 0.028405620693849165
+      },
+      {
+        "ensembl_id": "ENSG00000135069",
+        "annotation": "PSAT1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000074266",
+        "annotation": "EED",
+        "coefficient": 0.005742293936956403
+      },
+      {
+        "ensembl_id": "ENSG00000256612",
+        "annotation": "CYP2B7P",
+        "coefficient": -0.014883280923459221
+      },
+      {
+        "ensembl_id": "ENSG00000121594",
+        "annotation": "CD80",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000112742",
+        "annotation": "TTK",
+        "coefficient": 0.02696467726226263
+      },
+      {
+        "ensembl_id": "ENSG00000152766",
+        "annotation": "ANKRD22",
+        "coefficient": 0.061741169500773796
+      },
+      {
+        "ensembl_id": "ENSG00000115165",
+        "annotation": "CYTIP",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000277632",
+        "annotation": "CCL3",
+        "coefficient": 0.044535115887742865
+      },
+      {
+        "ensembl_id": "ENSG00000275302",
+        "annotation": "CCL4",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000154127",
+        "annotation": "UBASH3B",
+        "coefficient": 0.0263493277226853
+      },
+      {
+        "ensembl_id": "ENSG00000173559",
+        "annotation": "NABP1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000160883",
+        "annotation": "HK3",
+        "coefficient": 0.017060023208875372
+      },
+      {
+        "ensembl_id": "ENSG00000136122",
+        "annotation": "BORA",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000165490",
+        "annotation": "DDIAS",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000113368",
+        "annotation": "LMNB1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000100749",
+        "annotation": "VRK1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000169245",
+        "annotation": "CXCL10",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000135047",
+        "annotation": "CTSL",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000100368",
+        "annotation": "CSF2RB",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000075218",
+        "annotation": "GTSE1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000100453",
+        "annotation": "GZMB",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000138755",
+        "annotation": "CXCL9",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000134460",
+        "annotation": "IL2RA",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000076344",
+        "annotation": "RGS11",
+        "coefficient": -0.09588778025773148
+      },
+      {
+        "ensembl_id": "ENSG00000145779",
+        "annotation": "TNFAIP8",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000133106",
+        "annotation": "EPSTI1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000266709",
+        "annotation": "MGC12916",
+        "coefficient": 0.03369976782330778
+      },
+      {
+        "ensembl_id": "ENSG00000157193",
+        "annotation": "LRP8",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000151790",
+        "annotation": "TDO2",
+        "coefficient": 0.06611634947407058
+      },
+      {
+        "ensembl_id": "ENSG00000185947",
+        "annotation": "ZNF267",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000198833",
+        "annotation": "UBE2J1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000043462",
+        "annotation": "LCP2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000119729",
+        "annotation": "RHOQ",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000171310",
+        "annotation": "CHST11",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000169442",
+        "annotation": "CD52",
+        "coefficient": 0.0013434997194847094
+      },
+      {
+        "ensembl_id": "ENSG00000147168",
+        "annotation": "IL2RG",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000137807",
+        "annotation": "KIF23",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000163563",
+        "annotation": "MNDA",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000168496",
+        "annotation": "FEN1",
+        "coefficient": 0.01384944442176962
+      },
+      {
+        "ensembl_id": "ENSG00000155629",
+        "annotation": "PIK3AP1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000066279",
+        "annotation": "ASPM",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000136167",
+        "annotation": "LCP1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000103569",
+        "annotation": "AQP9",
+        "coefficient": 0.09752753728385875
+      },
+      {
+        "ensembl_id": "ENSG00000164543",
+        "annotation": "STK17A",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000174371",
+        "annotation": "EXO1",
+        "coefficient": 0.05125227387773149
+      },
+      {
+        "ensembl_id": "ENSG00000119866",
+        "annotation": "BCL11A",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000090889",
+        "annotation": "KIF4A",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000121621",
+        "annotation": "KIF18A",
+        "coefficient": 0.004989800799821668
+      },
+      {
+        "ensembl_id": "ENSG00000271503",
+        "annotation": "CCL5",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000145386",
+        "annotation": "CCNA2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000229474",
+        "annotation": "PATL2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000143977",
+        "annotation": "SNRPG",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000174788",
+        "annotation": "PCP2",
+        "coefficient": -0.0926171609340278
+      },
+      {
+        "ensembl_id": "ENSG00000137040",
+        "annotation": "RANBP6",
+        "coefficient": 0.009662629295459541
+      },
+      {
+        "ensembl_id": "ENSG00000169679",
+        "annotation": "BUB1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000135074",
+        "annotation": "ADAM19",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000112303",
+        "annotation": "VNN2",
+        "coefficient": 0.03529415151775478
+      },
+      {
+        "ensembl_id": "ENSG00000163902",
+        "annotation": "RPN1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000156958",
+        "annotation": "GALK2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000186868",
+        "annotation": "MAPT",
+        "coefficient": -0.04507868924197635
+      },
+      {
+        "ensembl_id": "ENSG00000124787",
+        "annotation": "RPP40",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000198554",
+        "annotation": "WDHD1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000068784",
+        "annotation": "SRBD1",
+        "coefficient": 0.03479339464865733
+      },
+      {
+        "ensembl_id": "ENSG00000151287",
+        "annotation": "TEX30",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000254726",
+        "annotation": "MEX3A",
+        "coefficient": 0.0032730273944424904
+      },
+      {
+        "ensembl_id": "ENSG00000148700",
+        "annotation": "ADD3",
+        "coefficient": 0.029082822943459714
+      },
+      {
+        "ensembl_id": "ENSG00000159753",
+        "annotation": "RLTPR",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000158714",
+        "annotation": "SLAMF8",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000274267",
+        "annotation": "HIST1H3B",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000154451",
+        "annotation": "GBP5",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000141854",
+        "annotation": "MIR1199",
+        "coefficient": -0.16120902116973834
+      },
+      {
+        "ensembl_id": "ENSG00000122877",
+        "annotation": "EGR2",
+        "coefficient": 0.10019877103920447
+      },
+      {
+        "ensembl_id": "ENSG00000108691",
+        "annotation": "CCL2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000119969",
+        "annotation": "HELLS",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000197646",
+        "annotation": "PDCD1LG2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000122862",
+        "annotation": "SRGN",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000121211",
+        "annotation": "MND1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000189362",
+        "annotation": "TMEM194B",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000143412",
+        "annotation": "ANXA9",
+        "coefficient": -0.017848952240249457
+      },
+      {
+        "ensembl_id": "ENSG00000138180",
+        "annotation": "CEP55",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000172322",
+        "annotation": "CLEC12A",
+        "coefficient": 0.07367814000161668
+      },
+      {
+        "ensembl_id": "ENSG00000273802",
+        "annotation": "HIST1H2BG",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000160654",
+        "annotation": "CD3G",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000167613",
+        "annotation": "LAIR1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000105639",
+        "annotation": "JAK3",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000152558",
+        "annotation": "TMEM123",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000136560",
+        "annotation": "TANK",
+        "coefficient": 0.0
+      }
+    ]
+  },
+  "combined": {
+    "clinical_features": [
+      "age",
+      "er",
+      "pr",
+      "her2",
+      "grade",
+      "stage"
+    ],
+    "genes": [
+      {
+        "ensembl_id": "ENSG00000175356",
+        "annotation": "SCUBE2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000231752",
+        "annotation": "EMBP1",
+        "coefficient": 0.25635645686949365
+      },
+      {
+        "ensembl_id": "ENSG00000148773",
+        "annotation": "MKI67",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000090382",
+        "annotation": "LYZ",
+        "coefficient": 0.02718405723928117
+      },
+      {
+        "ensembl_id": "ENSG00000117228",
+        "annotation": "GBP1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000177602",
+        "annotation": "GSG2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000140105",
+        "annotation": "WARS",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000109861",
+        "annotation": "CTSC",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000124610",
+        "annotation": "HIST1H1A",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000091831",
+        "annotation": "ESR1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000139618",
+        "annotation": "BRCA2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000124795",
+        "annotation": "DEK",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000139725",
+        "annotation": "RHOF",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000135069",
+        "annotation": "PSAT1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000074266",
+        "annotation": "EED",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000256612",
+        "annotation": "CYP2B7P",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000121594",
+        "annotation": "CD80",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000112742",
+        "annotation": "TTK",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000152766",
+        "annotation": "ANKRD22",
+        "coefficient": 0.029687757509488634
+      },
+      {
+        "ensembl_id": "ENSG00000115165",
+        "annotation": "CYTIP",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000277632",
+        "annotation": "CCL3",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000275302",
+        "annotation": "CCL4",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000154127",
+        "annotation": "UBASH3B",
+        "coefficient": 0.0052890993864628385
+      },
+      {
+        "ensembl_id": "ENSG00000173559",
+        "annotation": "NABP1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000160883",
+        "annotation": "HK3",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000136122",
+        "annotation": "BORA",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000165490",
+        "annotation": "DDIAS",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000113368",
+        "annotation": "LMNB1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000100749",
+        "annotation": "VRK1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000169245",
+        "annotation": "CXCL10",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000135047",
+        "annotation": "CTSL",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000100368",
+        "annotation": "CSF2RB",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000075218",
+        "annotation": "GTSE1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000100453",
+        "annotation": "GZMB",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000138755",
+        "annotation": "CXCL9",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000134460",
+        "annotation": "IL2RA",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000076344",
+        "annotation": "RGS11",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000145779",
+        "annotation": "TNFAIP8",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000133106",
+        "annotation": "EPSTI1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000266709",
+        "annotation": "MGC12916",
+        "coefficient": 0.025212292272966293
+      },
+      {
+        "ensembl_id": "ENSG00000157193",
+        "annotation": "LRP8",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000151790",
+        "annotation": "TDO2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000185947",
+        "annotation": "ZNF267",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000198833",
+        "annotation": "UBE2J1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000043462",
+        "annotation": "LCP2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000119729",
+        "annotation": "RHOQ",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000171310",
+        "annotation": "CHST11",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000169442",
+        "annotation": "CD52",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000147168",
+        "annotation": "IL2RG",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000137807",
+        "annotation": "KIF23",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000163563",
+        "annotation": "MNDA",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000168496",
+        "annotation": "FEN1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000155629",
+        "annotation": "PIK3AP1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000066279",
+        "annotation": "ASPM",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000136167",
+        "annotation": "LCP1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000103569",
+        "annotation": "AQP9",
+        "coefficient": 0.08958960685268574
+      },
+      {
+        "ensembl_id": "ENSG00000164543",
+        "annotation": "STK17A",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000174371",
+        "annotation": "EXO1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000119866",
+        "annotation": "BCL11A",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000090889",
+        "annotation": "KIF4A",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000121621",
+        "annotation": "KIF18A",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000271503",
+        "annotation": "CCL5",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000145386",
+        "annotation": "CCNA2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000229474",
+        "annotation": "PATL2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000143977",
+        "annotation": "SNRPG",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000174788",
+        "annotation": "PCP2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000137040",
+        "annotation": "RANBP6",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000169679",
+        "annotation": "BUB1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000135074",
+        "annotation": "ADAM19",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000112303",
+        "annotation": "VNN2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000163902",
+        "annotation": "RPN1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000156958",
+        "annotation": "GALK2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000186868",
+        "annotation": "MAPT",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000124787",
+        "annotation": "RPP40",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000198554",
+        "annotation": "WDHD1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000068784",
+        "annotation": "SRBD1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000151287",
+        "annotation": "TEX30",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000254726",
+        "annotation": "MEX3A",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000148700",
+        "annotation": "ADD3",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000159753",
+        "annotation": "RLTPR",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000158714",
+        "annotation": "SLAMF8",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000274267",
+        "annotation": "HIST1H3B",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000154451",
+        "annotation": "GBP5",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000141854",
+        "annotation": "MIR1199",
+        "coefficient": -0.03175743003101017
+      },
+      {
+        "ensembl_id": "ENSG00000122877",
+        "annotation": "EGR2",
+        "coefficient": 0.10327576410009048
+      },
+      {
+        "ensembl_id": "ENSG00000108691",
+        "annotation": "CCL2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000119969",
+        "annotation": "HELLS",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000197646",
+        "annotation": "PDCD1LG2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000122862",
+        "annotation": "SRGN",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000121211",
+        "annotation": "MND1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000189362",
+        "annotation": "TMEM194B",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000143412",
+        "annotation": "ANXA9",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000138180",
+        "annotation": "CEP55",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000172322",
+        "annotation": "CLEC12A",
+        "coefficient": 0.1327436337907767
+      },
+      {
+        "ensembl_id": "ENSG00000273802",
+        "annotation": "HIST1H2BG",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000160654",
+        "annotation": "CD3G",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000167613",
+        "annotation": "LAIR1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000105639",
+        "annotation": "JAK3",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000152558",
+        "annotation": "TMEM123",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000136560",
+        "annotation": "TANK",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000149503",
+        "annotation": "INCENP",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000065328",
+        "annotation": "MCM10",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000105185",
+        "annotation": "PDCD5",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000122122",
+        "annotation": "SASH3",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000204392",
+        "annotation": "LSM2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000068878",
+        "annotation": "PSME4",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000116824",
+        "annotation": "CD2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000197748",
+        "annotation": "CFAP43",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000180957",
+        "annotation": "PITPNB",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000278637",
+        "annotation": "HIST1H4A",
+        "coefficient": 0.09598015223840659
+      },
+      {
+        "ensembl_id": "ENSG00000034510",
+        "annotation": "TMSB10",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000112242",
+        "annotation": "E2F3",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000115163",
+        "annotation": "CENPA",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000132780",
+        "annotation": "NASP",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000073921",
+        "annotation": "PICALM",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000110448",
+        "annotation": "CD5",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000165480",
+        "annotation": "SKA3",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000109436",
+        "annotation": "TBC1D9",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000163565",
+        "annotation": "IFI16",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000130775",
+        "annotation": "THEMIS2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000101447",
+        "annotation": "FAM83D",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000275379",
+        "annotation": "HIST1H3I",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000136457",
+        "annotation": "CHAD",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000024526",
+        "annotation": "DEPDC1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000197472",
+        "annotation": "ZNF695",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000163808",
+        "annotation": "KIF15",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000115956",
+        "annotation": "PLEK",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000198826",
+        "annotation": "ARHGAP11A",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000169684",
+        "annotation": "CHRNA5",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000163739",
+        "annotation": "CXCL1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000178372",
+        "annotation": "CALML5",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000104856",
+        "annotation": "RELB",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000215784",
+        "annotation": "FAM72D",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000131828",
+        "annotation": "PDHA1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000109805",
+        "annotation": "NCAPG",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000189057",
+        "annotation": "FAM111B",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000183918",
+        "annotation": "SH2D1A",
+        "coefficient": 0.0615096248031404
+      },
+      {
+        "ensembl_id": "ENSG00000168404",
+        "annotation": "MLKL",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000048028",
+        "annotation": "USP28",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000011426",
+        "annotation": "ANLN",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000162692",
+        "annotation": "VCAM1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000027075",
+        "annotation": "PRKCH",
+        "coefficient": 0.05535420039949678
+      },
+      {
+        "ensembl_id": "ENSG00000003989",
+        "annotation": "SLC7A2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000152256",
+        "annotation": "PDK1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000170571",
+        "annotation": "EMB",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000123908",
+        "annotation": "AGO2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000114423",
+        "annotation": "CBLB",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000106462",
+        "annotation": "EZH2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000015285",
+        "annotation": "WAS",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000216490",
+        "annotation": "IFI30",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000179583",
+        "annotation": "CIITA",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000156234",
+        "annotation": "CXCL13",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000137101",
+        "annotation": "CD72",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000130487",
+        "annotation": "KLHDC7B",
+        "coefficient": 0.07371352103864282
+      },
+      {
+        "ensembl_id": "ENSG00000125249",
+        "annotation": "RAP2A",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000118849",
+        "annotation": "RARRES1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000091651",
+        "annotation": "ORC6",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000114209",
+        "annotation": "PDCD10",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000023902",
+        "annotation": "PLEKHO1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000136490",
+        "annotation": "LIMD2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000171848",
+        "annotation": "RRM2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000162511",
+        "annotation": "LAPTM5",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000123975",
+        "annotation": "CKS2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000120217",
+        "annotation": "CD274",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000057252",
+        "annotation": "SOAT1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000138670",
+        "annotation": "RASGEF1B",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000173200",
+        "annotation": "PARP15",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000162654",
+        "annotation": "GBP4",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000090861",
+        "annotation": "AARS",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000059804",
+        "annotation": "SLC2A3",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000011600",
+        "annotation": "TYROBP",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000128340",
+        "annotation": "RAC2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000160791",
+        "annotation": "CCR5",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000081985",
+        "annotation": "IL12RB2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000161929",
+        "annotation": "SCIMP",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000110958",
+        "annotation": "PTGES3",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000184922",
+        "annotation": "FMNL1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000126787",
+        "annotation": "DLGAP5",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000182481",
+        "annotation": "KPNA2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000124226",
+        "annotation": "RNF114",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000134028",
+        "annotation": "ADAMDEC1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000049249",
+        "annotation": "TNFRSF9",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000000938",
+        "annotation": "FGR",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000127507",
+        "annotation": "EMR2",
+        "coefficient": 0.024335473630366908
+      },
+      {
+        "ensembl_id": "ENSG00000100092",
+        "annotation": "SH3BP1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000279392",
+        "annotation": "AL158801.1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000162645",
+        "annotation": "GBP2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000157456",
+        "annotation": "CCNB2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000262406",
+        "annotation": "MMP12",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000138092",
+        "annotation": "CENPO",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000102524",
+        "annotation": "TNFSF13B",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000070190",
+        "annotation": "DAPP1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000170312",
+        "annotation": "CDK1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000134684",
+        "annotation": "YARS",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000131042",
+        "annotation": "LILRB2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000197265",
+        "annotation": "GTF2E2",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000129810",
+        "annotation": "SGOL1",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000143924",
+        "annotation": "EML4",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000163131",
+        "annotation": "CTSS",
+        "coefficient": 0.0
+      },
+      {
+        "ensembl_id": "ENSG00000126882",
+        "annotation": "FAM78A",
+        "coefficient": 0.0
+      }
+    ]
+  }
+}

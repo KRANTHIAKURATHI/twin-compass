@@ -1,0 +1,181 @@
+{
+  "model_name": "METABRIC relapse-free survival model",
+  "endpoint": "RFS",
+  "status": "Research model \u2014 not clinically validated",
+  "model_version": "metabric-rfs-v1",
+  "selected_model": "cox",
+  "selection_reason": "Cox preferred: RSF test C-index minus Cox is -0.0069, below the 0.01 margin required to prefer the less interpretable forest.",
+  "trained_at": "2026-10-06T17:36:46.320469+00:00",
+  "target": {
+    "time": "RFS_MONTHS (months)",
+    "event": "RFS_STATUS: '1:Recurred' -> True, '0:Not Recurred' -> False"
+  },
+  "feature_names": [
+    "AGE_AT_DIAGNOSIS",
+    "LYMPH_NODES_EXAMINED_POSITIVE",
+    "TUMOR_SIZE",
+    "GRADE",
+    "TUMOR_STAGE",
+    "INFERRED_MENOPAUSAL_STATE_Post",
+    "INFERRED_MENOPAUSAL_STATE_Pre",
+    "INFERRED_MENOPAUSAL_STATE_Unknown",
+    "CLAUDIN_SUBTYPE_Basal",
+    "CLAUDIN_SUBTYPE_Her2",
+    "CLAUDIN_SUBTYPE_LumA",
+    "CLAUDIN_SUBTYPE_LumB",
+    "CLAUDIN_SUBTYPE_NC",
+    "CLAUDIN_SUBTYPE_Normal",
+    "CLAUDIN_SUBTYPE_Unknown",
+    "CLAUDIN_SUBTYPE_claudin-low",
+    "HISTOLOGICAL_SUBTYPE_Ductal/NST",
+    "HISTOLOGICAL_SUBTYPE_Lobular",
+    "HISTOLOGICAL_SUBTYPE_Medullary",
+    "HISTOLOGICAL_SUBTYPE_Metaplastic",
+    "HISTOLOGICAL_SUBTYPE_Mixed",
+    "HISTOLOGICAL_SUBTYPE_Mucinous",
+    "HISTOLOGICAL_SUBTYPE_Other",
+    "HISTOLOGICAL_SUBTYPE_Tubular/ cribriform",
+    "HISTOLOGICAL_SUBTYPE_Unknown",
+    "CHEMOTHERAPY_No",
+    "CHEMOTHERAPY_Unknown",
+    "CHEMOTHERAPY_Yes",
+    "HORMONE_THERAPY_No",
+    "HORMONE_THERAPY_Unknown",
+    "HORMONE_THERAPY_Yes",
+    "RADIO_THERAPY_No",
+    "RADIO_THERAPY_Unknown",
+    "RADIO_THERAPY_Yes",
+    "BREAST_SURGERY_BREAST CONSERVING",
+    "BREAST_SURGERY_MASTECTOMY",
+    "BREAST_SURGERY_Unknown",
+    "ER_STATUS_Negative",
+    "ER_STATUS_Positive",
+    "ER_STATUS_Unknown",
+    "PR_STATUS_Negative",
+    "PR_STATUS_Positive",
+    "PR_STATUS_Unknown",
+    "HER2_STATUS_Negative",
+    "HER2_STATUS_Positive",
+    "HER2_STATUS_Unknown"
+  ],
+  "raw_features": {
+    "numeric": [
+      "AGE_AT_DIAGNOSIS",
+      "LYMPH_NODES_EXAMINED_POSITIVE",
+      "TUMOR_SIZE",
+      "GRADE",
+      "TUMOR_STAGE"
+    ],
+    "categorical": [
+      "INFERRED_MENOPAUSAL_STATE",
+      "CLAUDIN_SUBTYPE",
+      "HISTOLOGICAL_SUBTYPE",
+      "CHEMOTHERAPY",
+      "HORMONE_THERAPY",
+      "RADIO_THERAPY",
+      "BREAST_SURGERY",
+      "ER_STATUS",
+      "PR_STATUS",
+      "HER2_STATUS"
+    ]
+  },
+  "dataset": {
+    "source": "METABRIC, cBioPortal clinical files (patient + sample)",
+    "files": {
+      "data_clinical_patient.txt": {
+        "sha256": "2a6bbadc6e4b2b07c0505559d438da959fc5c9aba55c7194abc394e2d6454995"
+      },
+      "data_clinical_sample.txt": {
+        "sha256": "9a2291e065e2a0a5337b4eaeb09836e70b1bc3e1ed17714a013b53515697e6dc"
+      }
+    },
+    "patients_in_files": 2509
+  },
+  "training_config": {
+    "seed": 42,
+    "test_size": 0.2,
+    "cv_folds": 5,
+    "cox_alpha_grid": [
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "rsf": {
+      "n_estimators": 100,
+      "min_samples_leaf": 40,
+      "max_features": "sqrt"
+    },
+    "interpretability_margin": 0.01
+  },
+  "split": {
+    "n_total": 2380,
+    "n_train": 1904,
+    "n_test": 476,
+    "events_train": 771,
+    "events_test": 193,
+    "censoring_rate_train": 0.595063025210084,
+    "censoring_rate_test": 0.5945378151260504,
+    "endpoint": "RFS",
+    "n_excluded_no_target": 129,
+    "n_features_raw": 15,
+    "n_features_after_preprocessing": 46,
+    "evaluation_times_months": [
+      10.5,
+      17.4,
+      25.6,
+      33.0,
+      45.4,
+      56.3,
+      74.3,
+      97.1
+    ]
+  },
+  "environment": {
+    "python": "3.13.14",
+    "scikit-survival": "0.28.0",
+    "scikit-learn": "1.9.0"
+  },
+  "metrics": {
+    "train_c_index": 0.6704547018224636,
+    "test_c_index": 0.6660163994226895,
+    "time_dependent_auc": {
+      "times_months": [
+        10.5,
+        17.4,
+        25.6,
+        33.0,
+        45.4,
+        56.3,
+        74.3,
+        97.1
+      ],
+      "auc": [
+        0.6121509490758446,
+        0.6384950942519281,
+        0.6919393440194329,
+        0.7108279006460083,
+        0.7040751876891995,
+        0.7076573295309632,
+        0.7157641686930979,
+        0.7011124421297381
+      ],
+      "mean_auc": 0.6862301226498466
+    },
+    "integrated_brier_score": 0.14870805606843984,
+    "cv_c_index_mean": 0.6612315672598471,
+    "cv_c_index_std": 0.018794999931552158,
+    "hyperparameters": {
+      "alpha": 100.0,
+      "selected_by": "train-only CV"
+    }
+  },
+  "limitations": [
+    "Research/prototype model; not clinically validated and not for patient care.",
+    "Single random split of one historical cohort; no external validation.",
+    "Treatment variables are recorded post-diagnosis and confounded by indication.",
+    "Not a treatment-response model: it does not estimate the effect of any treatment.",
+    "RFS counts recurrence and disease-specific death; prognostic outcome modelling only."
+  ]
+}

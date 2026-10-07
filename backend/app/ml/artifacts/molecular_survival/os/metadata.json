@@ -1,0 +1,106 @@
+{
+  "model_name": "METABRIC molecular survival experiment (OS)",
+  "status": "Research model \u2014 not clinically validated",
+  "dataset": "METABRIC",
+  "endpoint": "OS",
+  "model": "Elastic-Net Cox",
+  "variant": "C: clinical + selected expression",
+  "expression_source": "METABRIC Illumina microarray mRNA z-scores (diploid-reference samples), cBioPortal",
+  "gene_identifier": "Entrez ID",
+  "patient_count": 1980,
+  "event_count": 1143,
+  "selected_gene_count": 39,
+  "screened_gene_count": 1000,
+  "l1_ratio": 1.0,
+  "regularization": {
+    "alpha": 0.041424545771406224,
+    "n_alphas": 30,
+    "alpha_min_ratio": 0.01,
+    "clinical_penalty_factor": 0.0,
+    "expression_penalty_factor": 1.0
+  },
+  "screening": {
+    "method": "univariate Cox score |z|, training rows only",
+    "candidate_sizes": [
+      500,
+      1000,
+      2000,
+      5000
+    ],
+    "chosen_size": 1000,
+    "winsorization_percentiles": [
+      1.0,
+      99.0
+    ]
+  },
+  "random_seed": 42,
+  "feature_selection_methodology": "Per training set / CV fold: median-impute, winsorise (train percentiles 1/99) and standardise every gene with training statistics only; rank genes by |univariate Cox score z| on the training rows only; keep the top-k; fit Elastic-Net Cox along an alpha path. k, l1_ratio and alpha are chosen by train-only CV (screening repeated inside every fold). No variance filter (z-score genes have ~equal variance). Test rows are used only for the final metrics.",
+  "split": {
+    "endpoint": "OS",
+    "n_patients": 1980,
+    "n_train": 1584,
+    "n_test": 396,
+    "events": 1143,
+    "events_train": 914,
+    "events_test": 229,
+    "censoring_rate": 0.42272727272727273,
+    "n_genes_available": 20192,
+    "p_over_n_train": 12.747474747474747,
+    "evaluation_times_months": [
+      28.0,
+      37.3,
+      47.2,
+      64.2,
+      84.2,
+      104.3,
+      125.1,
+      163.2
+    ]
+  },
+  "metrics": {
+    "train_c_index": 0.7257954521731264,
+    "test_c_index": 0.6765232478727136,
+    "cv_c_index_mean": 0.6857882979155427,
+    "cv_c_index_std": 0.022831522083923025,
+    "time_dependent_auc": {
+      "times_months": [
+        28.0,
+        37.3,
+        47.2,
+        64.2,
+        84.2,
+        104.3,
+        125.1,
+        163.2
+      ],
+      "auc": [
+        0.6003848462830418,
+        0.6500636103539452,
+        0.6824755457864988,
+        0.7080343862773698,
+        0.7112913921879966,
+        0.7182970291453453,
+        0.7321906323727687,
+        0.7492500608877963
+      ],
+      "mean_auc": 0.6976191875808574
+    },
+    "integrated_brier_score": 0.17636564683536632,
+    "test_c_index_ci95": [
+      0.6419914659623362,
+      0.7123773139312051
+    ]
+  },
+  "trained_at": "2026-10-06T18:58:30.771138+00:00",
+  "environment": {
+    "python": "3.13.14",
+    "scikit-survival": "0.28.0",
+    "scikit-learn": "1.9.0"
+  },
+  "limitations": [
+    "One METABRIC cohort; no external validation.",
+    "Observational cohort; treatment flags are confounded by indication.",
+    "High-dimensional molecular data; possible batch/cohort effects.",
+    "Not treatment-response prediction. Not clinically validated."
+  ]
+}

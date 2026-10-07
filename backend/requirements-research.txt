@@ -1,0 +1,15 @@
+# Offline research tooling: METABRIC survival model (app/ml/survival). The scikit-survival
+# stack below is now ALSO pinned in requirements.txt (used by app/ml/prognosis.py at runtime);
+# keep the two in sync. Install on top of requirements.txt:  pip install -r requirements-research.txt
+#
+# scikit-survival 0.28 requires scikit-learn>=1.9,<1.10, which matches the
+# scikit-learn==1.9.0 pinned in requirements.txt; numpy/scipy/scikit-learn are
+# not touched. Its `ecos` dependency has no Windows wheel for Python 3.13 and
+# compiles from source; it is only used by the SVM estimators, not by the Cox /
+# Random Survival Forest models here (on a machine without a C compiler install
+# scikit-survival with --no-deps after the packages below).
+scikit-survival==0.28.0
+pandas==3.0.6
+numexpr==2.14.2
+osqp==1.1.3
+narwhals==2.26.0

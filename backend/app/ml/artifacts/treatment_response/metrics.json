@@ -1,0 +1,3116 @@
+{
+  "models": {
+    "clinical": {
+      "label": "A clinical-only",
+      "fold_metrics": {
+        "roc_auc": {
+          "mean": 0.7213823891625616,
+          "sd": 0.06653334001669023,
+          "median": 0.7209821428571428,
+          "p2.5": 0.6084821428571429,
+          "p97.5": 0.8349137931034483,
+          "n_folds": 25
+        },
+        "pr_auc": {
+          "mean": 0.5963783748327919,
+          "sd": 0.08841125089394677,
+          "median": 0.5934858397906613,
+          "p2.5": 0.47177479064958333,
+          "p97.5": 0.7615975176434776,
+          "n_folds": 25
+        },
+        "brier": {
+          "mean": 0.20012413722186964,
+          "sd": 0.021508417527636672,
+          "median": 0.19758201982427623,
+          "p2.5": 0.15953097629909507,
+          "p97.5": 0.23497733814480215,
+          "n_folds": 25
+        },
+        "log_loss": {
+          "mean": 0.5792249106818038,
+          "sd": 0.05113399545158945,
+          "median": 0.5747371347781448,
+          "p2.5": 0.48981102436290525,
+          "p97.5": 0.6630019042221647,
+          "n_folds": 25
+        },
+        "sensitivity": {
+          "mean": 0.7025,
+          "sd": 0.13414466693337707,
+          "median": 0.6875,
+          "p2.5": 0.4375,
+          "p97.5": 0.9375,
+          "n_folds": 25
+        },
+        "specificity": {
+          "mean": 0.6068472906403941,
+          "sd": 0.13098564854799521,
+          "median": 0.5862068965517241,
+          "p2.5": 0.36551724137931035,
+          "p97.5": 0.8044334975369458,
+          "n_folds": 25
+        },
+        "balanced_accuracy": {
+          "mean": 0.654673645320197,
+          "sd": 0.04776509128629759,
+          "median": 0.6584051724137931,
+          "p2.5": 0.5741071428571429,
+          "p97.5": 0.740301724137931,
+          "n_folds": 25
+        }
+      },
+      "repeat_averaged_oof": {
+        "roc_auc": 0.7238556338028169,
+        "pr_auc": 0.5723956031618066,
+        "brier": 0.19856766230189646,
+        "roc_auc_ci95": [
+          0.6562920619004692,
+          0.7897810504287588
+        ],
+        "pr_auc_ci95": [
+          0.46624443090413265,
+          0.6866624318828011
+        ]
+      },
+      "calibration": {
+        "slope_per_repeat": {
+          "mean": 0.8871872682004058,
+          "sd": 0.09423950773806185,
+          "median": 0.8759416729777963,
+          "p2.5": 0.8027523604488214,
+          "p97.5": 1.0287822001601017,
+          "n_folds": 5
+        },
+        "intercept_per_repeat": {
+          "mean": -0.04013995420441606,
+          "sd": 0.05008898206620455,
+          "median": -0.0508834319807087,
+          "p2.5": -0.10102813142249827,
+          "p97.5": 0.022418986192780394,
+          "n_folds": 5
+        },
+        "reliability_repeat_averaged": [
+          {
+            "bin": 0,
+            "n": 45,
+            "mean_predicted": 0.09618904467487698,
+            "observed_pcr_rate": 0.06666666666666667
+          },
+          {
+            "bin": 1,
+            "n": 44,
+            "mean_predicted": 0.22348781113502067,
+            "observed_pcr_rate": 0.25
+          },
+          {
+            "bin": 2,
+            "n": 44,
+            "mean_predicted": 0.3538105553799808,
+            "observed_pcr_rate": 0.4090909090909091
+          },
+          {
+            "bin": 3,
+            "n": 44,
+            "mean_predicted": 0.4887426150155157,
+            "observed_pcr_rate": 0.5454545454545454
+          },
+          {
+            "bin": 4,
+            "n": 45,
+            "mean_predicted": 0.630280537732778,
+            "observed_pcr_rate": 0.5333333333333333
+          }
+        ]
+      },
+      "selected_config_frequency": {
+        "k": {
+          "0": 25
+        },
+        "l1_ratio": {
+          "0.0": 25
+        },
+        "C": {
+          "1.0": 14,
+          "10.0": 1,
+          "0.3": 7,
+          "0.1": 1,
+          "3.0": 2
+        },
+        "clin_scale": {
+          "1.0": 25
+        }
+      }
+    },
+    "expression": {
+      "label": "B expression-only",
+      "fold_metrics": {
+        "roc_auc": {
+          "mean": 0.6860467980295566,
+          "sd": 0.06986675630415494,
+          "median": 0.6961206896551725,
+          "p2.5": 0.5491379310344827,
+          "p97.5": 0.8068965517241379,
+          "n_folds": 25
+        },
+        "pr_auc": {
+          "mean": 0.5780623675622544,
+          "sd": 0.08560873950148175,
+          "median": 0.5946470460307471,
+          "p2.5": 0.4248947381121365,
+          "p97.5": 0.7073345836647175,
+          "n_folds": 25
+        },
+        "brier": {
+          "mean": 0.2120002580403748,
+          "sd": 0.023226497937825278,
+          "median": 0.20809503112880517,
+          "p2.5": 0.17789977532751672,
+          "p97.5": 0.259675884229412,
+          "n_folds": 25
+        },
+        "log_loss": {
+          "mean": 0.6126539406304508,
+          "sd": 0.0594667930815286,
+          "median": 0.5997630900746752,
+          "p2.5": 0.5290180964739677,
+          "p97.5": 0.7449878188434487,
+          "n_folds": 25
+        },
+        "sensitivity": {
+          "mean": 0.5925,
+          "sd": 0.164491007859599,
+          "median": 0.5625,
+          "p2.5": 0.25,
+          "p97.5": 0.9249999999999998,
+          "n_folds": 25
+        },
+        "specificity": {
+          "mean": 0.6552216748768472,
+          "sd": 0.11140753766102843,
+          "median": 0.6785714285714286,
+          "p2.5": 0.4857142857142857,
+          "p97.5": 0.8571428571428569,
+          "n_folds": 25
+        },
+        "balanced_accuracy": {
+          "mean": 0.6238608374384236,
+          "sd": 0.05691210057239249,
+          "median": 0.6205357142857143,
+          "p2.5": 0.5339285714285714,
+          "p97.5": 0.7480911330049261,
+          "n_folds": 25
+        }
+      },
+      "repeat_averaged_oof": {
+        "roc_auc": 0.6924295774647888,
+        "pr_auc": 0.5583794250155422,
+        "brier": 0.20685105261614967,
+        "roc_auc_ci95": [
+          0.618316805731819,
+          0.7635749940953727
+        ],
+        "pr_auc_ci95": [
+          0.44471342867516606,
+          0.6826940693705258
+        ]
+      },
+      "calibration": {
+        "slope_per_repeat": {
+          "mean": 0.7390457371928915,
+          "sd": 0.15599322488566972,
+          "median": 0.6923786421962445,
+          "p2.5": 0.5569710015191951,
+          "p97.5": 0.9058990724618287,
+          "n_folds": 5
+        },
+        "intercept_per_repeat": {
+          "mean": -0.14200699425527302,
+          "sd": 0.09851408615392589,
+          "median": -0.17564120019965912,
+          "p2.5": -0.26005133951526704,
+          "p97.5": -0.030551465303110106,
+          "n_folds": 5
+        },
+        "reliability_repeat_averaged": [
+          {
+            "bin": 0,
+            "n": 45,
+            "mean_predicted": 0.14051874087338784,
+            "observed_pcr_rate": 0.13333333333333333
+          },
+          {
+            "bin": 1,
+            "n": 44,
+            "mean_predicted": 0.2424659749500088,
+            "observed_pcr_rate": 0.3409090909090909
+          },
+          {
+            "bin": 2,
+            "n": 44,
+            "mean_predicted": 0.3478373493516574,
+            "observed_pcr_rate": 0.3181818181818182
+          },
+          {
+            "bin": 3,
+            "n": 44,
+            "mean_predicted": 0.46897835933807086,
+            "observed_pcr_rate": 0.45454545454545453
+          },
+          {
+            "bin": 4,
+            "n": 45,
+            "mean_predicted": 0.6174262260641342,
+            "observed_pcr_rate": 0.5555555555555556
+          }
+        ]
+      },
+      "selected_config_frequency": {
+        "k": {
+          "100": 9,
+          "50": 6,
+          "500": 7,
+          "200": 3
+        },
+        "l1_ratio": {
+          "0.2": 15,
+          "0.8": 5,
+          "0.5": 2,
+          "1.0": 3
+        },
+        "C": {
+          "0.03": 17,
+          "0.1": 8
+        },
+        "clin_scale": {
+          "1.0": 25
+        }
+      },
+      "gene_selection": {
+        "outer_folds": 25,
+        "most_often_nonzero_coefficient": [
+          {
+            "ensembl_id": "ENSG00000231752",
+            "annotation": "EMBP1",
+            "nonzero_in_folds": 25,
+            "in_screened_top_k_in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000175356",
+            "annotation": "SCUBE2",
+            "nonzero_in_folds": 23,
+            "in_screened_top_k_in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000148773",
+            "annotation": "MKI67",
+            "nonzero_in_folds": 18,
+            "in_screened_top_k_in_folds": 24
+          },
+          {
+            "ensembl_id": "ENSG00000152766",
+            "annotation": "ANKRD22",
+            "nonzero_in_folds": 16,
+            "in_screened_top_k_in_folds": 21
+          },
+          {
+            "ensembl_id": "ENSG00000090382",
+            "annotation": "LYZ",
+            "nonzero_in_folds": 14,
+            "in_screened_top_k_in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000076344",
+            "annotation": "RGS11",
+            "nonzero_in_folds": 14,
+            "in_screened_top_k_in_folds": 17
+          },
+          {
+            "ensembl_id": "ENSG00000141854",
+            "annotation": "MIR1199",
+            "nonzero_in_folds": 14,
+            "in_screened_top_k_in_folds": 15
+          },
+          {
+            "ensembl_id": "ENSG00000112742",
+            "annotation": "TTK",
+            "nonzero_in_folds": 13,
+            "in_screened_top_k_in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000122877",
+            "annotation": "EGR2",
+            "nonzero_in_folds": 13,
+            "in_screened_top_k_in_folds": 13
+          },
+          {
+            "ensembl_id": "ENSG00000154127",
+            "annotation": "UBASH3B",
+            "nonzero_in_folds": 12,
+            "in_screened_top_k_in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000277632",
+            "annotation": "CCL3",
+            "nonzero_in_folds": 11,
+            "in_screened_top_k_in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000139618",
+            "annotation": "BRCA2",
+            "nonzero_in_folds": 11,
+            "in_screened_top_k_in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000178372",
+            "annotation": "CALML5",
+            "nonzero_in_folds": 11,
+            "in_screened_top_k_in_folds": 13
+          },
+          {
+            "ensembl_id": "ENSG00000151790",
+            "annotation": "TDO2",
+            "nonzero_in_folds": 11,
+            "in_screened_top_k_in_folds": 20
+          },
+          {
+            "ensembl_id": "ENSG00000103569",
+            "annotation": "AQP9",
+            "nonzero_in_folds": 10,
+            "in_screened_top_k_in_folds": 13
+          },
+          {
+            "ensembl_id": "ENSG00000174788",
+            "annotation": "PCP2",
+            "nonzero_in_folds": 10,
+            "in_screened_top_k_in_folds": 14
+          },
+          {
+            "ensembl_id": "ENSG00000172322",
+            "annotation": "CLEC12A",
+            "nonzero_in_folds": 10,
+            "in_screened_top_k_in_folds": 12
+          },
+          {
+            "ensembl_id": "ENSG00000169442",
+            "annotation": "CD52",
+            "nonzero_in_folds": 9,
+            "in_screened_top_k_in_folds": 19
+          },
+          {
+            "ensembl_id": "ENSG00000186868",
+            "annotation": "MAPT",
+            "nonzero_in_folds": 9,
+            "in_screened_top_k_in_folds": 17
+          },
+          {
+            "ensembl_id": "ENSG00000139725",
+            "annotation": "RHOF",
+            "nonzero_in_folds": 8,
+            "in_screened_top_k_in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000174371",
+            "annotation": "EXO1",
+            "nonzero_in_folds": 8,
+            "in_screened_top_k_in_folds": 15
+          },
+          {
+            "ensembl_id": "ENSG00000124610",
+            "annotation": "HIST1H1A",
+            "nonzero_in_folds": 8,
+            "in_screened_top_k_in_folds": 24
+          },
+          {
+            "ensembl_id": "ENSG00000130487",
+            "annotation": "KLHDC7B",
+            "nonzero_in_folds": 8,
+            "in_screened_top_k_in_folds": 11
+          },
+          {
+            "ensembl_id": "ENSG00000278637",
+            "annotation": "HIST1H4A",
+            "nonzero_in_folds": 8,
+            "in_screened_top_k_in_folds": 10
+          },
+          {
+            "ensembl_id": "ENSG00000266709",
+            "annotation": "MGC12916",
+            "nonzero_in_folds": 7,
+            "in_screened_top_k_in_folds": 18
+          }
+        ],
+        "most_often_screened": [
+          {
+            "ensembl_id": "ENSG00000175356",
+            "annotation": "SCUBE2",
+            "in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000231752",
+            "annotation": "EMBP1",
+            "in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000139725",
+            "annotation": "RHOF",
+            "in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000090382",
+            "annotation": "LYZ",
+            "in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000117228",
+            "annotation": "GBP1",
+            "in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000177602",
+            "annotation": "GSG2",
+            "in_folds": 24
+          },
+          {
+            "ensembl_id": "ENSG00000148773",
+            "annotation": "MKI67",
+            "in_folds": 24
+          },
+          {
+            "ensembl_id": "ENSG00000124795",
+            "annotation": "DEK",
+            "in_folds": 24
+          },
+          {
+            "ensembl_id": "ENSG00000140105",
+            "annotation": "WARS",
+            "in_folds": 24
+          },
+          {
+            "ensembl_id": "ENSG00000109861",
+            "annotation": "CTSC",
+            "in_folds": 24
+          },
+          {
+            "ensembl_id": "ENSG00000124610",
+            "annotation": "HIST1H1A",
+            "in_folds": 24
+          },
+          {
+            "ensembl_id": "ENSG00000074266",
+            "annotation": "EED",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000277632",
+            "annotation": "CCL3",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000112742",
+            "annotation": "TTK",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000139618",
+            "annotation": "BRCA2",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000100368",
+            "annotation": "CSF2RB",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000154127",
+            "annotation": "UBASH3B",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000165490",
+            "annotation": "DDIAS",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000275302",
+            "annotation": "CCL4",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000135069",
+            "annotation": "PSAT1",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000115165",
+            "annotation": "CYTIP",
+            "in_folds": 21
+          },
+          {
+            "ensembl_id": "ENSG00000136122",
+            "annotation": "BORA",
+            "in_folds": 21
+          },
+          {
+            "ensembl_id": "ENSG00000091831",
+            "annotation": "ESR1",
+            "in_folds": 21
+          },
+          {
+            "ensembl_id": "ENSG00000173559",
+            "annotation": "NABP1",
+            "in_folds": 21
+          },
+          {
+            "ensembl_id": "ENSG00000134460",
+            "annotation": "IL2RA",
+            "in_folds": 21
+          }
+        ],
+        "median_nonzero_genes_per_fold": 29.0
+      }
+    },
+    "combined": {
+      "label": "C clinical + expression",
+      "fold_metrics": {
+        "roc_auc": {
+          "mean": 0.7442595443349753,
+          "sd": 0.057936853985975915,
+          "median": 0.7388392857142858,
+          "p2.5": 0.6325584975369458,
+          "p97.5": 0.8392087438423645,
+          "n_folds": 25
+        },
+        "pr_auc": {
+          "mean": 0.6237712895802526,
+          "sd": 0.09032244434342195,
+          "median": 0.6012029457611354,
+          "p2.5": 0.4881441165686855,
+          "p97.5": 0.7868709953617073,
+          "n_folds": 25
+        },
+        "brier": {
+          "mean": 0.1972311634272468,
+          "sd": 0.02664802333333331,
+          "median": 0.1976384003064612,
+          "p2.5": 0.15385174767828136,
+          "p97.5": 0.24991259741526425,
+          "n_folds": 25
+        },
+        "log_loss": {
+          "mean": 0.5761615467968153,
+          "sd": 0.06471485689355722,
+          "median": 0.5804787850669006,
+          "p2.5": 0.4756319855946088,
+          "p97.5": 0.707412633312991,
+          "n_folds": 25
+        },
+        "sensitivity": {
+          "mean": 0.7075,
+          "sd": 0.12332207155790618,
+          "median": 0.75,
+          "p2.5": 0.475,
+          "p97.5": 0.8999999999999999,
+          "n_folds": 25
+        },
+        "specificity": {
+          "mean": 0.6566995073891626,
+          "sd": 0.14416859178792557,
+          "median": 0.6428571428571429,
+          "p2.5": 0.33793103448275863,
+          "p97.5": 0.8886699507389162,
+          "n_folds": 25
+        },
+        "balanced_accuracy": {
+          "mean": 0.6820997536945812,
+          "sd": 0.06803441129996145,
+          "median": 0.6785714285714286,
+          "p2.5": 0.5616379310344828,
+          "p97.5": 0.7898706896551724,
+          "n_folds": 25
+        }
+      },
+      "repeat_averaged_oof": {
+        "roc_auc": 0.7473591549295775,
+        "pr_auc": 0.5833928889437038,
+        "brier": 0.19217183238738186,
+        "roc_auc_ci95": [
+          0.6827962722321584,
+          0.8088632692425045
+        ],
+        "pr_auc_ci95": [
+          0.4772665180360259,
+          0.7040642951893152
+        ]
+      },
+      "calibration": {
+        "slope_per_repeat": {
+          "mean": 0.7566493842650271,
+          "sd": 0.030695086524413034,
+          "median": 0.7556444087366696,
+          "p2.5": 0.7228152623297099,
+          "p97.5": 0.7880080719065204,
+          "n_folds": 5
+        },
+        "intercept_per_repeat": {
+          "mean": -0.16834195537448013,
+          "sd": 0.037994051010347606,
+          "median": -0.15849004843136788,
+          "p2.5": -0.20969178223138651,
+          "p97.5": -0.13247825242528957,
+          "n_folds": 5
+        },
+        "reliability_repeat_averaged": [
+          {
+            "bin": 0,
+            "n": 45,
+            "mean_predicted": 0.08386749386444324,
+            "observed_pcr_rate": 0.06666666666666667
+          },
+          {
+            "bin": 1,
+            "n": 44,
+            "mean_predicted": 0.20988912236519905,
+            "observed_pcr_rate": 0.2727272727272727
+          },
+          {
+            "bin": 2,
+            "n": 44,
+            "mean_predicted": 0.36648884468125775,
+            "observed_pcr_rate": 0.3409090909090909
+          },
+          {
+            "bin": 3,
+            "n": 44,
+            "mean_predicted": 0.5111090712582566,
+            "observed_pcr_rate": 0.4318181818181818
+          },
+          {
+            "bin": 4,
+            "n": 45,
+            "mean_predicted": 0.7053858626173029,
+            "observed_pcr_rate": 0.6888888888888889
+          }
+        ]
+      },
+      "selected_config_frequency": {
+        "k": {
+          "100": 7,
+          "500": 6,
+          "50": 6,
+          "200": 6
+        },
+        "l1_ratio": {
+          "1.0": 8,
+          "0.5": 4,
+          "0.8": 4,
+          "0.2": 9
+        },
+        "C": {
+          "0.1": 12,
+          "0.03": 12,
+          "0.003": 1
+        },
+        "clin_scale": {
+          "25.0": 18,
+          "5.0": 7
+        }
+      },
+      "gene_selection": {
+        "outer_folds": 25,
+        "most_often_nonzero_coefficient": [
+          {
+            "ensembl_id": "ENSG00000231752",
+            "annotation": "EMBP1",
+            "nonzero_in_folds": 24,
+            "in_screened_top_k_in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000152766",
+            "annotation": "ANKRD22",
+            "nonzero_in_folds": 14,
+            "in_screened_top_k_in_folds": 20
+          },
+          {
+            "ensembl_id": "ENSG00000266709",
+            "annotation": "MGC12916",
+            "nonzero_in_folds": 11,
+            "in_screened_top_k_in_folds": 20
+          },
+          {
+            "ensembl_id": "ENSG00000122877",
+            "annotation": "EGR2",
+            "nonzero_in_folds": 11,
+            "in_screened_top_k_in_folds": 13
+          },
+          {
+            "ensembl_id": "ENSG00000090382",
+            "annotation": "LYZ",
+            "nonzero_in_folds": 11,
+            "in_screened_top_k_in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000172322",
+            "annotation": "CLEC12A",
+            "nonzero_in_folds": 11,
+            "in_screened_top_k_in_folds": 13
+          },
+          {
+            "ensembl_id": "ENSG00000148773",
+            "annotation": "MKI67",
+            "nonzero_in_folds": 9,
+            "in_screened_top_k_in_folds": 24
+          },
+          {
+            "ensembl_id": "ENSG00000278637",
+            "annotation": "HIST1H4A",
+            "nonzero_in_folds": 9,
+            "in_screened_top_k_in_folds": 14
+          },
+          {
+            "ensembl_id": "ENSG00000103569",
+            "annotation": "AQP9",
+            "nonzero_in_folds": 9,
+            "in_screened_top_k_in_folds": 15
+          },
+          {
+            "ensembl_id": "ENSG00000154127",
+            "annotation": "UBASH3B",
+            "nonzero_in_folds": 8,
+            "in_screened_top_k_in_folds": 23
+          },
+          {
+            "ensembl_id": "ENSG00000027075",
+            "annotation": "PRKCH",
+            "nonzero_in_folds": 7,
+            "in_screened_top_k_in_folds": 12
+          },
+          {
+            "ensembl_id": "ENSG00000183918",
+            "annotation": "SH2D1A",
+            "nonzero_in_folds": 7,
+            "in_screened_top_k_in_folds": 10
+          },
+          {
+            "ensembl_id": "ENSG00000074266",
+            "annotation": "EED",
+            "nonzero_in_folds": 6,
+            "in_screened_top_k_in_folds": 23
+          },
+          {
+            "ensembl_id": "ENSG00000277632",
+            "annotation": "CCL3",
+            "nonzero_in_folds": 6,
+            "in_screened_top_k_in_folds": 20
+          },
+          {
+            "ensembl_id": "ENSG00000207016",
+            "annotation": "SNORA36C",
+            "nonzero_in_folds": 6,
+            "in_screened_top_k_in_folds": 7
+          },
+          {
+            "ensembl_id": "ENSG00000130487",
+            "annotation": "KLHDC7B",
+            "nonzero_in_folds": 6,
+            "in_screened_top_k_in_folds": 9
+          },
+          {
+            "ensembl_id": "ENSG00000169442",
+            "annotation": "CD52",
+            "nonzero_in_folds": 6,
+            "in_screened_top_k_in_folds": 15
+          },
+          {
+            "ensembl_id": "ENSG00000177602",
+            "annotation": "GSG2",
+            "nonzero_in_folds": 5,
+            "in_screened_top_k_in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000156234",
+            "annotation": "CXCL13",
+            "nonzero_in_folds": 5,
+            "in_screened_top_k_in_folds": 10
+          },
+          {
+            "ensembl_id": "ENSG00000112303",
+            "annotation": "VNN2",
+            "nonzero_in_folds": 5,
+            "in_screened_top_k_in_folds": 16
+          },
+          {
+            "ensembl_id": "ENSG00000163563",
+            "annotation": "MNDA",
+            "nonzero_in_folds": 5,
+            "in_screened_top_k_in_folds": 18
+          },
+          {
+            "ensembl_id": "ENSG00000151790",
+            "annotation": "TDO2",
+            "nonzero_in_folds": 5,
+            "in_screened_top_k_in_folds": 18
+          },
+          {
+            "ensembl_id": "ENSG00000148700",
+            "annotation": "ADD3",
+            "nonzero_in_folds": 5,
+            "in_screened_top_k_in_folds": 13
+          },
+          {
+            "ensembl_id": "ENSG00000137731",
+            "annotation": "FXYD2",
+            "nonzero_in_folds": 4,
+            "in_screened_top_k_in_folds": 6
+          },
+          {
+            "ensembl_id": "ENSG00000174371",
+            "annotation": "EXO1",
+            "nonzero_in_folds": 4,
+            "in_screened_top_k_in_folds": 17
+          }
+        ],
+        "most_often_screened": [
+          {
+            "ensembl_id": "ENSG00000177602",
+            "annotation": "GSG2",
+            "in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000231752",
+            "annotation": "EMBP1",
+            "in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000124795",
+            "annotation": "DEK",
+            "in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000090382",
+            "annotation": "LYZ",
+            "in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000117228",
+            "annotation": "GBP1",
+            "in_folds": 25
+          },
+          {
+            "ensembl_id": "ENSG00000175356",
+            "annotation": "SCUBE2",
+            "in_folds": 24
+          },
+          {
+            "ensembl_id": "ENSG00000148773",
+            "annotation": "MKI67",
+            "in_folds": 24
+          },
+          {
+            "ensembl_id": "ENSG00000140105",
+            "annotation": "WARS",
+            "in_folds": 24
+          },
+          {
+            "ensembl_id": "ENSG00000121594",
+            "annotation": "CD80",
+            "in_folds": 23
+          },
+          {
+            "ensembl_id": "ENSG00000109861",
+            "annotation": "CTSC",
+            "in_folds": 23
+          },
+          {
+            "ensembl_id": "ENSG00000074266",
+            "annotation": "EED",
+            "in_folds": 23
+          },
+          {
+            "ensembl_id": "ENSG00000139618",
+            "annotation": "BRCA2",
+            "in_folds": 23
+          },
+          {
+            "ensembl_id": "ENSG00000154127",
+            "annotation": "UBASH3B",
+            "in_folds": 23
+          },
+          {
+            "ensembl_id": "ENSG00000124610",
+            "annotation": "HIST1H1A",
+            "in_folds": 23
+          },
+          {
+            "ensembl_id": "ENSG00000091831",
+            "annotation": "ESR1",
+            "in_folds": 23
+          },
+          {
+            "ensembl_id": "ENSG00000139725",
+            "annotation": "RHOF",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000112742",
+            "annotation": "TTK",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000173559",
+            "annotation": "NABP1",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000275302",
+            "annotation": "CCL4",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000135047",
+            "annotation": "CTSL",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000135069",
+            "annotation": "PSAT1",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000100453",
+            "annotation": "GZMB",
+            "in_folds": 22
+          },
+          {
+            "ensembl_id": "ENSG00000115165",
+            "annotation": "CYTIP",
+            "in_folds": 21
+          },
+          {
+            "ensembl_id": "ENSG00000136122",
+            "annotation": "BORA",
+            "in_folds": 21
+          },
+          {
+            "ensembl_id": "ENSG00000157193",
+            "annotation": "LRP8",
+            "in_folds": 21
+          }
+        ],
+        "median_nonzero_genes_per_fold": 17.0
+      }
+    }
+  },
+  "primary_comparison": {
+    "question": "Does pretreatment gene expression improve pCR prediction beyond baseline clinical variables?",
+    "paired_differences_repeat_averaged_oof": {
+      "combined_minus_clinical": {
+        "roc_auc_ci95": [
+          -0.015400909681611457,
+          0.06225178488310531
+        ],
+        "pr_auc_ci95": [
+          -0.05004621131053418,
+          0.07911522462413907
+        ],
+        "roc_auc_boot_mean": 0.023081190381738465
+      },
+      "combined_minus_expression": {
+        "roc_auc_ci95": [
+          0.0043660584604212046,
+          0.10833715880893306
+        ],
+        "pr_auc_ci95": [
+          -0.06914370565609157,
+          0.12776733909656776
+        ],
+        "roc_auc_boot_mean": 0.055903833359098626
+      },
+      "expression_minus_clinical": {
+        "roc_auc_ci95": [
+          -0.11297462931116917,
+          0.048673643531486746
+        ],
+        "pr_auc_ci95": [
+          -0.14737552700789902,
+          0.11082898364113425
+        ],
+        "roc_auc_boot_mean": -0.032822642977360164
+      }
+    },
+    "n_bootstrap_resamples": 1000,
+    "note": "Intervals resample patient groups of the repeat-averaged out-of-fold predictions: test-sampling noise only; they ignore training variability and the dependence between repeated CV folds."
+  },
+  "subgroups": {
+    "basis": "repeat-averaged out-of-fold predictions from the primary nested CV",
+    "groups": {
+      "ER+": {
+        "n": 105,
+        "pcr": 24,
+        "rd": 81,
+        "status": "ok",
+        "clinical": {
+          "roc_auc": 0.7664609053497942,
+          "pr_auc": 0.5477900784698525,
+          "brier": 0.14700142390849757,
+          "roc_auc_ci95": [
+            0.637160191750724,
+            0.8731171150630794
+          ],
+          "pr_auc_ci95": [
+            0.32967750852117816,
+            0.761311875895457
+          ]
+        },
+        "expression": {
+          "roc_auc": 0.6430041152263375,
+          "pr_auc": 0.37779601320019407,
+          "brier": 0.17156759404045813,
+          "roc_auc_ci95": [
+            0.5057229184125024,
+            0.7638685865400632
+          ],
+          "pr_auc_ci95": [
+            0.21146457684626724,
+            0.6104866539457382
+          ]
+        },
+        "combined": {
+          "roc_auc": 0.7556584362139918,
+          "pr_auc": 0.5609478727981987,
+          "brier": 0.14564193605406558,
+          "roc_auc_ci95": [
+            0.6280885416666667,
+            0.8619873511904762
+          ],
+          "pr_auc_ci95": [
+            0.3328935668919908,
+            0.7620232106361743
+          ]
+        },
+        "paired_differences": {
+          "combined_minus_clinical": {
+            "roc_auc_ci95": [
+              -0.08939910600255431,
+              0.06400256410256426
+            ],
+            "pr_auc_ci95": [
+              -0.09100937469809618,
+              0.11366141114178102
+            ],
+            "roc_auc_boot_mean": -0.012858092603083945
+          },
+          "combined_minus_expression": {
+            "roc_auc_ci95": [
+              0.013322812051650016,
+              0.21631057563587675
+            ],
+            "pr_auc_ci95": [
+              -0.026736516769187393,
+              0.34045064499141886
+            ],
+            "roc_auc_boot_mean": 0.11465461568038961
+          },
+          "expression_minus_clinical": {
+            "roc_auc_ci95": [
+              -0.2759126326259948,
+              0.024054987243646256
+            ],
+            "pr_auc_ci95": [
+              -0.3878898927242606,
+              0.10184429094242721
+            ],
+            "roc_auc_boot_mean": -0.12751270828347355
+          }
+        }
+      },
+      "ER-": {
+        "n": 117,
+        "pcr": 56,
+        "rd": 61,
+        "status": "ok",
+        "clinical": {
+          "roc_auc": 0.6018735362997659,
+          "pr_auc": 0.5897675683318138,
+          "brier": 0.24484505573186974,
+          "roc_auc_ci95": [
+            0.49835639796607956,
+            0.7024506635195544
+          ],
+          "pr_auc_ci95": [
+            0.4650376168137721,
+            0.7196947361450896
+          ]
+        },
+        "expression": {
+          "roc_auc": 0.6252927400468384,
+          "pr_auc": 0.6164224686184934,
+          "brier": 0.23851569492766772,
+          "roc_auc_ci95": [
+            0.5194598473776256,
+            0.7236809892833957
+          ],
+          "pr_auc_ci95": [
+            0.4846960507978104,
+            0.7458164455919479
+          ]
+        },
+        "combined": {
+          "roc_auc": 0.6533957845433256,
+          "pr_auc": 0.5924265939074884,
+          "brier": 0.23392943166087088,
+          "roc_auc_ci95": [
+            0.5529895156742597,
+            0.7487678412132024
+          ],
+          "pr_auc_ci95": [
+            0.47174816399496206,
+            0.7386075342607866
+          ]
+        },
+        "paired_differences": {
+          "combined_minus_clinical": {
+            "roc_auc_ci95": [
+              -0.02756194108234925,
+              0.1322463269054178
+            ],
+            "pr_auc_ci95": [
+              -0.06985715480137551,
+              0.09083519967237352
+            ],
+            "roc_auc_boot_mean": 0.05021818348974065
+          },
+          "combined_minus_expression": {
+            "roc_auc_ci95": [
+              -0.05710143249668121,
+              0.1096601447229282
+            ],
+            "pr_auc_ci95": [
+              -0.12558038518309425,
+              0.09045236653050599
+            ],
+            "roc_auc_boot_mean": 0.02839719743588799
+          },
+          "expression_minus_clinical": {
+            "roc_auc_ci95": [
+              -0.10702995391705074,
+              0.15977582154257972
+            ],
+            "pr_auc_ci95": [
+              -0.11812168590161319,
+              0.16946587880557692
+            ],
+            "roc_auc_boot_mean": 0.021820986053852656
+          }
+        }
+      },
+      "HER2+": {
+        "n": 63,
+        "pcr": 29,
+        "rd": 34,
+        "status": "ok",
+        "clinical": {
+          "roc_auc": 0.7423935091277891,
+          "pr_auc": 0.7005911689925797,
+          "brier": 0.20656816656580484,
+          "roc_auc_ci95": [
+            0.6103155845051007,
+            0.8539122528705861
+          ],
+          "pr_auc_ci95": [
+            0.5171931108183953,
+            0.8615810730501342
+          ]
+        },
+        "expression": {
+          "roc_auc": 0.6744421906693712,
+          "pr_auc": 0.6289922225851249,
+          "brier": 0.24351701454937522,
+          "roc_auc_ci95": [
+            0.53875051910299,
+            0.7970509431695302
+          ],
+          "pr_auc_ci95": [
+            0.468174744807288,
+            0.7997189560635792
+          ]
+        },
+        "combined": {
+          "roc_auc": 0.7383367139959431,
+          "pr_auc": 0.6793991747443674,
+          "brier": 0.20396071313153416,
+          "roc_auc_ci95": [
+            0.6069882205081446,
+            0.8529411764705882
+          ],
+          "pr_auc_ci95": [
+            0.5126693016277653,
+            0.8451107821808287
+          ]
+        },
+        "paired_differences": {
+          "combined_minus_clinical": {
+            "roc_auc_ci95": [
+              -0.07501973684210533,
+              0.0684132996632996
+            ],
+            "pr_auc_ci95": [
+              -0.13541686250716906,
+              0.07919574176353822
+            ],
+            "roc_auc_boot_mean": -0.00344113482939194
+          },
+          "combined_minus_expression": {
+            "roc_auc_ci95": [
+              -0.044885407905803254,
+              0.1681893986042692
+            ],
+            "pr_auc_ci95": [
+              -0.06941141714520291,
+              0.16808354962739472
+            ],
+            "roc_auc_boot_mean": 0.06283396174905383
+          },
+          "expression_minus_clinical": {
+            "roc_auc_ci95": [
+              -0.20540397252090783,
+              0.08293569374298539
+            ],
+            "pr_auc_ci95": [
+              -0.22894741021247164,
+              0.09915757731011729
+            ],
+            "roc_auc_boot_mean": -0.06627509657844576
+          }
+        }
+      },
+      "HER2-": {
+        "n": 159,
+        "pcr": 51,
+        "rd": 108,
+        "status": "ok",
+        "clinical": {
+          "roc_auc": 0.7044299201161945,
+          "pr_auc": 0.4942287912768156,
+          "brier": 0.19539765117846103,
+          "roc_auc_ci95": [
+            0.6189892193496819,
+            0.7823855646059592
+          ],
+          "pr_auc_ci95": [
+            0.37362503556139426,
+            0.6352484042790599
+          ]
+        },
+        "expression": {
+          "roc_auc": 0.7189542483660131,
+          "pr_auc": 0.5614929888745981,
+          "brier": 0.19232302996336217,
+          "roc_auc_ci95": [
+            0.63029046725073,
+            0.8091844824058919
+          ],
+          "pr_auc_ci95": [
+            0.42632226147754393,
+            0.7152100624080018
+          ]
+        },
+        "combined": {
+          "roc_auc": 0.7429193899782135,
+          "pr_auc": 0.5422837966166522,
+          "brier": 0.1875007664321518,
+          "roc_auc_ci95": [
+            0.6630921993018567,
+            0.8199341123136704
+          ],
+          "pr_auc_ci95": [
+            0.4147618674981943,
+            0.6927920623888237
+          ]
+        },
+        "paired_differences": {
+          "combined_minus_clinical": {
+            "roc_auc_ci95": [
+              -0.012768950748791752,
+              0.09097098218294462
+            ],
+            "pr_auc_ci95": [
+              -0.027937032615910025,
+              0.13165571577371935
+            ],
+            "roc_auc_boot_mean": 0.03791404763573955
+          },
+          "combined_minus_expression": {
+            "roc_auc_ci95": [
+              -0.04343275156746272,
+              0.08276618959471475
+            ],
+            "pr_auc_ci95": [
+              -0.13285710164162465,
+              0.10742903355859139
+            ],
+            "roc_auc_boot_mean": 0.02536147462566062
+          },
+          "expression_minus_clinical": {
+            "roc_auc_ci95": [
+              -0.08817114802007954,
+              0.12020963949843261
+            ],
+            "pr_auc_ci95": [
+              -0.09796055304477173,
+              0.2196756340573258
+            ],
+            "roc_auc_boot_mean": 0.012552573010078925
+          }
+        }
+      },
+      "TNBC": {
+        "n": 90,
+        "pcr": 38,
+        "rd": 52,
+        "status": "ok",
+        "clinical": {
+          "roc_auc": 0.5708502024291499,
+          "pr_auc": 0.497461438915735,
+          "brier": 0.2472208652047247,
+          "roc_auc_ci95": [
+            0.4531151442435876,
+            0.6963406919774845
+          ],
+          "pr_auc_ci95": [
+            0.3667226882241794,
+            0.660689608640777
+          ]
+        },
+        "expression": {
+          "roc_auc": 0.6654858299595141,
+          "pr_auc": 0.6092566538896425,
+          "brier": 0.22275776660258056,
+          "roc_auc_ci95": [
+            0.550595020894218,
+            0.7759295714459253
+          ],
+          "pr_auc_ci95": [
+            0.45498726519676147,
+            0.7589140230156027
+          ]
+        },
+        "combined": {
+          "roc_auc": 0.6578947368421052,
+          "pr_auc": 0.5496837945083863,
+          "brier": 0.23261921629947468,
+          "roc_auc_ci95": [
+            0.5396060795604817,
+            0.7685760985394595
+          ],
+          "pr_auc_ci95": [
+            0.4096889176874587,
+            0.7290271202047315
+          ]
+        },
+        "paired_differences": {
+          "combined_minus_clinical": {
+            "roc_auc_ci95": [
+              -0.016160906711822735,
+              0.18433828341061567
+            ],
+            "pr_auc_ci95": [
+              -0.04062299584068808,
+              0.1608226434776102
+            ],
+            "roc_auc_boot_mean": 0.08536250401317606
+          },
+          "combined_minus_expression": {
+            "roc_auc_ci95": [
+              -0.09496697984749457,
+              0.08047794018681526
+            ],
+            "pr_auc_ci95": [
+              -0.18424198233722575,
+              0.07984688804157454
+            ],
+            "roc_auc_boot_mean": -0.006209819307761402
+          },
+          "expression_minus_clinical": {
+            "roc_auc_ci95": [
+              -0.0601231692621431,
+              0.24654876110732943
+            ],
+            "pr_auc_ci95": [
+              -0.05924305825141701,
+              0.27444719014298125
+            ],
+            "roc_auc_boot_mean": 0.09157232332093747
+          }
+        }
+      },
+      "non-TNBC": {
+        "n": 132,
+        "pcr": 42,
+        "rd": 90,
+        "status": "ok",
+        "clinical": {
+          "roc_auc": 0.8005291005291005,
+          "pr_auc": 0.648010414927172,
+          "brier": 0.165395023959059,
+          "roc_auc_ci95": [
+            0.7198710418328017,
+            0.8792833542956656
+          ],
+          "pr_auc_ci95": [
+            0.5054229017317289,
+            0.7941736624032627
+          ]
+        },
+        "expression": {
+          "roc_auc": 0.6928571428571427,
+          "pr_auc": 0.5100852708446892,
+          "brier": 0.1960055658072195,
+          "roc_auc_ci95": [
+            0.591737078319359,
+            0.7846697459099059
+          ],
+          "pr_auc_ci95": [
+            0.3620470815627453,
+            0.6999784945014585
+          ]
+        },
+        "combined": {
+          "roc_auc": 0.7965608465608466,
+          "pr_auc": 0.6461141430692469,
+          "brier": 0.16459407062913675,
+          "roc_auc_ci95": [
+            0.7106089825321944,
+            0.8749437924509768
+          ],
+          "pr_auc_ci95": [
+            0.504205255174056,
+            0.7896978324852043
+          ]
+        },
+        "paired_differences": {
+          "combined_minus_clinical": {
+            "roc_auc_ci95": [
+              -0.04730734830997195,
+              0.03902696342164365
+            ],
+            "pr_auc_ci95": [
+              -0.08904928725838171,
+              0.07785996056510434
+            ],
+            "roc_auc_boot_mean": -0.00461460509126006
+          },
+          "combined_minus_expression": {
+            "roc_auc_ci95": [
+              0.03144530888973965,
+              0.1760444874813095
+            ],
+            "pr_auc_ci95": [
+              -0.01608535277594373,
+              0.2644587599265434
+            ],
+            "roc_auc_boot_mean": 0.10435719432460215
+          },
+          "expression_minus_clinical": {
+            "roc_auc_ci95": [
+              -0.2117606353715113,
+              -0.009972665847665773
+            ],
+            "pr_auc_ci95": [
+              -0.3058104131071466,
+              0.04646952580855253
+            ],
+            "roc_auc_boot_mean": -0.1089717994158622
+          }
+        }
+      }
+    }
+  },
+  "fold_records": {
+    "clinical": [
+      {
+        "repeat": 0,
+        "fold": 0,
+        "roc_auc": 0.8080357142857143,
+        "pr_auc": 0.7826174334004368,
+        "brier": 0.16663870132652037,
+        "log_loss": 0.5149392111590622,
+        "sensitivity": 0.8125,
+        "specificity": 0.6428571428571429,
+        "balanced_accuracy": 0.7276785714285714,
+        "threshold": 0.26,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 0,
+        "fold": 1,
+        "roc_auc": 0.7025862068965518,
+        "pr_auc": 0.5315723606167904,
+        "brier": 0.2051682274154687,
+        "log_loss": 0.5843347252977278,
+        "sensitivity": 0.625,
+        "specificity": 0.7241379310344828,
+        "balanced_accuracy": 0.6745689655172413,
+        "threshold": 0.39,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 0,
+        "fold": 2,
+        "roc_auc": 0.7857142857142857,
+        "pr_auc": 0.5641297330046453,
+        "brier": 0.18764339168386082,
+        "log_loss": 0.5413311582841394,
+        "sensitivity": 0.5,
+        "specificity": 0.8214285714285714,
+        "balanced_accuracy": 0.6607142857142857,
+        "threshold": 0.46,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 0,
+        "fold": 3,
+        "roc_auc": 0.6629464285714286,
+        "pr_auc": 0.4987597854555575,
+        "brier": 0.22150660931812946,
+        "log_loss": 0.635666713066395,
+        "sensitivity": 0.6875,
+        "specificity": 0.4642857142857143,
+        "balanced_accuracy": 0.5758928571428572,
+        "threshold": 0.32,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 0,
+        "fold": 4,
+        "roc_auc": 0.6918103448275862,
+        "pr_auc": 0.666950793763247,
+        "brier": 0.2042237786011448,
+        "log_loss": 0.587225172409868,
+        "sensitivity": 0.9375,
+        "specificity": 0.3448275862068966,
+        "balanced_accuracy": 0.6411637931034483,
+        "threshold": 0.28,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 0,
+        "roc_auc": 0.8556034482758621,
+        "pr_auc": 0.7475842404721715,
+        "brier": 0.1488693887579571,
+        "log_loss": 0.45211874416866993,
+        "sensitivity": 0.6875,
+        "specificity": 0.7931034482758621,
+        "balanced_accuracy": 0.740301724137931,
+        "threshold": 0.42,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 10.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 1,
+        "roc_auc": 0.7370689655172414,
+        "pr_auc": 0.6608922875370243,
+        "brier": 0.1968002374949646,
+        "log_loss": 0.5720759229021599,
+        "sensitivity": 0.9375,
+        "specificity": 0.3793103448275862,
+        "balanced_accuracy": 0.6584051724137931,
+        "threshold": 0.31,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 2,
+        "roc_auc": 0.6729910714285714,
+        "pr_auc": 0.5115538801207822,
+        "brier": 0.21695577729676405,
+        "log_loss": 0.6124103639358821,
+        "sensitivity": 0.8125,
+        "specificity": 0.5,
+        "balanced_accuracy": 0.65625,
+        "threshold": 0.29,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 3,
+        "roc_auc": 0.6037946428571429,
+        "pr_auc": 0.4932034372037789,
+        "brier": 0.23585989496253,
+        "log_loss": 0.6704253783843955,
+        "sensitivity": 0.4375,
+        "specificity": 0.75,
+        "balanced_accuracy": 0.59375,
+        "threshold": 0.38,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 0.3,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 4,
+        "roc_auc": 0.6674107142857143,
+        "pr_auc": 0.5528409057545087,
+        "brier": 0.21959499350133554,
+        "log_loss": 0.6188315543581802,
+        "sensitivity": 0.4375,
+        "specificity": 0.75,
+        "balanced_accuracy": 0.59375,
+        "threshold": 0.42,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 0,
+        "roc_auc": 0.7844827586206897,
+        "pr_auc": 0.6401655384996023,
+        "brier": 0.18007038672359224,
+        "log_loss": 0.531435603584452,
+        "sensitivity": 0.6875,
+        "specificity": 0.6896551724137931,
+        "balanced_accuracy": 0.6885775862068966,
+        "threshold": 0.37,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 0.3,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 1,
+        "roc_auc": 0.7607758620689655,
+        "pr_auc": 0.6462906271769417,
+        "brier": 0.1873507203880087,
+        "log_loss": 0.5404932728801978,
+        "sensitivity": 0.75,
+        "specificity": 0.6551724137931034,
+        "balanced_accuracy": 0.7025862068965517,
+        "threshold": 0.35,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 2,
+        "roc_auc": 0.625,
+        "pr_auc": 0.4800768500330229,
+        "brier": 0.2343889669329836,
+        "log_loss": 0.652057977811785,
+        "sensitivity": 0.5,
+        "specificity": 0.6428571428571429,
+        "balanced_accuracy": 0.5714285714285714,
+        "threshold": 0.43,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 3,
+        "roc_auc": 0.7589285714285714,
+        "pr_auc": 0.7425541321601103,
+        "brier": 0.1915063922595409,
+        "log_loss": 0.5696144275510858,
+        "sensitivity": 0.75,
+        "specificity": 0.5357142857142857,
+        "balanced_accuracy": 0.6428571428571428,
+        "threshold": 0.32,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 4,
+        "roc_auc": 0.6919642857142857,
+        "pr_auc": 0.5644088704344122,
+        "brier": 0.21376201712601375,
+        "log_loss": 0.6222477596268383,
+        "sensitivity": 0.8125,
+        "specificity": 0.4642857142857143,
+        "balanced_accuracy": 0.6383928571428572,
+        "threshold": 0.28,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 0,
+        "roc_auc": 0.8211206896551725,
+        "pr_auc": 0.6263321772350158,
+        "brier": 0.17747296105582322,
+        "log_loss": 0.5228636282146375,
+        "sensitivity": 0.6875,
+        "specificity": 0.7931034482758621,
+        "balanced_accuracy": 0.740301724137931,
+        "threshold": 0.39,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 0.3,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 1,
+        "roc_auc": 0.7544642857142858,
+        "pr_auc": 0.5975095798640601,
+        "brier": 0.18959084097954546,
+        "log_loss": 0.5534255309423977,
+        "sensitivity": 0.75,
+        "specificity": 0.5357142857142857,
+        "balanced_accuracy": 0.6428571428571428,
+        "threshold": 0.32,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 0.1,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 2,
+        "roc_auc": 0.7477678571428571,
+        "pr_auc": 0.5996364545452684,
+        "brier": 0.19758201982427623,
+        "log_loss": 0.5747371347781448,
+        "sensitivity": 0.875,
+        "specificity": 0.5,
+        "balanced_accuracy": 0.6875,
+        "threshold": 0.32,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 0.3,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 3,
+        "roc_auc": 0.6594827586206897,
+        "pr_auc": 0.48939188077904566,
+        "brier": 0.21633950751828748,
+        "log_loss": 0.6110713970692127,
+        "sensitivity": 0.75,
+        "specificity": 0.5517241379310345,
+        "balanced_accuracy": 0.6508620689655172,
+        "threshold": 0.34,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 0.3,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 4,
+        "roc_auc": 0.6651785714285714,
+        "pr_auc": 0.5934858397906613,
+        "brier": 0.2137468675592834,
+        "log_loss": 0.6186227945979271,
+        "sensitivity": 0.6875,
+        "specificity": 0.5,
+        "balanced_accuracy": 0.59375,
+        "threshold": 0.29,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 0,
+        "roc_auc": 0.709051724137931,
+        "pr_auc": 0.5784512327809108,
+        "brier": 0.1958860303679784,
+        "log_loss": 0.5603089720026633,
+        "sensitivity": 0.75,
+        "specificity": 0.5862068965517241,
+        "balanced_accuracy": 0.6681034482758621,
+        "threshold": 0.39,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 0.3,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 1,
+        "roc_auc": 0.7790948275862069,
+        "pr_auc": 0.7135375452594928,
+        "brier": 0.1789994216093746,
+        "log_loss": 0.5374525268208485,
+        "sensitivity": 0.6875,
+        "specificity": 0.6896551724137931,
+        "balanced_accuracy": 0.6885775862068966,
+        "threshold": 0.3,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 3.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 2,
+        "roc_auc": 0.7566964285714286,
+        "pr_auc": 0.5670663519878618,
+        "brier": 0.18935138874042926,
+        "log_loss": 0.5501431072734708,
+        "sensitivity": 0.625,
+        "specificity": 0.7142857142857143,
+        "balanced_accuracy": 0.6696428571428572,
+        "threshold": 0.43,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 1.0,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 3,
+        "roc_auc": 0.6116071428571429,
+        "pr_auc": 0.4593217015744239,
+        "brier": 0.23313036583976654,
+        "log_loss": 0.6580529214473441,
+        "sensitivity": 0.625,
+        "specificity": 0.5714285714285714,
+        "balanced_accuracy": 0.5982142857142857,
+        "threshold": 0.37,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 0.3,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 4,
+        "roc_auc": 0.7209821428571428,
+        "pr_auc": 0.6011257313700231,
+        "brier": 0.2006645432631623,
+        "log_loss": 0.5887367684776109,
+        "sensitivity": 0.75,
+        "specificity": 0.5714285714285714,
+        "balanced_accuracy": 0.6607142857142857,
+        "threshold": 0.3,
+        "config": {
+          "k": 0,
+          "l1_ratio": 0.0,
+          "C": 3.0,
+          "clin_scale": 1.0
+        }
+      }
+    ],
+    "expression": [
+      {
+        "repeat": 0,
+        "fold": 0,
+        "roc_auc": 0.7031249999999999,
+        "pr_auc": 0.6131067379642976,
+        "brier": 0.2054096804286085,
+        "log_loss": 0.5997630900746752,
+        "sensitivity": 0.25,
+        "specificity": 0.9642857142857143,
+        "balanced_accuracy": 0.6071428571428572,
+        "threshold": 0.53,
+        "config": {
+          "k": 100,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 0,
+        "fold": 1,
+        "roc_auc": 0.8469827586206897,
+        "pr_auc": 0.7032686961731079,
+        "brier": 0.17294707689048847,
+        "log_loss": 0.5241507059579834,
+        "sensitivity": 1.0,
+        "specificity": 0.5172413793103449,
+        "balanced_accuracy": 0.7586206896551724,
+        "threshold": 0.33,
+        "config": {
+          "k": 50,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 0,
+        "fold": 2,
+        "roc_auc": 0.6272321428571428,
+        "pr_auc": 0.516109436373106,
+        "brier": 0.22740824323115466,
+        "log_loss": 0.6469273272961227,
+        "sensitivity": 0.6875,
+        "specificity": 0.4642857142857143,
+        "balanced_accuracy": 0.5758928571428572,
+        "threshold": 0.28,
+        "config": {
+          "k": 50,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 0,
+        "fold": 3,
+        "roc_auc": 0.7209821428571428,
+        "pr_auc": 0.6320307737603975,
+        "brier": 0.20260060197553142,
+        "log_loss": 0.5866578389513497,
+        "sensitivity": 0.5,
+        "specificity": 0.7142857142857143,
+        "balanced_accuracy": 0.6071428571428572,
+        "threshold": 0.38,
+        "config": {
+          "k": 50,
+          "l1_ratio": 0.8,
+          "C": 0.1,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 0,
+        "fold": 4,
+        "roc_auc": 0.7004310344827587,
+        "pr_auc": 0.5946470460307471,
+        "brier": 0.20837162424557157,
+        "log_loss": 0.6025286060390829,
+        "sensitivity": 0.5625,
+        "specificity": 0.5517241379310345,
+        "balanced_accuracy": 0.5571120689655172,
+        "threshold": 0.34,
+        "config": {
+          "k": 100,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 0,
+        "roc_auc": 0.6939655172413793,
+        "pr_auc": 0.5781293620891526,
+        "brier": 0.20935646766301994,
+        "log_loss": 0.6060518239966071,
+        "sensitivity": 0.6875,
+        "specificity": 0.7241379310344828,
+        "balanced_accuracy": 0.7058189655172413,
+        "threshold": 0.36,
+        "config": {
+          "k": 100,
+          "l1_ratio": 0.5,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 1,
+        "roc_auc": 0.6982758620689655,
+        "pr_auc": 0.48502396852460794,
+        "brier": 0.20899283099549443,
+        "log_loss": 0.5978077176654838,
+        "sensitivity": 0.625,
+        "specificity": 0.6551724137931034,
+        "balanced_accuracy": 0.6400862068965517,
+        "threshold": 0.41,
+        "config": {
+          "k": 100,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 2,
+        "roc_auc": 0.6316964285714286,
+        "pr_auc": 0.47104951959472335,
+        "brier": 0.22841615401417104,
+        "log_loss": 0.6552112545595448,
+        "sensitivity": 0.5625,
+        "specificity": 0.7142857142857143,
+        "balanced_accuracy": 0.6383928571428572,
+        "threshold": 0.45,
+        "config": {
+          "k": 50,
+          "l1_ratio": 1.0,
+          "C": 0.1,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 3,
+        "roc_auc": 0.6785714285714286,
+        "pr_auc": 0.6161022119260644,
+        "brier": 0.20599837668368204,
+        "log_loss": 0.6047174839522913,
+        "sensitivity": 0.625,
+        "specificity": 0.6785714285714286,
+        "balanced_accuracy": 0.6517857142857143,
+        "threshold": 0.39,
+        "config": {
+          "k": 100,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 4,
+        "roc_auc": 0.6138392857142857,
+        "pr_auc": 0.5761900352977947,
+        "brier": 0.22997738852002805,
+        "log_loss": 0.6586155540603014,
+        "sensitivity": 0.5625,
+        "specificity": 0.6785714285714286,
+        "balanced_accuracy": 0.6205357142857143,
+        "threshold": 0.38,
+        "config": {
+          "k": 100,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 0,
+        "roc_auc": 0.6875000000000001,
+        "pr_auc": 0.5547528661284639,
+        "brier": 0.21080783050582702,
+        "log_loss": 0.6127900131120069,
+        "sensitivity": 0.6875,
+        "specificity": 0.6206896551724138,
+        "balanced_accuracy": 0.6540948275862069,
+        "threshold": 0.39,
+        "config": {
+          "k": 500,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 1,
+        "roc_auc": 0.5323275862068966,
+        "pr_auc": 0.4443967176489044,
+        "brier": 0.2430849206346736,
+        "log_loss": 0.7025153305746766,
+        "sensitivity": 0.4375,
+        "specificity": 0.6896551724137931,
+        "balanced_accuracy": 0.5635775862068966,
+        "threshold": 0.36,
+        "config": {
+          "k": 100,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 2,
+        "roc_auc": 0.765625,
+        "pr_auc": 0.6194674786530605,
+        "brier": 0.19118464583922812,
+        "log_loss": 0.5652565515453032,
+        "sensitivity": 0.875,
+        "specificity": 0.6071428571428571,
+        "balanced_accuracy": 0.7410714285714286,
+        "threshold": 0.35,
+        "config": {
+          "k": 500,
+          "l1_ratio": 1.0,
+          "C": 0.1,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 3,
+        "roc_auc": 0.7232142857142858,
+        "pr_auc": 0.7000376210266716,
+        "brier": 0.1949146685624682,
+        "log_loss": 0.5697233731166796,
+        "sensitivity": 0.5625,
+        "specificity": 0.6071428571428571,
+        "balanced_accuracy": 0.5848214285714286,
+        "threshold": 0.36,
+        "config": {
+          "k": 200,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 4,
+        "roc_auc": 0.6272321428571428,
+        "pr_auc": 0.5098307134786764,
+        "brier": 0.2305711287767593,
+        "log_loss": 0.6525138486593921,
+        "sensitivity": 0.25,
+        "specificity": 0.7857142857142857,
+        "balanced_accuracy": 0.5178571428571428,
+        "threshold": 0.48,
+        "config": {
+          "k": 200,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 0,
+        "roc_auc": 0.7586206896551724,
+        "pr_auc": 0.7134334149021317,
+        "brier": 0.18120157428553554,
+        "log_loss": 0.5436408539663301,
+        "sensitivity": 0.625,
+        "specificity": 0.6896551724137931,
+        "balanced_accuracy": 0.6573275862068966,
+        "threshold": 0.35,
+        "config": {
+          "k": 500,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 1,
+        "roc_auc": 0.7410714285714285,
+        "pr_auc": 0.6912330928176564,
+        "brier": 0.20433906722987596,
+        "log_loss": 0.5961216189672298,
+        "sensitivity": 0.5625,
+        "specificity": 0.75,
+        "balanced_accuracy": 0.65625,
+        "threshold": 0.39,
+        "config": {
+          "k": 50,
+          "l1_ratio": 0.5,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 2,
+        "roc_auc": 0.6071428571428572,
+        "pr_auc": 0.45589459340595095,
+        "brier": 0.23759550861813689,
+        "log_loss": 0.6605662237207004,
+        "sensitivity": 0.375,
+        "specificity": 0.7142857142857143,
+        "balanced_accuracy": 0.5446428571428572,
+        "threshold": 0.44,
+        "config": {
+          "k": 500,
+          "l1_ratio": 0.8,
+          "C": 0.1,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 3,
+        "roc_auc": 0.5603448275862069,
+        "pr_auc": 0.39564176880698465,
+        "brier": 0.2845623296215197,
+        "log_loss": 0.808696551246607,
+        "sensitivity": 0.5625,
+        "specificity": 0.5862068965517241,
+        "balanced_accuracy": 0.5743534482758621,
+        "threshold": 0.39,
+        "config": {
+          "k": 200,
+          "l1_ratio": 0.8,
+          "C": 0.1,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 4,
+        "roc_auc": 0.6897321428571429,
+        "pr_auc": 0.599503772527534,
+        "brier": 0.20809503112880517,
+        "log_loss": 0.583745477772892,
+        "sensitivity": 0.625,
+        "specificity": 0.6071428571428571,
+        "balanced_accuracy": 0.6160714285714286,
+        "threshold": 0.4,
+        "config": {
+          "k": 500,
+          "l1_ratio": 0.8,
+          "C": 0.1,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 0,
+        "roc_auc": 0.6961206896551725,
+        "pr_auc": 0.5502432202843387,
+        "brier": 0.20590531046158314,
+        "log_loss": 0.597285274629901,
+        "sensitivity": 0.6875,
+        "specificity": 0.5517241379310345,
+        "balanced_accuracy": 0.6196120689655172,
+        "threshold": 0.32,
+        "config": {
+          "k": 50,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 1,
+        "roc_auc": 0.7801724137931034,
+        "pr_auc": 0.6384275991831773,
+        "brier": 0.18172222372648542,
+        "log_loss": 0.532263023484624,
+        "sensitivity": 0.5625,
+        "specificity": 0.7586206896551724,
+        "balanced_accuracy": 0.6605603448275862,
+        "threshold": 0.41,
+        "config": {
+          "k": 500,
+          "l1_ratio": 0.8,
+          "C": 0.1,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 2,
+        "roc_auc": 0.7142857142857143,
+        "pr_auc": 0.598744089294361,
+        "brier": 0.19996478184524866,
+        "log_loss": 0.5736297246141038,
+        "sensitivity": 0.5,
+        "specificity": 0.75,
+        "balanced_accuracy": 0.625,
+        "threshold": 0.39,
+        "config": {
+          "k": 100,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 3,
+        "roc_auc": 0.7120535714285715,
+        "pr_auc": 0.6489973227326216,
+        "brier": 0.20079280723492474,
+        "log_loss": 0.5856107583468666,
+        "sensitivity": 0.75,
+        "specificity": 0.5,
+        "balanced_accuracy": 0.625,
+        "threshold": 0.35,
+        "config": {
+          "k": 500,
+          "l1_ratio": 1.0,
+          "C": 0.1,
+          "clin_scale": 1.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 4,
+        "roc_auc": 0.640625,
+        "pr_auc": 0.5452971304318288,
+        "brier": 0.22578617789054842,
+        "log_loss": 0.6495584894505148,
+        "sensitivity": 0.6875,
+        "specificity": 0.5,
+        "balanced_accuracy": 0.59375,
+        "threshold": 0.28,
+        "config": {
+          "k": 100,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 1.0
+        }
+      }
+    ],
+    "combined": [
+      {
+        "repeat": 0,
+        "fold": 0,
+        "roc_auc": 0.8325892857142857,
+        "pr_auc": 0.82281162464986,
+        "brier": 0.15610455534114615,
+        "log_loss": 0.4877173660125609,
+        "sensitivity": 0.625,
+        "specificity": 0.9285714285714286,
+        "balanced_accuracy": 0.7767857142857143,
+        "threshold": 0.48,
+        "config": {
+          "k": 100,
+          "l1_ratio": 1.0,
+          "C": 0.1,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 0,
+        "fold": 1,
+        "roc_auc": 0.7392241379310345,
+        "pr_auc": 0.5806106917698433,
+        "brier": 0.19486539496103603,
+        "log_loss": 0.5575242418522648,
+        "sensitivity": 0.625,
+        "specificity": 0.7586206896551724,
+        "balanced_accuracy": 0.6918103448275862,
+        "threshold": 0.45,
+        "config": {
+          "k": 500,
+          "l1_ratio": 0.5,
+          "C": 0.03,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 0,
+        "fold": 2,
+        "roc_auc": 0.7254464285714286,
+        "pr_auc": 0.5758117502051325,
+        "brier": 0.21768121823310993,
+        "log_loss": 0.6129812495345122,
+        "sensitivity": 0.6875,
+        "specificity": 0.6428571428571429,
+        "balanced_accuracy": 0.6651785714285714,
+        "threshold": 0.36,
+        "config": {
+          "k": 500,
+          "l1_ratio": 1.0,
+          "C": 0.1,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 0,
+        "fold": 3,
+        "roc_auc": 0.7388392857142858,
+        "pr_auc": 0.6198372967122967,
+        "brier": 0.1986978353257283,
+        "log_loss": 0.5938015018524534,
+        "sensitivity": 0.75,
+        "specificity": 0.6428571428571429,
+        "balanced_accuracy": 0.6964285714285714,
+        "threshold": 0.29,
+        "config": {
+          "k": 50,
+          "l1_ratio": 0.8,
+          "C": 0.1,
+          "clin_scale": 5.0
+        }
+      },
+      {
+        "repeat": 0,
+        "fold": 4,
+        "roc_auc": 0.7349137931034483,
+        "pr_auc": 0.6895310389890716,
+        "brier": 0.20103733069578647,
+        "log_loss": 0.5836291325074847,
+        "sensitivity": 0.875,
+        "specificity": 0.3793103448275862,
+        "balanced_accuracy": 0.6271551724137931,
+        "threshold": 0.31,
+        "config": {
+          "k": 100,
+          "l1_ratio": 0.5,
+          "C": 0.03,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 0,
+        "roc_auc": 0.8491379310344828,
+        "pr_auc": 0.7629105758362724,
+        "brier": 0.1504725361839842,
+        "log_loss": 0.4595211965720451,
+        "sensitivity": 0.875,
+        "specificity": 0.6551724137931034,
+        "balanced_accuracy": 0.7650862068965517,
+        "threshold": 0.3,
+        "config": {
+          "k": 100,
+          "l1_ratio": 1.0,
+          "C": 0.1,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 1,
+        "roc_auc": 0.7801724137931034,
+        "pr_auc": 0.7151328910060528,
+        "brier": 0.19575997545998153,
+        "log_loss": 0.5691846982614206,
+        "sensitivity": 0.9375,
+        "specificity": 0.27586206896551724,
+        "balanced_accuracy": 0.6066810344827587,
+        "threshold": 0.23,
+        "config": {
+          "k": 100,
+          "l1_ratio": 0.5,
+          "C": 0.03,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 2,
+        "roc_auc": 0.7299107142857143,
+        "pr_auc": 0.5601435282530699,
+        "brier": 0.2032788536858403,
+        "log_loss": 0.5989401400152935,
+        "sensitivity": 0.8125,
+        "specificity": 0.5357142857142857,
+        "balanced_accuracy": 0.6741071428571428,
+        "threshold": 0.28,
+        "config": {
+          "k": 100,
+          "l1_ratio": 1.0,
+          "C": 0.1,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 3,
+        "roc_auc": 0.6696428571428571,
+        "pr_auc": 0.541261490986658,
+        "brier": 0.21497190804871977,
+        "log_loss": 0.6246777819044359,
+        "sensitivity": 0.4375,
+        "specificity": 0.75,
+        "balanced_accuracy": 0.59375,
+        "threshold": 0.45,
+        "config": {
+          "k": 200,
+          "l1_ratio": 0.5,
+          "C": 0.03,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 1,
+        "fold": 4,
+        "roc_auc": 0.6852678571428571,
+        "pr_auc": 0.5634416490105449,
+        "brier": 0.237320014731198,
+        "log_loss": 0.6599629019060922,
+        "sensitivity": 0.5625,
+        "specificity": 0.6428571428571429,
+        "balanced_accuracy": 0.6026785714285714,
+        "threshold": 0.42,
+        "config": {
+          "k": 100,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 0,
+        "roc_auc": 0.75,
+        "pr_auc": 0.633787117799792,
+        "brier": 0.18771386515784672,
+        "log_loss": 0.5633031554204923,
+        "sensitivity": 0.75,
+        "specificity": 0.7241379310344828,
+        "balanced_accuracy": 0.7370689655172413,
+        "threshold": 0.41,
+        "config": {
+          "k": 500,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 5.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 1,
+        "roc_auc": 0.6831896551724138,
+        "pr_auc": 0.5181600978855614,
+        "brier": 0.21530213303062565,
+        "log_loss": 0.6096281411830818,
+        "sensitivity": 0.5,
+        "specificity": 0.6206896551724138,
+        "balanced_accuracy": 0.5603448275862069,
+        "threshold": 0.33,
+        "config": {
+          "k": 50,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 5.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 2,
+        "roc_auc": 0.7232142857142857,
+        "pr_auc": 0.6012029457611354,
+        "brier": 0.1990996564367129,
+        "log_loss": 0.5804787850669006,
+        "sensitivity": 0.75,
+        "specificity": 0.6428571428571429,
+        "balanced_accuracy": 0.6964285714285714,
+        "threshold": 0.37,
+        "config": {
+          "k": 200,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 5.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 3,
+        "roc_auc": 0.7946428571428571,
+        "pr_auc": 0.7607483084045583,
+        "brier": 0.17948622819970939,
+        "log_loss": 0.5344944645898287,
+        "sensitivity": 0.6875,
+        "specificity": 0.8214285714285714,
+        "balanced_accuracy": 0.7544642857142857,
+        "threshold": 0.45,
+        "config": {
+          "k": 50,
+          "l1_ratio": 1.0,
+          "C": 0.1,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 2,
+        "fold": 4,
+        "roc_auc": 0.7254464285714286,
+        "pr_auc": 0.6425602175602175,
+        "brier": 0.20348966065694113,
+        "log_loss": 0.5978675108829586,
+        "sensitivity": 0.5625,
+        "specificity": 0.75,
+        "balanced_accuracy": 0.65625,
+        "threshold": 0.45,
+        "config": {
+          "k": 500,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 0,
+        "roc_auc": 0.8168103448275863,
+        "pr_auc": 0.6675497020287074,
+        "brier": 0.16033962417694966,
+        "log_loss": 0.4863725116096512,
+        "sensitivity": 0.8125,
+        "specificity": 0.7931034482758621,
+        "balanced_accuracy": 0.802801724137931,
+        "threshold": 0.43,
+        "config": {
+          "k": 50,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 5.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 1,
+        "roc_auc": 0.7377232142857143,
+        "pr_auc": 0.5640280784030784,
+        "brier": 0.19200315207153243,
+        "log_loss": 0.5570782002429107,
+        "sensitivity": 0.8125,
+        "specificity": 0.5357142857142857,
+        "balanced_accuracy": 0.6741071428571428,
+        "threshold": 0.3,
+        "config": {
+          "k": 500,
+          "l1_ratio": 0.2,
+          "C": 0.003,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 2,
+        "roc_auc": 0.75,
+        "pr_auc": 0.5982080401323822,
+        "brier": 0.1976384003064612,
+        "log_loss": 0.5743446883217382,
+        "sensitivity": 0.75,
+        "specificity": 0.7142857142857143,
+        "balanced_accuracy": 0.7321428571428572,
+        "threshold": 0.47,
+        "config": {
+          "k": 500,
+          "l1_ratio": 0.8,
+          "C": 0.1,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 3,
+        "roc_auc": 0.6271551724137931,
+        "pr_auc": 0.448345768428489,
+        "brier": 0.26184264034204635,
+        "log_loss": 0.7407606900795647,
+        "sensitivity": 0.6875,
+        "specificity": 0.5517241379310345,
+        "balanced_accuracy": 0.6196120689655172,
+        "threshold": 0.32,
+        "config": {
+          "k": 200,
+          "l1_ratio": 0.8,
+          "C": 0.1,
+          "clin_scale": 5.0
+        }
+      },
+      {
+        "repeat": 3,
+        "fold": 4,
+        "roc_auc": 0.7120535714285714,
+        "pr_auc": 0.5634045534204293,
+        "brier": 0.21019615324719407,
+        "log_loss": 0.598779807418055,
+        "sensitivity": 0.6875,
+        "specificity": 0.6428571428571429,
+        "balanced_accuracy": 0.6651785714285714,
+        "threshold": 0.27,
+        "config": {
+          "k": 200,
+          "l1_ratio": 1.0,
+          "C": 0.1,
+          "clin_scale": 5.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 0,
+        "roc_auc": 0.8103448275862069,
+        "pr_auc": 0.6682317855755355,
+        "brier": 0.16694210780126187,
+        "log_loss": 0.4912861681781759,
+        "sensitivity": 0.75,
+        "specificity": 0.6896551724137931,
+        "balanced_accuracy": 0.7198275862068966,
+        "threshold": 0.4,
+        "config": {
+          "k": 50,
+          "l1_ratio": 0.8,
+          "C": 0.1,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 1,
+        "roc_auc": 0.8211206896551724,
+        "pr_auc": 0.7621000919767367,
+        "brier": 0.16310630970024492,
+        "log_loss": 0.49207813624851615,
+        "sensitivity": 0.5625,
+        "specificity": 0.8620689655172413,
+        "balanced_accuracy": 0.7122844827586207,
+        "threshold": 0.44,
+        "config": {
+          "k": 50,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 2,
+        "roc_auc": 0.7834821428571429,
+        "pr_auc": 0.5920357419283503,
+        "brier": 0.18398284416739916,
+        "log_loss": 0.5463806770446307,
+        "sensitivity": 0.8125,
+        "specificity": 0.75,
+        "balanced_accuracy": 0.78125,
+        "threshold": 0.42,
+        "config": {
+          "k": 200,
+          "l1_ratio": 0.2,
+          "C": 0.03,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 3,
+        "roc_auc": 0.6361607142857143,
+        "pr_auc": 0.5146763486621498,
+        "brier": 0.24195923546407624,
+        "log_loss": 0.6851805954686087,
+        "sensitivity": 0.625,
+        "specificity": 0.5,
+        "balanced_accuracy": 0.5625,
+        "threshold": 0.38,
+        "config": {
+          "k": 100,
+          "l1_ratio": 1.0,
+          "C": 0.1,
+          "clin_scale": 25.0
+        }
+      },
+      {
+        "repeat": 4,
+        "fold": 4,
+        "roc_auc": 0.75,
+        "pr_auc": 0.6277509041203894,
+        "brier": 0.1974874522556383,
+        "log_loss": 0.5980649277467073,
+        "sensitivity": 0.75,
+        "specificity": 0.6071428571428571,
+        "balanced_accuracy": 0.6785714285714286,
+        "threshold": 0.37,
+        "config": {
+          "k": 200,
+          "l1_ratio": 1.0,
+          "C": 0.1,
+          "clin_scale": 25.0
+        }
+      }
+    ]
+  },
+  "site_sensitivity": {
+    "design": "leave-one-site-group-out: train (with inner CV tuning) on two site groups, test on the third. Site groups come from the GEO source field; this is NOT external validation (same cohort, same assay and pipeline).",
+    "site_composition": {
+      "Hartford": {
+        "samples": 31,
+        "pcr_rate": 0.2903225806451613,
+        "tnbc_share": 0.1935483870967742
+      },
+      "MT": {
+        "samples": 153,
+        "pcr_rate": 0.3660130718954248,
+        "tnbc_share": 0.5359477124183006
+      },
+      "UConn": {
+        "samples": 38,
+        "pcr_rate": 0.39473684210526316,
+        "tnbc_share": 0.05263157894736842
+      }
+    },
+    "folds": [
+      {
+        "site": "Hartford",
+        "n_test": 31,
+        "pcr_test": 9,
+        "rd_test": 22,
+        "models": {
+          "clinical": {
+            "roc_auc": 0.9343434343434344,
+            "pr_auc": 0.8354818021484689,
+            "brier": 0.12809110192109344,
+            "log_loss": 0.4005343208636692,
+            "sensitivity": 1.0,
+            "specificity": 0.8181818181818182,
+            "balanced_accuracy": 0.9090909090909092,
+            "threshold": 0.32,
+            "config": {
+              "k": 0,
+              "l1_ratio": 0.0,
+              "C": 0.3,
+              "clin_scale": 1.0
+            }
+          },
+          "expression": {
+            "roc_auc": 0.8585858585858586,
+            "pr_auc": 0.8186202686202686,
+            "brier": 0.15717247070901266,
+            "log_loss": 0.4914311315393573,
+            "sensitivity": 0.7777777777777778,
+            "specificity": 0.7272727272727273,
+            "balanced_accuracy": 0.7525252525252526,
+            "threshold": 0.42,
+            "config": {
+              "k": 100,
+              "l1_ratio": 0.2,
+              "C": 0.03,
+              "clin_scale": 1.0
+            }
+          },
+          "combined": {
+            "roc_auc": 0.9191919191919191,
+            "pr_auc": 0.8409171075837745,
+            "brier": 0.1232030033911112,
+            "log_loss": 0.39654493698925697,
+            "sensitivity": 0.8888888888888888,
+            "specificity": 0.7272727272727273,
+            "balanced_accuracy": 0.8080808080808081,
+            "threshold": 0.43,
+            "config": {
+              "k": 100,
+              "l1_ratio": 0.2,
+              "C": 0.03,
+              "clin_scale": 5.0
+            }
+          }
+        },
+        "status": "underpowered: fewer than 10 samples in a class; point estimates are unstable"
+      },
+      {
+        "site": "MT",
+        "n_test": 153,
+        "pcr_test": 56,
+        "rd_test": 97,
+        "models": {
+          "clinical": {
+            "roc_auc": 0.6738770250368188,
+            "pr_auc": 0.5130189410743485,
+            "brier": 0.22027217093569315,
+            "log_loss": 0.62764310275236,
+            "sensitivity": 0.7857142857142857,
+            "specificity": 0.5463917525773195,
+            "balanced_accuracy": 0.6660530191458026,
+            "threshold": 0.39,
+            "config": {
+              "k": 0,
+              "l1_ratio": 0.0,
+              "C": 0.3,
+              "clin_scale": 1.0
+            }
+          },
+          "expression": {
+            "roc_auc": 0.6544550810014728,
+            "pr_auc": 0.5218827554504561,
+            "brier": 0.2165775812643071,
+            "log_loss": 0.6216230910787941,
+            "sensitivity": 0.44642857142857145,
+            "specificity": 0.7525773195876289,
+            "balanced_accuracy": 0.5995029455081001,
+            "threshold": 0.43,
+            "config": {
+              "k": 500,
+              "l1_ratio": 0.2,
+              "C": 0.03,
+              "clin_scale": 1.0
+            }
+          },
+          "combined": {
+            "roc_auc": 0.6753497790868925,
+            "pr_auc": 0.5162375546873409,
+            "brier": 0.23592925144392585,
+            "log_loss": 0.6686312066103508,
+            "sensitivity": 0.8214285714285714,
+            "specificity": 0.4948453608247423,
+            "balanced_accuracy": 0.6581369661266568,
+            "threshold": 0.34,
+            "config": {
+              "k": 500,
+              "l1_ratio": 0.2,
+              "C": 0.01,
+              "clin_scale": 25.0
+            }
+          }
+        },
+        "status": "ok"
+      },
+      {
+        "site": "UConn",
+        "n_test": 38,
+        "pcr_test": 15,
+        "rd_test": 23,
+        "models": {
+          "clinical": {
+            "roc_auc": 0.663768115942029,
+            "pr_auc": 0.5451290898834757,
+            "brier": 0.23579586485664922,
+            "log_loss": 0.666270973611243,
+            "sensitivity": 0.6666666666666666,
+            "specificity": 0.4782608695652174,
+            "balanced_accuracy": 0.572463768115942,
+            "threshold": 0.21,
+            "config": {
+              "k": 0,
+              "l1_ratio": 0.0,
+              "C": 1.0,
+              "clin_scale": 1.0
+            }
+          },
+          "expression": {
+            "roc_auc": 0.5507246376811594,
+            "pr_auc": 0.4624124733946448,
+            "brier": 0.27093409390683626,
+            "log_loss": 0.7605577391457284,
+            "sensitivity": 0.6666666666666666,
+            "specificity": 0.4782608695652174,
+            "balanced_accuracy": 0.572463768115942,
+            "threshold": 0.3,
+            "config": {
+              "k": 500,
+              "l1_ratio": 0.8,
+              "C": 0.1,
+              "clin_scale": 1.0
+            }
+          },
+          "combined": {
+            "roc_auc": 0.6231884057971014,
+            "pr_auc": 0.5206884601097125,
+            "brier": 0.24231434971481547,
+            "log_loss": 0.6873317704541686,
+            "sensitivity": 0.4666666666666667,
+            "specificity": 0.6086956521739131,
+            "balanced_accuracy": 0.5376811594202899,
+            "threshold": 0.42,
+            "config": {
+              "k": 500,
+              "l1_ratio": 1.0,
+              "C": 0.1,
+              "clin_scale": 25.0
+            }
+          }
+        },
+        "status": "ok"
+      }
+    ]
+  },
+  "cohort": {
+    "samples_in_expression": 222,
+    "samples_in_metadata": 222,
+    "samples_without_explicit_label_dropped": 0,
+    "samples": 222,
+    "patients": 213,
+    "pcr": 80,
+    "rd": 142,
+    "pcr_patients": 76,
+    "rd_patients": 137,
+    "missing_expression_values": 0,
+    "missing_clinical": {
+      "age": 0,
+      "er": 0,
+      "pr": 0,
+      "her2": 0,
+      "grade": 1,
+      "stage": 14
+    }
+  },
+  "cv": {
+    "outer_folds": 5,
+    "repeats": 5,
+    "inner_folds": 4,
+    "bootstrap_resamples": 1000,
+    "seed": 42,
+    "validation_pcr_rate_range": [
+      0.35555555555555557,
+      0.36363636363636365
+    ],
+    "group_leak_check": "passed (no group in both train and validation of any outer fold)"
+  },
+  "statement": {
+    "status": "Research model — not clinically validated",
+    "claim": "This model predicts pCR in the GSE163882 neoadjuvant taxane-based chemotherapy cohort. It does not estimate causal treatment effects and should not be interpreted as a clinical treatment recommendation."
+  }
+}

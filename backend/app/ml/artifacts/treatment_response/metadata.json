@@ -1,0 +1,149 @@
+{
+  "model_name": "GSE163882 neoadjuvant chemotherapy pCR prediction model",
+  "status": "Research model — not clinically validated",
+  "target": "Target: pathological complete response (pCR) vs residual disease (RD)",
+  "treatment_context": "Treatment context: neoadjuvant taxane-based chemotherapy",
+  "claim": "This model predicts pCR in the GSE163882 neoadjuvant taxane-based chemotherapy cohort. It does not estimate causal treatment effects and should not be interpreted as a clinical treatment recommendation.",
+  "dataset": "GEO GSE163882 (AmpliSeq transcriptome, FFPE pretreatment breast biopsies; TPM)",
+  "patient_count": 213,
+  "sample_count": 222,
+  "pcr_count": 80,
+  "rd_count": 142,
+  "pcr_patients": 76,
+  "rd_patients": 137,
+  "grouping_strategy": "specimen label (text after 'BA#####:' in the GEO sample title); samples with the same label or sharing an accession token are one patient group (union-find). Patient identity is NOT proven; all samples of a group stay in the same outer and inner fold.",
+  "preprocessing": [
+    "log2(TPM + 1)",
+    "detection filter fitted on training rows: TPM > 1 in >= 20% of samples",
+    "standardise with training mean/sd",
+    "Welch t-test pCR vs RD on training rows, top-k genes",
+    "clinical: median/mode imputation and standardisation of age/grade/stage from training rows"
+  ],
+  "detection_threshold": "TPM > 1 in >= 20% of training samples",
+  "gene_key": "Ensembl ID (annotation column is display-only)",
+  "clinical_features": [
+    "age",
+    "er",
+    "pr",
+    "her2",
+    "grade",
+    "stage"
+  ],
+  "primary_model": "combined",
+  "model_kinds": {
+    "clinical": "A clinical-only",
+    "expression": "B expression-only",
+    "combined": "C clinical + expression"
+  },
+  "final_model_hyperparameters": {
+    "clinical": {
+      "k": 0,
+      "l1_ratio": 0.0,
+      "C": 3.0,
+      "clin_scale": 1.0
+    },
+    "expression": {
+      "k": 100,
+      "l1_ratio": 0.2,
+      "C": 0.03,
+      "clin_scale": 1.0
+    },
+    "combined": {
+      "k": 200,
+      "l1_ratio": 1.0,
+      "C": 0.1,
+      "clin_scale": 25.0
+    }
+  },
+  "selected_gene_count": 200,
+  "selected_gene_count_expression_only": 100,
+  "l1_ratio": 1.0,
+  "clinical_scale": 25.0,
+  "regularization": {
+    "C": 0.1,
+    "type": "inverse strength, sklearn LogisticRegression (elastic-net)"
+  },
+  "decision_thresholds": {
+    "clinical": 0.33,
+    "expression": 0.44,
+    "combined": 0.37
+  },
+  "random_seed": 42,
+  "cv_configuration": {
+    "outer": "StratifiedGroupKFold(5, shuffle=True, random_state=SEED+repeat), repeated",
+    "inner": "StratifiedGroupKFold(4) inside each outer training set for k, l1_ratio, C (pooled out-of-fold log-loss)",
+    "clinical_only_C_grid": [
+      0.01,
+      0.03,
+      0.1,
+      0.3,
+      1.0,
+      3.0,
+      10.0,
+      100.0
+    ],
+    "k_grid": [
+      50,
+      100,
+      200,
+      500
+    ],
+    "clinical_scale_grid_combined_model": [
+      1.0,
+      5.0,
+      25.0
+    ],
+    "l1_ratio_grid": [
+      0.2,
+      0.5,
+      0.8,
+      1.0
+    ],
+    "C_grid": [
+      0.001,
+      0.003,
+      0.01,
+      0.03,
+      0.1,
+      0.3,
+      1.0
+    ],
+    "outer_repeats": 5
+  },
+  "evaluation_note": "Final artifact is fitted on all labelled samples; performance claims come only from metrics.json (nested CV).",
+  "external_validation": "none",
+  "limitations": [
+    "single small cohort, no external validation",
+    "probable repeated patients (grouped, identity unproven)",
+    "regimen details unavailable",
+    "pCR definition not independently verified from the metadata",
+    "site/subtype confounding",
+    "research only"
+  ],
+  "library_versions": {
+    "python": "3.13.14",
+    "scikit-learn": "1.9.0",
+    "numpy": "2.5.3"
+  },
+  "trained_at": "2026-10-07T04:41:47+00:00",
+  "cohort_provenance": {
+    "samples_in_expression": 222,
+    "samples_in_metadata": 222,
+    "samples_without_explicit_label_dropped": 0,
+    "samples": 222,
+    "patients": 213,
+    "pcr": 80,
+    "rd": 142,
+    "pcr_patients": 76,
+    "rd_patients": 137,
+    "missing_expression_values": 0,
+    "missing_clinical": {
+      "age": 0,
+      "er": 0,
+      "pr": 0,
+      "her2": 0,
+      "grade": 1,
+      "stage": 14
+    }
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "model_name": "METABRIC relapse-free survival model",
+  "status": "Research model \u2014 not clinically validated",
+  "split": {
+    "n_total": 2380,
+    "n_train": 1904,
+    "n_test": 476,
+    "events_train": 771,
+    "events_test": 193,
+    "censoring_rate_train": 0.595063025210084,
+    "censoring_rate_test": 0.5945378151260504,
+    "endpoint": "RFS",
+    "n_excluded_no_target": 129,
+    "n_features_raw": 15,
+    "n_features_after_preprocessing": 46,
+    "evaluation_times_months": [
+      10.5,
+      17.4,
+      25.6,
+      33.0,
+      45.4,
+      56.3,
+      74.3,
+      97.1
+    ]
+  },
+  "candidates": {
+    "cox": {
+      "train_c_index": 0.6704547018224636,
+      "test_c_index": 0.6660163994226895,
+      "time_dependent_auc": {
+        "times_months": [
+          10.5,
+          17.4,
+          25.6,
+          33.0,
+          45.4,
+          56.3,
+          74.3,
+          97.1
+        ],
+        "auc": [
+          0.6121509490758446,
+          0.6384950942519281,
+          0.6919393440194329,
+          0.7108279006460083,
+          0.7040751876891995,
+          0.7076573295309632,
+          0.7157641686930979,
+          0.7011124421297381
+        ],
+        "mean_auc": 0.6862301226498466
+      },
+      "integrated_brier_score": 0.14870805606843984,
+      "cv_c_index_mean": 0.6612315672598471,
+      "cv_c_index_std": 0.018794999931552158,
+      "hyperparameters": {
+        "alpha": 100.0,
+        "selected_by": "train-only CV"
+      }
+    },
+    "rsf": {
+      "train_c_index": 0.6966028578336843,
+      "test_c_index": 0.6591648030959065,
+      "time_dependent_auc": {
+        "times_months": [
+          10.5,
+          17.4,
+          25.6,
+          33.0,
+          45.4,
+          56.3,
+          74.3,
+          97.1
+        ],
+        "auc": [
+          0.598608389001896,
+          0.6297728920126688,
+          0.6888995231859986,
+          0.6941613707621804,
+          0.6885183109195423,
+          0.698369744973987,
+          0.7086456147162787,
+          0.6976420609859106
+        ],
+        "mean_auc": 0.6768187332589753
+      },
+      "integrated_brier_score": 0.15091673380976295,
+      "cv_c_index_mean": 0.663319519353953,
+      "cv_c_index_std": 0.02034278955492704,
+      "hyperparameters": {
+        "n_estimators": 100,
+        "min_samples_leaf": 40,
+        "max_features": "sqrt",
+        "selected_by": "fixed, not tuned"
+      }
+    }
+  },
+  "metrics_not_computed": {
+    "cox": {},
+    "rsf": {}
+  },
+  "selected_model": "cox",
+  "selection_reason": "Cox preferred: RSF test C-index minus Cox is -0.0069, below the 0.01 margin required to prefer the less interpretable forest."
+}
