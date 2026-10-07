@@ -26,6 +26,7 @@ export const queryKeys = {
     trend: (id: string) => ["predictions", id, "trend"] as const,
     progression: (id: string) => ["predictions", id, "progression"] as const,
     explain: (id: string) => ["predictions", id, "explain"] as const,
+    prognosis: (id: string) => ["predictions", id, "prognosis"] as const,
   },
   simulations: {
     all: ["simulations"] as const,

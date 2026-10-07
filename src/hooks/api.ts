@@ -168,6 +168,11 @@ export const useExplainability = (patientId: string) =>
     enabled: Boolean(patientId),
   });
 
+export const usePrognosis = (patientId: string) =>
+  useApiQuery(queryKeys.predictions.prognosis(patientId), () => predictionService.prognosis(patientId), {
+    enabled: Boolean(patientId),
+  });
+
 export const useRunPrediction = () =>
   useApiMutation((patientId: string) => predictionService.run(patientId), {
     successMessage: "Prediction complete",

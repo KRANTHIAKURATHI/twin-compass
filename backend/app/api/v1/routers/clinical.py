@@ -17,6 +17,8 @@ from app.schemas.clinical import PatientInput, SimulationRequest
 from app.services.clinical_queries import patient_uuid, resolve_patient
 from app.services.response_model import project_scenarios
 
+_NO_DEFAULT_CLINICAL_COLUMNS = ("stage", "grade", "nodes_involved", "er_status", "pr_status", "her2_status")
+
 router = APIRouter(tags=["clinical"])
 
 
@@ -540,6 +542,10 @@ async def create_patient(
     legacy_user = (await session.execute(text("SELECT id FROM users WHERE id = :uid"), {"uid": actor_id})).scalar()
     values = payload.model_dump(exclude_none=True)
     values.update({"id": str(uuid.uuid4()), "patient_code": f"PT-{next_code}"})
+    # The patients table has server defaults for these columns (stage 'I', grade 1, nodes 0, receptors 'Negative'). A field the
+    # clinician left blank must stay NULL, not become a value that looks recorded and feeds the prognosis models.
+    for column in _NO_DEFAULT_CLINICAL_COLUMNS:
+        values.setdefault(column, None)
     if legacy_user is not None:
         values["created_by"] = legacy_user
     columns = ", ".join(values)

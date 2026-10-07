@@ -13,6 +13,7 @@ import type {
   AuthUser,
   CohortAnalytics,
   ConfidencePoint,
+  PrognosisResult,
   Credentials,
   DashboardAnalytics,
   Dataset,
@@ -133,6 +134,8 @@ export interface PredictionService {
   /** Measured tumour size per twin version. Empty until versions exist. */
   progression(patientId: string): Promise<TumorSizePoint[]>;
   explain(patientId: string): Promise<ExplainabilityResult>;
+  /** METABRIC OS/RFS research estimates computed from recorded clinical fields. */
+  prognosis(patientId: string): Promise<PrognosisResult>;
   run(patientId: string): Promise<MutationResult<PredictionRun>>;
 }
 

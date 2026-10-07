@@ -52,6 +52,8 @@ import type {
   SimulationRun,
   TimelineEvent,
   TumorSizePoint,
+  PrognosisResult,
+  SurvivalEstimate,
 } from "@/types/models";
 
 export { USING_MOCKS };
@@ -279,6 +281,22 @@ export const predictionService: PredictionService = {
     withFallback(
       () => apiRequest(endpoints.predictions.confidenceTrend(patientId)),
       () => fx.confidenceTrendFixtures,
+    ),
+  prognosis: (patientId) =>
+    withFallback<PrognosisResult>(
+      () => apiRequest(endpoints.predictions.prognosis(patientId)),
+      () => {
+        const off = (model: string): SurvivalEstimate => ({
+          status: "unavailable",
+          model,
+          researchStatus: "Research model — not clinically validated",
+          reason: "Not available in offline preview mode.",
+        });
+        return {
+          overallSurvival: off("METABRIC overall survival model — research only"),
+          relapseFreeSurvival: off("METABRIC relapse-free survival model — research only"),
+        };
+      },
     ),
   progression: (patientId) =>
     withFallback<TumorSizePoint[]>(

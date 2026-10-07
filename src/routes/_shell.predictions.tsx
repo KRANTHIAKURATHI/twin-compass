@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   useCohortAnalytics,
   useConfidenceTrend,
+  usePrognosis,
   usePatient,
   usePatients,
   usePredictionHistory,
@@ -147,6 +148,7 @@ function PredictionsPage() {
   const { data: confidenceTrend = [] } = useConfidenceTrend(patientId);
   const { data: sizeHistory = [] } = useTumorSizeHistory(patientId);
   const { data: cohort } = useCohortAnalytics();
+  const { data: prognosis, isLoading: prognosisLoading } = usePrognosis(patientId);
   const runPrediction = useRunPrediction();
 
   const [runId, setRunId] = useState("");
@@ -373,6 +375,52 @@ function PredictionsPage() {
             )}
           </CardContent>
         </Card>
+      </section>
+
+      <section className="mt-4 grid gap-4 lg:grid-cols-2">
+        {([
+          ["Overall survival estimate — METABRIC research model", prognosis?.overallSurvival],
+          ["Relapse-free survival estimate — METABRIC research model", prognosis?.relapseFreeSurvival],
+        ] as const).map(([title, est]) => (
+          <Card key={title}>
+            <CardHeader>
+              <CardTitle>{title}</CardTitle>
+              <CardDescription>
+                Research only — not clinically validated. Prognostic model on clinical variables; not a treatment-response
+                prediction and not the malignancy classification above.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {prognosisLoading || !est ? (
+                <Skeleton className="h-16 w-full" />
+              ) : est.status !== "available" ? (
+                <p className="text-muted-foreground">Unavailable: {est.reason}</p>
+              ) : (
+                <>
+                  <p>
+                    Relative risk score:{" "}
+                    <span className="font-medium">{est.riskScore?.toFixed(2)}</span>{" "}
+                    <span className="text-muted-foreground">(model-relative; not a probability)</span>
+                  </p>
+                  {est.estimates?.map((e) => (
+                    <p key={e.horizonMonths}>
+                      {e.horizonMonths / 12}-year estimate:{" "}
+                      {e.probability == null ? (
+                        <span className="text-muted-foreground">beyond training follow-up</span>
+                      ) : (
+                        <span className="font-medium">{(e.probability * 100).toFixed(1)}%</span>
+                      )}
+                    </p>
+                  ))}
+                  <p className="text-xs text-muted-foreground">
+                    Not recorded in OncoTwin (left unknown, never estimated):{" "}
+                    {est.featureAvailability?.notRecordedInOncoTwin.join(", ")}
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        ))}
       </section>
 
       <section className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.4fr]">

@@ -200,6 +200,24 @@ export interface PredictionRun {
   status: "Complete" | "Low confidence" | "Superseded";
 }
 
+/** METABRIC OS/RFS research estimate. Prognostic only; not treatment response; not clinically validated. */
+export interface SurvivalEstimate {
+  status: "available" | "unavailable";
+  model: string;
+  researchStatus: string;
+  reason?: string;
+  riskScore?: number;
+  riskScoreNote?: string;
+  estimates?: { horizonMonths: number; probability: number | null }[];
+  featureAvailability?: { missingRequired: string[]; notRecordedInOncoTwin: string[] };
+  provenance?: { modelVersion?: string; clinicallyValidated: boolean };
+}
+
+export interface PrognosisResult {
+  overallSurvival: SurvivalEstimate;
+  relapseFreeSurvival: SurvivalEstimate;
+}
+
 export interface ConfidencePoint {
   date: string;
   confidence: number;

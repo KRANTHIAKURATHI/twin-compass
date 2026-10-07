@@ -45,6 +45,7 @@ export const endpoints = {
     // not a forecast. Named `progression` because that is the panel it feeds.
     progression: (patientId: string) => `/predictions/${patientId}/progression`,
     explain: (patientId: string) => `/predictions/${patientId}/explainability`,
+    prognosis: (patientId: string) => `/predictions/${patientId}/prognosis`,
     run: "/predictions/run",
   },
   simulations: {

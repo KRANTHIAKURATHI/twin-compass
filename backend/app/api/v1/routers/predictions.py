@@ -88,6 +88,26 @@ async def latest_prediction(
     return runs[0] if runs else None
 
 
+def _prognosis(patient: dict[str, object]) -> dict[str, object]:
+    """METABRIC OS/RFS research estimates (worker thread). scikit-survival is imported lazily inside, and a missing
+    dependency or artifact makes each model report `unavailable` rather than failing the request."""
+    from app.ml.prognosis import prognosis_for_patient
+
+    return prognosis_for_patient(patient)
+
+
+@router.get("/predictions/{patient_id}/prognosis")
+async def patient_prognosis(
+    patient_id: str,
+    session: AsyncSession = Depends(get_db_session),
+    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+) -> dict[str, object]:
+    """Computed on request from the patient's recorded clinical fields (not stored). Research models, not validated;
+    prognostic only - not treatment response."""
+    patient = await resolve_patient(session, patient_id)
+    return await anyio.to_thread.run_sync(_prognosis, dict(patient))
+
+
 @router.get("/predictions/{patient_id}/history")
 async def prediction_history(
     patient_id: str,
@@ -361,6 +381,7 @@ async def run_prediction(
     ).mappings().first()
 
     result, model_label = await anyio.to_thread.run_sync(_run_model, dict(patient))
+    prognosis = await anyio.to_thread.run_sync(_prognosis, dict(patient))
     now = datetime.now(timezone.utc).isoformat()
     run_id = str(uuid.uuid4())
 
@@ -410,4 +431,7 @@ async def run_prediction(
     await session.commit()
 
     runs = await _history(session, pid)
-    return {"ok": True, "data": runs[0] if runs else None, "message": "Prediction run recorded."}
+    # `prognosis` is additive: METABRIC OS/RFS research estimates, computed for this response and not stored in the run.
+    return {
+        "ok": True, "data": runs[0] if runs else None, "message": "Prediction run recorded.", "prognosis": prognosis,
+    }
