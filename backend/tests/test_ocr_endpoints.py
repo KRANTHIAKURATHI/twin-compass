@@ -11,14 +11,11 @@ tested here against the real dependency graph is: route mounting,
 authentication, and role enforcement - everything `require_roles` decides
 before any OCR SQL or storage/provider call runs.
 
-The one piece of real application logic that has no I/O and so *is* fully
-exercised here is `services/ocr_provider.extract_fields` - the seam a real
-OCR provider plugs into. No provider is configured in this environment
-(no OCR SDK in requirements.txt), so it must fail loudly rather than
-inventing fields; that failure is asserted directly, not mocked away.
+The provider seam (`services/ocr_provider.extract_fields`) is covered at
+the bottom of this file and, in depth, by `test_ocr_engine.py` / `test_ocr_parser.py`.
 
 Behaviour that requires a real Postgres/Supabase instance (and, for
-`/extract`, a real configured OCR provider) and is NOT covered here -
+`/extract`, an installed Tesseract) and is NOT covered here -
 flagged rather than faked:
   * persisting an extraction and its fields
   * reviewing fields before they reach the patient
@@ -107,26 +104,30 @@ def test_doctor_role_accepted_past_the_authorization_check(client, method, _temp
 
 
 class TestOcrProviderBoundary:
-    """`services/ocr_provider.extract_fields` has no I/O, so it is exercised
-    directly rather than mocked. No OCR SDK is installed (see that module's
-    docstring): with OCR_PROVIDER unset (the default), extraction must fail
-    loudly instead of returning fabricated fields."""
+    """The provider seam fails loudly (never returns empty fields) when OCR cannot run."""
 
-    async def test_extraction_fails_without_a_configured_provider(self):
-        from app.core.exceptions import UpstreamServiceError
-        from app.services import ocr_provider
-
-        with pytest.raises(UpstreamServiceError):
-            await ocr_provider.extract_fields(b"%PDF-1.4 ...", "application/pdf")
-
-    async def test_extraction_fails_for_an_unimplemented_named_provider(self):
+    async def test_disabled_provider_fails_loudly(self):
         from app.core.config import get_settings
         from app.core.exceptions import UpstreamServiceError
         from app.services import ocr_provider
 
+        prior = get_settings().OCR_PROVIDER
+        get_settings().OCR_PROVIDER = None
+        try:
+            with pytest.raises(UpstreamServiceError):
+                await ocr_provider.extract_fields(b"%PDF-1.4 ...", "application/pdf")
+        finally:
+            get_settings().OCR_PROVIDER = prior
+
+    async def test_unimplemented_named_provider_fails_loudly(self):
+        from app.core.config import get_settings
+        from app.core.exceptions import UpstreamServiceError
+        from app.services import ocr_provider
+
+        prior = get_settings().OCR_PROVIDER
         get_settings().OCR_PROVIDER = "some-future-vendor"
         try:
             with pytest.raises(UpstreamServiceError):
                 await ocr_provider.extract_fields(b"%PDF-1.4 ...", "application/pdf")
         finally:
-            get_settings().OCR_PROVIDER = None
+            get_settings().OCR_PROVIDER = prior

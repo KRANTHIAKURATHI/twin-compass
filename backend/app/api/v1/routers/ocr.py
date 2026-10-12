@@ -14,11 +14,10 @@ applied. `/reject` marks the extraction rejected without touching the
 patient at all. Both keep the original extraction row (and its fields) for
 audit - nothing here deletes a reviewed extraction.
 
-Real text/field extraction depends on `services/ocr_provider.py`, which has
-no OCR engine configured (see that module's docstring) - `/extract` will
-fail with a clear 502 until one is added. Everything else in this router
-(storage retrieval, mime validation, persistence, review, approval, patient
-update, twin resync, audit) is real and exercised independently of that.
+Text/field extraction is `services/ocr_provider.py` (Tesseract 5.x, PDF text
+layer first). If the Tesseract executable is missing `/extract` fails with a
+clear 502 and nothing is persisted. Raw OCR text is not stored (no schema
+column for it); only the parsed fields and their OCR confidence are.
 
 Schema note: `ocr_extractions` / `ocr_extraction_fields` are new tables, not
 yet present in any environment's Postgres - see
@@ -160,7 +159,7 @@ async def extract_document(
             FROM documents d WHERE d.id = :document_id
             """
         ),
-        {"id": extraction_id, "document_id": document_id, "model": get_settings().OCR_PROVIDER, "now": now},
+        {"id": extraction_id, "document_id": document_id, "model": ocr_provider.engine_label(), "now": now},
     )
     for item in extracted:
         catalog_entry = FIELD_CATALOG.get(item.field)

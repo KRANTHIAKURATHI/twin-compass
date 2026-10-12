@@ -120,11 +120,18 @@ class Settings(BaseSettings):
     DOCUMENT_SIGNED_URL_TTL_SECONDS: int = 300
 
     # --- OCR extraction (Phase 7) ------------------------------------------
-    # No OCR engine/SDK is installed (see app/services/ocr_provider.py). Unset
-    # until a real provider is wired up; extraction fails loudly rather than
-    # inventing values. Only formats OCR could plausibly read at all, even
-    # once a provider exists - a strict subset of DOCUMENT_ALLOWED_MIME_TYPES.
-    OCR_PROVIDER: str | None = None
+    # "tesseract" is the only engine (local Tesseract 5.x via pytesseract; the
+    # executable is a system dependency, not a Python package). Set to None to
+    # disable OCR: /ocr/*/extract then fails loudly instead of inventing values.
+    # Only formats OCR could plausibly read at all - a strict subset of
+    # DOCUMENT_ALLOWED_MIME_TYPES.
+    OCR_PROVIDER: str | None = "tesseract"
+    # Path to the tesseract executable; when unset, `tesseract` is looked up on PATH.
+    TESSERACT_CMD: str | None = None
+    OCR_MAX_PAGES: int = 20
+    OCR_LANGUAGE: str = "eng"
+    # A PDF page with fewer extractable text characters than this is rendered and OCR'd.
+    OCR_MIN_TEXT_CHARS_PER_PAGE: int = 40
     OCR_SUPPORTED_MIME_TYPES: list[str] = Field(
         default_factory=lambda: [
             "application/pdf",
