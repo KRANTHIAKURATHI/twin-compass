@@ -48,8 +48,9 @@ from app.services import ocr_provider, storage
 router = APIRouter(tags=["ocr"])
 
 
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+def _now() -> datetime:
+    # asyncpg requires a datetime (not an ISO string) for TIMESTAMPTZ params.
+    return datetime.now(timezone.utc)
 
 
 # The only patient columns OCR is allowed to touch - clinically relevant
@@ -235,7 +236,8 @@ async def approve_extraction(
     now = _now()
     assignments = ", ".join(f"{key} = :{key}" for key in updates)
     updates["patient_id"] = patient_id
-    updates["now"] = now
+    # patients.last_updated is a text column, so it keeps the ISO string.
+    updates["now"] = now.isoformat()
     await session.execute(
         text(f"UPDATE patients SET {assignments}, last_updated = :now WHERE id = :patient_id"),
         updates,
@@ -265,7 +267,7 @@ async def approve_extraction(
         {
             "id": str(uuid.uuid4()),
             "pid": patient_id,
-            "date": now,
+            "date": now.isoformat(),  # timeline_events.date is a text column
             "title": "Clinician-verified document fields applied",
             "detail": (
                 f"{', '.join(approved_field_names)} updated from document {document_id} "
