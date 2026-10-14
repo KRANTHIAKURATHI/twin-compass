@@ -53,6 +53,19 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+async def _set_document_status(session: AsyncSession, document_id: str, status: str, now: datetime) -> None:
+    """Move the document through Pending OCR -> Needs review -> Verified.
+
+    Runs inside the caller's transaction (no commit here) so the document
+    status can never disagree with the extraction it reflects.
+    """
+    await session.execute(
+        text("UPDATE documents SET status = :status, updated_at = :now WHERE id = :id"),
+        # documents.updated_at is a text column, so it takes the ISO string.
+        {"status": status, "now": now.isoformat(), "id": document_id},
+    )
+
+
 # The only patient columns OCR is allowed to touch - clinically relevant
 # fields already represented on `patients` (see `schemas/clinical.py`
 # `PatientInput`). Never invented to make extraction look more capable than
@@ -183,6 +196,7 @@ async def extract_document(
                 "now": now,
             },
         )
+    await _set_document_status(session, document_id, "Needs review", now)
     await session.commit()
 
     row = await _latest_extraction(session, document_id)
@@ -275,6 +289,7 @@ async def approve_extraction(
             ),
         },
     )
+    await _set_document_status(session, document_id, "Verified", now)
     await session.commit()
 
     # Reuses the existing Digital Twin resync mechanism - no second
@@ -315,7 +330,8 @@ async def reject_extraction(
     )
     # Patient data and the document itself are untouched - rejection only
     # marks the extraction; the original document and its OCR result remain
-    # for audit.
+    # for audit. The document returns to "Pending OCR" so it can be re-extracted.
+    await _set_document_status(session, document_id, "Pending OCR", now)
     await session.commit()
 
     updated_row = await _latest_extraction(session, document_id)

@@ -9,9 +9,10 @@ docstring). The uploaded file itself is never stored in Postgres: it goes to
 a private Supabase Storage bucket (`services/storage.py`), and only the
 storage path/metadata are persisted here.
 
-OCR (extraction, approval, twin updates from a document) is explicitly out
-of scope - Phase 7. `status` on a freshly uploaded document is always
-"Pending OCR" because nothing here has looked at its contents.
+OCR (extraction, approval, twin updates from a document) lives in
+routers/ocr.py. `status` on a freshly uploaded document is "Pending OCR";
+routers/ocr.py moves it to "Needs review" after extraction, "Verified" after
+approval, and back to "Pending OCR" after rejection.
 
 Links/timeline: there is no `document_id` column anywhere else in the
 schema, so "linked records" for a document is only ever its patient (real),
