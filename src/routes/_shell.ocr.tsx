@@ -105,7 +105,7 @@ function OcrPage() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="OCR Verification"
-        description="Every extracted value requires clinician verification before it reaches the digital twin."
+        description="Clinical document OCR — AI/OCR extracted; every extracted field requires clinician verification before it reaches the patient record or digital twin."
         crumbs={[{ label: "Home", to: "/" }, { label: "OCR Verification" }]}
         actions={
           documentId && (
@@ -177,7 +177,7 @@ function OcrPage() {
                   <p className="mt-1 text-xs text-muted-foreground">Run OCR to propose clinical fields for review.</p>
                   {canReview && (
                     <Button className="mt-4" onClick={() => extract.mutate(documentId)} disabled={extract.isPending}>
-                      {extract.isPending ? "Extracting…" : "Extract fields"}
+                      {extract.isPending ? "Running OCR…" : "Run OCR"}
                     </Button>
                   )}
                 </div>
@@ -216,6 +216,11 @@ function OcrPage() {
 
               {!extraction.isFetching && extraction.data && (
                 <>
+                  {fields.length === 0 && (
+                    <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                      OCR ran but no supported clinical field could be read unambiguously from this document. Nothing was extracted.
+                    </p>
+                  )}
                   {fields.map((f) => {
                     const approvable = APPROVABLE_FIELDS.has(f.field);
                     const isChecked = checked.has(f.field);
@@ -234,7 +239,7 @@ function OcrPage() {
                             {f.status === "approved" && <StatusChip tone="success">Approved</StatusChip>}
                             {f.status === "rejected" && <StatusChip tone="neutral">Rejected</StatusChip>}
                             <StatusChip tone={f.confidence == null ? "neutral" : f.confidence >= 0.85 ? "success" : "warning"}>
-                              {f.confidence == null ? "Confidence unavailable" : `${Math.round(f.confidence * 100)}% confidence`}
+                              {f.confidence == null ? "OCR confidence unavailable" : `OCR confidence ${Math.round(f.confidence * 100)}%`}
                             </StatusChip>
                           </div>
                         </div>

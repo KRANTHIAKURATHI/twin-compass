@@ -280,7 +280,7 @@ export const useExtractOcr = () =>
 export const useApproveOcr = () =>
   useApiMutation((vars: { documentId: string; fields: OcrField[] }) => ocrService.approve(vars.documentId, vars.fields), {
     successMessage: "Extraction approved — digital twin resynced",
-    invalidate: [queryKeys.documents.all, queryKeys.twins.all, ["ocr"]],
+    invalidate: [queryKeys.documents.all, queryKeys.patients.all, queryKeys.twins.all, ["ocr"]],
   });
 
 export const useRejectOcr = () =>
