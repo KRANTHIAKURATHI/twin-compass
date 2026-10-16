@@ -476,3 +476,24 @@ class TestOcrDocumentStatus:
                 "doc-1", OcrRejectRequest(reason="x"), session=session, current_user=self._user()
             )
         assert events == []
+
+
+def test_extraction_response_serializes_null_and_numeric_confidence():
+    """The API keeps a missing confidence as JSON null and a real one as a number (never 0 or a default)."""
+    import json
+
+    from fastapi.encoders import jsonable_encoder
+
+    from app.api.v1.routers import ocr as ocr_router
+
+    row = {
+        "document_id": "doc-1", "patient_code": "P1", "status": "Extracted", "model": "tesseract 5.3.0",
+        "extracted_at": None, "reviewed_by_email": None, "reviewed_at": None, "reject_reason": None,
+    }
+    fields = [
+        {"field_name": "stage", "label": "Stage", "extracted_value": "II", "confidence": None, "status": "pending"},
+        {"field_name": "ki67", "label": "Ki-67", "extracted_value": "30", "confidence": 0.77, "status": "pending"},
+    ]
+    payload = json.loads(json.dumps(jsonable_encoder(ocr_router._extraction_response(row, fields))))
+    by_field = {f["field"]: f["confidence"] for f in payload["fields"]}
+    assert by_field == {"stage": None, "ki67": 0.77}

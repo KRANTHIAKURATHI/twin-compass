@@ -70,6 +70,8 @@ def test_digital_pdf_uses_text_layer_without_ocr(stub_tesseract):
     assert stub_tesseract == []                       # Tesseract never called
     assert {f.field: f.value for f in fields} == {"tumor_size_mm": "25", "er_status": "Positive", "grade": "2"}
     assert all(f.confidence is None for f in fields)  # no OCR -> no confidence, never invented
+    # No OCR word spans exist at all, so there is nothing a confidence could be derived from.
+    assert op.extract_text_from_pdf(_text_pdf("Tumor size: 25 mm. " * 3)).words == []
 
 
 def test_scanned_pdf_page_falls_back_to_ocr(stub_tesseract):
@@ -78,6 +80,14 @@ def test_scanned_pdf_page_falls_back_to_ocr(stub_tesseract):
     f = {x.field: x for x in fields}
     assert f["tumor_size_mm"].value == "25"
     assert f["tumor_size_mm"].confidence == 0.77      # min confidence of the value's words
+
+
+def test_missing_word_confidence_is_never_fabricated(monkeypatch):
+    """If Tesseract reports no confidence for a word of the value, the field's confidence stays None."""
+    words = [("Tumor", 0.9), ("size:", 0.9), ("25", None), ("mm", 0.9)]
+    monkeypatch.setattr(op, "run_tesseract", lambda image, settings: [words])
+    fields = op._extract_sync(_scanned_pdf(), "application/pdf")
+    assert {f.field: f.confidence for f in fields}["tumor_size_mm"] is None
 
 
 def test_image_confidence_is_tesseract_confidence(stub_tesseract):
@@ -154,8 +164,18 @@ def test_real_ocr_on_images(fmt, mime):
 
 @needs_tesseract
 def test_real_ocr_on_scanned_pdf():
-    got = {f.field: f.value for f in op._extract_sync(_scanned_pdf(), "application/pdf")}
+    fields = op._extract_sync(_scanned_pdf(), "application/pdf")
+    got = {f.field: f.value for f in fields}
     assert got["tumor_size_mm"] == "25"
+    # An image-only page has no text layer, so Tesseract ran and each value carries its real word confidence.
+    assert fields and all(isinstance(f.confidence, float) and 0.0 < f.confidence <= 1.0 for f in fields)
+
+
+@needs_tesseract
+def test_real_ocr_digital_pdf_never_gets_a_confidence():
+    fields = op._extract_sync(_text_pdf("Tumor size: 25 mm. ER: Positive. Grade 2. " * 2), "application/pdf")
+    assert {f.field for f in fields} >= {"tumor_size_mm", "er_status", "grade"}
+    assert all(f.confidence is None for f in fields)
 
 
 # --- provider selection ---------------------------------------------------------------------
