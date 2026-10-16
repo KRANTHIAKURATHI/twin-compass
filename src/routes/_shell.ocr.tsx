@@ -47,6 +47,13 @@ const APPROVABLE_FIELDS = new Set([
   "diagnosed_on",
 ]);
 
+// Per-field extraction source, as recorded by the backend. Null/missing (historical
+// rows, ambiguous values) falls through to "Source not recorded".
+const SOURCE_LABELS: Record<string, string> = {
+  "text-layer": "PDF text layer",
+  ocr: "OCR (Tesseract)",
+};
+
 function OcrPage() {
   const { hasAnyRole } = useAuth();
   const canReview = hasAnyRole(["doctor", "admin"]);
@@ -235,12 +242,13 @@ function OcrPage() {
                       >
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-xs text-muted-foreground">{f.label ?? f.field}</p>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center justify-end gap-2">
                             {f.status === "approved" && <StatusChip tone="success">Approved</StatusChip>}
                             {f.status === "rejected" && <StatusChip tone="neutral">Rejected</StatusChip>}
                             <StatusChip tone={f.confidence == null ? "neutral" : f.confidence >= 0.85 ? "success" : "warning"}>
                               {f.confidence == null ? "OCR confidence unavailable" : `OCR confidence ${Math.round(f.confidence * 100)}%`}
                             </StatusChip>
+                            <StatusChip tone="neutral">{SOURCE_LABELS[f.source ?? ""] ?? "Source not recorded"}</StatusChip>
                           </div>
                         </div>
                         <div className="mt-2 flex items-center gap-2">

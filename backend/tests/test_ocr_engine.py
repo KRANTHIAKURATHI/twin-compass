@@ -72,6 +72,7 @@ def test_digital_pdf_uses_text_layer_without_ocr(stub_tesseract):
     assert all(f.confidence is None for f in fields)  # no OCR -> no confidence, never invented
     # No OCR word spans exist at all, so there is nothing a confidence could be derived from.
     assert op.extract_text_from_pdf(_text_pdf("Tumor size: 25 mm. " * 3)).words == []
+    assert all(f.source == "text-layer" for f in fields)
 
 
 def test_scanned_pdf_page_falls_back_to_ocr(stub_tesseract):
@@ -80,6 +81,7 @@ def test_scanned_pdf_page_falls_back_to_ocr(stub_tesseract):
     f = {x.field: x for x in fields}
     assert f["tumor_size_mm"].value == "25"
     assert f["tumor_size_mm"].confidence == 0.77      # min confidence of the value's words
+    assert all(x.source == "ocr" for x in fields)
 
 
 def test_missing_word_confidence_is_never_fabricated(monkeypatch):
@@ -90,18 +92,41 @@ def test_missing_word_confidence_is_never_fabricated(monkeypatch):
     assert {f.field: f.confidence for f in fields}["tumor_size_mm"] is None
 
 
+def test_value_overlapping_both_sources_or_neither_has_no_source():
+    """Source is only set when unambiguous; the confidence rule is unchanged."""
+    text = "Tumor size: 25 mm"
+    both = op.DocumentText(parts=[text], length=len(text), words=[(12, 14, 0.9)], plain_spans=[(0, len(text))])
+    fields = op.extract_clinical_fields(both)
+    assert [f.field for f in fields] == ["tumor_size_mm"]
+    assert fields[0].source is None and fields[0].confidence == 0.9
+
+    neither = op.DocumentText(parts=[text], length=len(text))
+    fields = op.extract_clinical_fields(neither)
+    assert fields[0].source is None and fields[0].confidence is None
+
+
+def test_source_never_depends_on_the_model_label(monkeypatch):
+    monkeypatch.setattr(op, "engine_label", lambda: "tesseract 5.3.0")
+    fields = op._extract_sync(_text_pdf("Tumor size: 25 mm. Grade 2. " * 2), "application/pdf")
+    assert fields and all(f.source == "text-layer" for f in fields)
+
+
 def test_image_confidence_is_tesseract_confidence(stub_tesseract):
     fields = op._extract_sync(_image_bytes("PNG"), "image/png")
     assert fields and fields[0].confidence == 0.77
     assert op._extract_sync(_image_bytes("JPEG"), "image/jpeg")[0].confidence == 0.77
+    assert all(f.source == "ocr" for f in fields)
 
 
 def test_mixed_pdf_ocrs_only_the_thin_page(stub_tesseract):
     doc = pymupdf.open()
     doc.new_page().insert_text((72, 72), "Grade 2. " * 10, fontsize=12)
     doc.new_page().insert_image(doc[0].rect, stream=_image_bytes("PNG"))
-    op._extract_sync(doc.tobytes(), "application/pdf")
+    fields = {f.field: f for f in op._extract_sync(doc.tobytes(), "application/pdf")}
     assert len(stub_tesseract) == 1
+    # Each value is attributed to the page it actually came from.
+    assert fields["grade"].source == "text-layer" and fields["grade"].confidence is None
+    assert fields["tumor_size_mm"].source == "ocr" and fields["tumor_size_mm"].confidence == 0.77
 
 
 def test_empty_document_rejected(stub_tesseract):
@@ -169,6 +194,7 @@ def test_real_ocr_on_scanned_pdf():
     assert got["tumor_size_mm"] == "25"
     # An image-only page has no text layer, so Tesseract ran and each value carries its real word confidence.
     assert fields and all(isinstance(f.confidence, float) and 0.0 < f.confidence <= 1.0 for f in fields)
+    assert all(f.source == "ocr" for f in fields)
 
 
 @needs_tesseract
@@ -176,6 +202,7 @@ def test_real_ocr_digital_pdf_never_gets_a_confidence():
     fields = op._extract_sync(_text_pdf("Tumor size: 25 mm. ER: Positive. Grade 2. " * 2), "application/pdf")
     assert {f.field for f in fields} >= {"tumor_size_mm", "er_status", "grade"}
     assert all(f.confidence is None for f in fields)
+    assert all(f.source == "text-layer" for f in fields)
 
 
 # --- provider selection ---------------------------------------------------------------------

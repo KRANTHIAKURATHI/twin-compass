@@ -99,6 +99,7 @@ def _extraction_response(row, fields: list[Any]) -> dict[str, object]:
                 "label": f["label"],
                 "value": f["extracted_value"],
                 "confidence": f["confidence"],
+                "source": f["source"],
                 "status": f["status"],
             }
             for f in fields
@@ -131,7 +132,7 @@ async def _latest_extraction(session: AsyncSession, document_id: str):
 async def _fields_for(session: AsyncSession, extraction_id: str) -> list[Any]:
     result = await session.execute(
         text(
-            "SELECT field_name, label, extracted_value, confidence, status "
+            "SELECT field_name, label, extracted_value, confidence, source, status "
             "FROM ocr_extraction_fields WHERE extraction_id = :id ORDER BY field_name"
         ),
         {"id": extraction_id},
@@ -181,9 +182,9 @@ async def extract_document(
             text(
                 """
                 INSERT INTO ocr_extraction_fields
-                    (id, extraction_id, field_name, label, extracted_value, confidence, status, created_at)
+                    (id, extraction_id, field_name, label, extracted_value, confidence, source, status, created_at)
                 VALUES
-                    (:id, :extraction_id, :field_name, :label, :value, :confidence, 'pending', :now)
+                    (:id, :extraction_id, :field_name, :label, :value, :confidence, :source, 'pending', :now)
                 """
             ),
             {
@@ -193,6 +194,7 @@ async def extract_document(
                 "label": catalog_entry["label"] if catalog_entry else item.field,
                 "value": item.value,
                 "confidence": item.confidence,
+                "source": item.source,
                 "now": now,
             },
         )

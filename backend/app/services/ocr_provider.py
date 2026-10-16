@@ -13,6 +13,9 @@ Honesty rules (do not weaken):
   that make up the extracted value - the minimum over those words. It is None
   when the value came from a PDF text layer (no OCR happened) and is never
   estimated. It is OCR evidence only; it says nothing about clinical correctness.
+* `source` records, per field, whether the value's text came from the PDF text layer
+  ("text-layer") or from Tesseract ("ocr"). It is None when the value overlaps both or
+  neither, so it is only ever set when unambiguous.
 * Tesseract missing/failing raises UpstreamServiceError. An unreadable, empty,
   oversized or unsupported document raises ValidationAppError. Neither ever
   degrades to "no fields".
@@ -50,6 +53,9 @@ class ExtractedField:
     field: str
     value: str
     confidence: float | None  # None when no OCR confidence applies - never fabricated.
+    # Where the value's text came from: "text-layer" (PDF text, no OCR), "ocr" (Tesseract), or
+    # None when that cannot be established unambiguously. Never inferred from the model label.
+    source: str | None = None
 
 
 @dataclass
@@ -59,6 +65,7 @@ class DocumentText:
     parts: list[str] = field(default_factory=list)
     length: int = 0
     words: list[tuple[int, int, float | None]] = field(default_factory=list)
+    plain_spans: list[tuple[int, int]] = field(default_factory=list)  # PDF text-layer text (no OCR)
 
     @property
     def text(self) -> str:
@@ -70,7 +77,9 @@ class DocumentText:
 
     def add_plain(self, s: str) -> None:
         """Text from a PDF text layer: no OCR, so no confidence."""
-        self._add(s.rstrip() + "\n\n")
+        text = s.rstrip()
+        self.plain_spans.append((self.length, self.length + len(text)))
+        self._add(text + "\n\n")
 
     def add_ocr_lines(self, lines: list[list[tuple[str, float]]]) -> None:
         for line in lines:
@@ -247,7 +256,10 @@ def extract_clinical_fields(doc: DocumentText) -> list[ExtractedField]:
     for p in parse_clinical_fields(doc.text):
         confs = [c for s, e, c in doc.words if s < p.end and e > p.start]
         confidence = min(confs) if confs and all(c is not None for c in confs) else None
-        results.append(ExtractedField(p.field, p.value, confidence))
+        from_ocr = bool(confs)
+        from_text_layer = any(s < p.end and e > p.start for s, e in doc.plain_spans)
+        source = "ocr" if from_ocr and not from_text_layer else "text-layer" if from_text_layer and not from_ocr else None
+        results.append(ExtractedField(p.field, p.value, confidence, source))
     return results
 
 

@@ -391,6 +391,9 @@ export interface DocumentDownload {
 
 export type OcrFieldStatus = "pending" | "approved" | "rejected";
 
+/** Where a field's text came from. Null/absent: not recorded (historical rows) or ambiguous. */
+export type OcrFieldSource = "text-layer" | "ocr";
+
 export interface OcrField {
   /** Machine key matching a patient column (e.g. "tumor_size_mm") — used when approving. */
   field: string;
@@ -399,6 +402,7 @@ export interface OcrField {
   value: string | null;
   /** Omitted/null when the OCR provider does not supply a confidence score — never fabricated. */
   confidence: number | null;
+  source?: OcrFieldSource | null;
   status?: OcrFieldStatus;
 }
 

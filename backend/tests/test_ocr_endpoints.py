@@ -362,6 +362,25 @@ class TestOcrDocumentStatus:
         self._assert_text_updated_at(updates[0][1])
         self._assert_before_commit(events)
 
+    async def test_extract_binds_field_source(self, monkeypatch):
+        from app.api.v1.routers import ocr as ocr_router
+        from app.services import ocr_provider
+
+        async def fake_extract(content, mime):
+            return [
+                ocr_provider.ExtractedField(field="stage", value="II", confidence=None, source="text-layer"),
+                ocr_provider.ExtractedField(field="ki67", value="30", confidence=0.8, source="ocr"),
+                ocr_provider.ExtractedField(field="grade", value="2", confidence=None),
+            ]
+
+        self._patch_reads(monkeypatch)
+        self._patch_extract_deps(monkeypatch, fake_extract)
+        session, events = self._session()
+        await ocr_router.extract_document("doc-1", session=session, current_user=self._user())
+
+        inserts = [e[2] for e in events if e[0] == "sql" and "INSERT INTO ocr_extraction_fields" in e[1]]
+        assert {p["field_name"]: p["source"] for p in inserts} == {"stage": "text-layer", "ki67": "ocr", "grade": None}
+
     async def test_extract_failure_touches_no_document_status(self, monkeypatch):
         import pytest
 
@@ -491,9 +510,15 @@ def test_extraction_response_serializes_null_and_numeric_confidence():
         "extracted_at": None, "reviewed_by_email": None, "reviewed_at": None, "reject_reason": None,
     }
     fields = [
-        {"field_name": "stage", "label": "Stage", "extracted_value": "II", "confidence": None, "status": "pending"},
-        {"field_name": "ki67", "label": "Ki-67", "extracted_value": "30", "confidence": 0.77, "status": "pending"},
+        {"field_name": "stage", "label": "Stage", "extracted_value": "II", "confidence": None,
+         "source": None, "status": "pending"},  # historical row: source never recorded
+        {"field_name": "ki67", "label": "Ki-67", "extracted_value": "30", "confidence": 0.77,
+         "source": "ocr", "status": "pending"},
+        {"field_name": "grade", "label": "Grade", "extracted_value": "2", "confidence": None,
+         "source": "text-layer", "status": "pending"},
     ]
     payload = json.loads(json.dumps(jsonable_encoder(ocr_router._extraction_response(row, fields))))
     by_field = {f["field"]: f["confidence"] for f in payload["fields"]}
-    assert by_field == {"stage": None, "ki67": 0.77}
+    assert by_field == {"stage": None, "ki67": 0.77, "grade": None}
+    sources = {f["field"]: f["source"] for f in payload["fields"]}
+    assert sources == {"stage": None, "ki67": "ocr", "grade": "text-layer"}
