@@ -52,3 +52,4 @@ build/
 # Local archives
 *.zip
 *.zip
+supabase/.temp/
