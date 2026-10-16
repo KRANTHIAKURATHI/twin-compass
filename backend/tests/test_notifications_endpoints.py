@@ -50,15 +50,16 @@ def seed(db_sessionmaker):
 
     asyncio.run(_setup())
 
-    def _insert(id_: str, *, user_id=None, audience_role=None, time="2026-01-01T00:00:00Z", unread=True):
+    def _insert(id_: str, *, user_id=None, audience_role=None, time="2026-01-01T00:00:00Z", unread=True, type_=None):
         async def _go():
             async with db_sessionmaker() as s:
                 await s.execute(
                     text(
-                        "INSERT INTO notifications (id, user_id, audience_role, title, body, time, unread) "
-                        "VALUES (:id, :u, :r, :t, 'body', :time, :unread)"
+                        "INSERT INTO notifications (id, user_id, audience_role, title, body, time, unread, type) "
+                        "VALUES (:id, :u, :r, :t, 'body', :time, :unread, :type)"
                     ),
-                    {"id": id_, "u": user_id, "r": audience_role, "t": f"title-{id_}", "time": time, "unread": unread},
+                    {"id": id_, "u": user_id, "r": audience_role, "t": f"title-{id_}", "time": time,
+                     "unread": unread, "type": type_},
                 )
                 await s.commit()
 
@@ -103,6 +104,34 @@ def test_list_returns_only_own_and_role_broadcast(client, seed):
     assert [n["id"] for n in body] == ["broadcast", "mine"]  # newest first
     assert set(body[0]) == {"id", "title", "body", "time", "unread", "type"}
     assert body[0]["unread"] is True
+
+
+def test_list_serializes_null_type_and_keeps_known_type(client, seed):
+    """A row with no `type` (the column is nullable) comes back as JSON null, not an error or a made-up value."""
+    headers = _headers(client, "n-type@example.com")
+    me = _user_id(client, headers)
+    seed("untyped", user_id=me, time="2026-01-02T00:00:00Z")
+    seed("typed", user_id=me, time="2026-01-01T00:00:00Z", type_="system")
+
+    r = client.get("/notifications", headers=headers)
+    assert r.status_code == 200
+    by_id = {n["id"]: n for n in r.json()}
+    assert by_id["untyped"]["type"] is None
+    assert by_id["typed"]["type"] == "system"
+
+
+def test_list_orders_by_time_newest_first_regardless_of_insert_order(client, seed):
+    """`time` is a text column, so this asserts the query's real behaviour for ISO-8601 strings only.
+    Rows sharing an identical time have no defined relative order and are not asserted on."""
+    headers = _headers(client, "n-order@example.com")
+    me = _user_id(client, headers)
+    seed("c", user_id=me, time="2026-03-01T00:00:00Z")
+    seed("a", user_id=me, time="2026-01-01T00:00:00Z")
+    seed("d", audience_role="doctor", time="2026-04-01T00:00:00Z")
+    seed("b", user_id=me, time="2026-02-01T00:00:00Z")
+
+    body = client.get("/notifications", headers=headers).json()
+    assert [n["id"] for n in body] == ["d", "c", "b", "a"]
 
 
 def test_list_is_empty_when_there_are_no_notifications(client, seed):

@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { RouteErrorState, withPageStates, PageErrorState, PageSkeleton } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
-import { Bell, BellOff, Boxes, Brain, FlaskConical, ServerCog, UserPlus } from "lucide-react";
+import { Bell, BellOff, Boxes, Brain, Check, FlaskConical, ServerCog, UserPlus } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatusChip } from "@/components/common/StatusChip";
@@ -9,7 +8,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { notifications as seed } from "@/services/data";
+import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from "@/hooks/api";
 
 export const Route = createFileRoute("/_shell/notifications")({
   head: () => ({
@@ -32,9 +31,26 @@ const typeMeta = {
   system: { icon: ServerCog, tone: "risk" as const, label: "System" },
 };
 
+// Rows can carry a null or unrecognised `type`; they still render, with a generic icon and label.
+const genericMeta = { icon: Bell, tone: "neutral" as const, label: "Notification" };
+
 function NotificationsPage() {
-  const [items, setItems] = useState(seed);
+  const { data: items = [], isLoading, isError, refetch } = useNotifications("doctor");
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
   const unread = items.filter((n) => n.unread);
+
+  if (isLoading) return <PageSkeleton variant="list" />;
+  if (isError)
+    return (
+      <div className="mx-auto max-w-[900px] pt-4">
+        <PageErrorState
+          title="Notifications could not be loaded"
+          description="We could not load your notifications. This is usually temporary — try again."
+          onRetry={() => void refetch()}
+        />
+      </div>
+    );
 
   const list = (rows: typeof items) =>
     rows.length === 0 ? (
@@ -42,7 +58,7 @@ function NotificationsPage() {
     ) : (
       <div className="space-y-2">
         {rows.map((n) => {
-          const meta = typeMeta[n.type as keyof typeof typeMeta];
+          const meta = typeMeta[n.type as keyof typeof typeMeta] ?? genericMeta;
           return (
             <Card key={n.id} className={n.unread ? "border-primary/30 bg-primary-soft/30 p-0" : "p-0"}>
               <CardContent className="flex items-start gap-3 p-4">
@@ -56,7 +72,19 @@ function NotificationsPage() {
                   </div>
                   <p className="mt-0.5 text-sm text-muted-foreground">{n.body}</p>
                 </div>
-                <span className="shrink-0 text-xs text-muted-foreground">{n.time}</span>
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <span className="text-xs text-muted-foreground">{n.time}</span>
+                  {n.unread && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => markRead.mutate(n.id)}
+                      disabled={markRead.isPending && markRead.variables === n.id}
+                    >
+                      <Check className="size-4" aria-hidden="true" /> Mark read
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           );
@@ -71,7 +99,11 @@ function NotificationsPage() {
         description={`${unread.length} unread of ${items.length} events.`}
         crumbs={[{ label: "Home", to: "/" }, { label: "Notifications" }]}
         actions={
-          <Button variant="outline" onClick={() => setItems((v) => v.map((n) => ({ ...n, unread: false })))}>
+          <Button
+            variant="outline"
+            onClick={() => markAllRead.mutate(undefined)}
+            disabled={unread.length === 0 || markAllRead.isPending}
+          >
             <Bell className="size-4" aria-hidden="true" /> Mark all as read
           </Button>
         }
