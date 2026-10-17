@@ -36,6 +36,7 @@ from app.db.session import get_db_session
 from app.dependencies.auth import CurrentUser, require_roles
 from app.schemas.clinical import PredictionRequest
 from app.services.clinical_queries import resolve_patient
+from app.services.notifications import notify_roles
 
 router = APIRouter(tags=["predictions"])
 
@@ -429,6 +430,15 @@ async def run_prediction(
         },
     )
     await session.commit()
+
+    # Best-effort and only after the run is committed; identifiers only, no results.
+    await notify_roles(
+        session,
+        ("doctor", "admin", "researcher"),
+        type_="prediction",
+        title="Prediction run recorded",
+        body=f"Prediction run {run_id} was recorded for patient {patient['patient_code']}.",
+    )
 
     runs = await _history(session, pid)
     # `prognosis` is additive: METABRIC OS/RFS research estimates, computed for this response and not stored in the run.

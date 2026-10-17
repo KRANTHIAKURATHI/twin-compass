@@ -43,7 +43,7 @@ from app.core.exceptions import ConflictError, NotFoundError, ValidationAppError
 from app.db.session import get_db_session
 from app.dependencies.auth import CurrentUser, require_roles
 from app.schemas.ocr import OcrApproveRequest, OcrRejectRequest
-from app.services import ocr_provider, storage
+from app.services import notifications, ocr_provider, storage
 
 router = APIRouter(tags=["ocr"])
 
@@ -202,6 +202,14 @@ async def extract_document(
     await session.commit()
 
     row = await _latest_extraction(session, document_id)
+    if extracted:  # nothing to review when no field was read; best-effort and only after the commit above
+        await notifications.notify_roles(
+            session,
+            ("doctor", "admin"),
+            type_="ocr",
+            title="OCR extraction ready for review",
+            body=f"Document {document_id} (patient {row['patient_code']}) has extracted fields awaiting verification.",
+        )
     fields = await _fields_for(session, extraction_id)
     return {"ok": True, "data": _extraction_response(row, fields), "message": "Extraction complete — requires verification."}
 
