@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db_session
 from app.dependencies.auth import CurrentUser, require_roles
+from app.services.audit import record_audit
 from app.services.clinical_queries import resolve_patient
 
 router = APIRouter(tags=["digital-twins"])
@@ -177,19 +178,27 @@ async def twin_snapshots(
     ]
 
 
-@router.post("/digital-twins/{patient_id}/resync")
-async def resync_twin(
-    patient_id: str,
-    session: AsyncSession = Depends(get_db_session),
-    current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
-) -> dict[str, object]:
-    """Cut a new active version from the patient's current record.
+def _active_version(versions: list[dict[str, object]]) -> str | None:
+    return next((str(v["version"]) for v in versions if v["status"] == "Active"), None)
+
+
+async def cut_twin_version(
+    session: AsyncSession,
+    patient,
+    current_user: CurrentUser,
+    *,
+    summary: str = "Resynced from the current patient record.",
+) -> dict[str, str | None]:
+    """Cut a new active version from `patient` inside the caller's transaction.
+
+    Does NOT commit: the caller commits once, together with whatever else
+    belongs to the same operation (an audit row, an approved OCR update).
+    Returns the new version label and the version it superseded.
 
     The twin's numbers are copied from the patient row, which is the only
     measured state this system holds - no model is invoked, so nothing here
     is predicted.
     """
-    patient = await resolve_patient(session, patient_id)
     pid = str(patient["id"])
     versions = await _versions_for(session, pid)
     version = _next_version(versions)
@@ -222,7 +231,7 @@ async def resync_twin(
             "version": version,
             "created_at": now,
             "author": current_user.email or str(current_user.id),
-            "summary": "Resynced from the current patient record.",
+            "summary": summary,
             "tumor_size_mm": patient["tumor_size_mm"],
             "survival": patient["survival_probability"],
             "risk": patient["risk"],
@@ -247,8 +256,28 @@ async def resync_twin(
             "detail": f"New active version cut from the patient record by {current_user.email or current_user.id}.",
         },
     )
+    return {"version": version, "previousVersion": _active_version(versions)}
+
+
+@router.post("/digital-twins/{patient_id}/resync")
+async def resync_twin(
+    patient_id: str,
+    session: AsyncSession = Depends(get_db_session),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
+) -> dict[str, object]:
+    """Cut a new active version from the patient's current record."""
+    patient = await resolve_patient(session, patient_id)
+    cut = await cut_twin_version(session, patient, current_user)
+    await record_audit(
+        session,
+        actor=current_user,
+        action="twin.resynced",
+        target=patient["patient_code"],
+        before={"activeVersion": cut["previousVersion"]},
+        after={"version": cut["version"], "trigger": "manual"},
+    )
     await session.commit()
-    return {"ok": True, "data": {"version": version}, "message": f"Digital twin resynced to {version}."}
+    return {"ok": True, "data": {"version": cut["version"]}, "message": f"Digital twin resynced to {cut['version']}."}
 
 
 @router.post("/digital-twins/{patient_id}/versions/{version}/restore")
@@ -320,6 +349,14 @@ async def restore_twin_version(
             "detail": f"Version {version} copied forward as {new_version}.",
         },
     )
+    await record_audit(
+        session,
+        actor=current_user,
+        action="twin.restored",
+        target=patient["patient_code"],
+        before={"activeVersion": _active_version(versions)},
+        after={"version": new_version, "sourceVersion": version},
+    )
     await session.commit()
     return {"ok": True, "data": {"version": new_version}, "message": f"Restored {version} as {new_version}."}
 
@@ -328,10 +365,11 @@ async def restore_twin_version(
 async def archive_twin(
     patient_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     patient = await resolve_patient(session, patient_id)
     pid = str(patient["id"])
+    versions = await _versions_for(session, pid)
     await session.execute(
         text("UPDATE twin_versions SET status = 'Archived' WHERE patient_id = :pid"),
         {"pid": pid},
@@ -339,6 +377,14 @@ async def archive_twin(
     await session.execute(
         text("UPDATE patients SET twin_status = 'Archived', last_updated = :now WHERE id = :pid"),
         {"pid": pid, "now": _now()},
+    )
+    await record_audit(
+        session,
+        actor=current_user,
+        action="twin.archived",
+        target=patient["patient_code"],
+        before={"twinStatus": patient["twin_status"], "activeVersion": _active_version(versions)},
+        after={"twinStatus": "Archived"},
     )
     await session.commit()
     return {"ok": True, "message": "Digital twin archived."}

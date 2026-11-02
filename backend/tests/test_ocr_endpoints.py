@@ -146,7 +146,7 @@ class TestOcrTimestampBinding:
 
         async def execute(statement, params=None):
             calls.append((str(statement), params or {}))
-            return MagicMock()
+            return MagicMock(rowcount=1)
 
         session = MagicMock()
         session.execute = AsyncMock(side_effect=execute)
@@ -162,7 +162,7 @@ class TestOcrTimestampBinding:
         from app.services import ocr_provider, storage
 
         async def fake_doc(session, document_id):
-            return {"id": document_id, "storage_path": "p", "mime_type": "application/pdf"}
+            return {"id": document_id, "storage_path": "p", "mime_type": "application/pdf", "patient_code": "PT-1001"}
 
         async def fake_download(path):
             return b"%PDF-1.4"
@@ -178,7 +178,7 @@ class TestOcrTimestampBinding:
 
         session, calls = self._recording_session()
         result = await ocr_router.extract_document(
-            "doc-1", session=session, current_user=SimpleNamespace(id="u1", email="d@example.com")
+            "doc-1", session=session, current_user=SimpleNamespace(id="u1", email="d@example.com", role="doctor")
         )
 
         assert result is not None
@@ -214,12 +214,12 @@ class TestOcrTimestampBinding:
         session, calls = self._recording_session()
         await ocr_router.reject_extraction(
             "doc-1", OcrRejectRequest(reason="bad scan"), session=session,
-            current_user=SimpleNamespace(id="u1", email="d@example.com"),
+            current_user=SimpleNamespace(id="u1", email="d@example.com", role="doctor"),
         )
         update = next(p for sql, p in calls if "reviewed_at" in sql)
         assert isinstance(update["now"], datetime) and update["now"].tzinfo is not None
 
-    async def test_approve_binds_datetime_for_reviewed_at_and_resyncs_twin(self, monkeypatch):
+    async def test_approve_binds_datetime_for_reviewed_at_and_cuts_twin_in_one_transaction(self, monkeypatch):
         from datetime import datetime
         from types import SimpleNamespace
         from unittest.mock import AsyncMock
@@ -239,13 +239,11 @@ class TestOcrTimestampBinding:
         async def fake_fields(session, extraction_id):
             return []
 
-        resync = AsyncMock()
         monkeypatch.setattr(ocr_router, "_latest_extraction", fake_latest)
         monkeypatch.setattr(ocr_router, "_fields_for", fake_fields)
-        monkeypatch.setattr(ocr_router, "resync_twin", resync)
 
         session, calls = self._recording_session()
-        user = SimpleNamespace(id="u1", email="d@example.com")
+        user = SimpleNamespace(id="u1", email="d@example.com", role="doctor")
         payload = OcrApproveRequest(fields=[{"field": "stage", "value": "II"}])
         await ocr_router.approve_extraction("doc-1", payload, session=session, current_user=user)
 
@@ -257,9 +255,14 @@ class TestOcrTimestampBinding:
         timeline = next(p for sql, p in by_sql.items() if "INSERT INTO timeline_events" in sql)
         assert isinstance(patient_update["now"], str)
         assert isinstance(timeline["date"], str)
-        # Twin resync runs once, after the commit, for the right patient.
-        resync.assert_awaited_once()
-        assert resync.await_args.args[0] == "pat-1"
+        # The twin version is cut inside the same transaction (single commit),
+        # before the audit row, for the right patient.
+        sqls = [sql for sql, _ in calls]
+        twin_at = next(i for i, sql in enumerate(sqls) if "INSERT INTO twin_versions" in sql)
+        audit_at = next(i for i, sql in enumerate(sqls) if "INSERT INTO audit_logs" in sql)
+        assert twin_at < audit_at
+        assert next(p for sql, p in calls if "UPDATE patients SET" in sql and "last_updated" in sql)["patient_id"] == "pat-1"
+        session.commit.assert_awaited_once()
 
 
 class TestOcrDocumentStatus:
@@ -273,7 +276,7 @@ class TestOcrDocumentStatus:
 
         async def execute(statement, params=None):
             events.append(("sql", str(statement), params or {}))
-            return MagicMock()
+            return MagicMock(rowcount=1)
 
         async def commit():
             events.append(("commit",))
@@ -325,7 +328,7 @@ class TestOcrDocumentStatus:
     def _user():
         from types import SimpleNamespace
 
-        return SimpleNamespace(id="u1", email="d@x.test")
+        return SimpleNamespace(id="u1", email="d@x.test", role="doctor")
 
     def _patch_extract_deps(self, monkeypatch, extract):
         from app.api.v1.routers import ocr as ocr_router
@@ -333,7 +336,7 @@ class TestOcrDocumentStatus:
         from app.services import ocr_provider, storage
 
         async def fake_doc(session, document_id):
-            return {"id": document_id, "storage_path": "p", "mime_type": "application/pdf"}
+            return {"id": document_id, "storage_path": "p", "mime_type": "application/pdf", "patient_code": "PT-1001"}
 
         async def fake_download(path):
             return b"%PDF-1.4"
@@ -405,7 +408,6 @@ class TestOcrDocumentStatus:
         from app.schemas.ocr import OcrApproveRequest
 
         self._patch_reads(monkeypatch)
-        monkeypatch.setattr(ocr_router, "resync_twin", AsyncMock())
 
         session, events = self._session()
         payload = OcrApproveRequest(fields=[{"field": "stage", "value": "II"}])
@@ -424,8 +426,6 @@ class TestOcrDocumentStatus:
         from app.schemas.ocr import OcrApproveRequest
 
         self._patch_reads(monkeypatch)
-        resync = AsyncMock()
-        monkeypatch.setattr(ocr_router, "resync_twin", resync)
         session, events = self._session()
 
         async def failing_execute(statement, params=None):
@@ -433,7 +433,7 @@ class TestOcrDocumentStatus:
             if "INSERT INTO timeline_events" in sql:
                 raise RuntimeError("db error")
             events.append(("sql", sql, params or {}))
-            return MagicMock()
+            return MagicMock(rowcount=1)
 
         session.execute = AsyncMock(side_effect=failing_execute)
         payload = OcrApproveRequest(fields=[{"field": "stage", "value": "II"}])
@@ -443,7 +443,6 @@ class TestOcrDocumentStatus:
         # (later-issued) status update cannot persist without the approval.
         assert not any(e[0] == "commit" for e in events)
         assert self._status_updates(events) == []
-        resync.assert_not_awaited()
 
     async def test_approve_with_no_usable_fields_does_not_change_status(self, monkeypatch):
         import pytest

@@ -44,6 +44,7 @@ def db(db_sessionmaker, client):
     run("CREATE TABLE twin_versions (id, patient_id, version, created_at, status, author, summary, "
         "tumor_size_mm, survival, risk, model, snapshot)")
     run("CREATE TABLE timeline_events (id, patient_id, date, title, detail, kind)")
+    run("CREATE TABLE audit_logs (id, time, actor, actor_role, action, target, before, after, ip)")
     # twin_status 'Synced' mirrors the live column default.
     run("INSERT INTO patients (id, patient_code, name, age, stage, tumor_size_mm, risk, "
         "survival_probability, twin_status) VALUES ('p1', 'PT-1', 'Pat One', 24, 'I', 24, 'low', 0.9, 'Synced')")

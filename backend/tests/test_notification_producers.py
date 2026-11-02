@@ -24,7 +24,7 @@ from app.schemas.clinical import PredictionRequest
 from app.services import notifications, ocr_provider, storage
 from tests.conftest import login, register
 
-USER = SimpleNamespace(id="u1", email="d@x.test")
+USER = SimpleNamespace(id="u1", email="d@x.test", role="doctor")
 
 
 def _session(fail_notification: bool = False):
@@ -72,7 +72,7 @@ def _assert_broadcast_rows(rows, roles, type_):
 
 def _patch_ocr(monkeypatch, extract):
     async def fake_doc(session, document_id):
-        return {"id": document_id, "storage_path": "p", "mime_type": "application/pdf"}
+        return {"id": document_id, "storage_path": "p", "mime_type": "application/pdf", "patient_code": "PT-1001"}
 
     async def fake_download(path):
         return b"%PDF-1.4"

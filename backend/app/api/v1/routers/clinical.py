@@ -14,6 +14,7 @@ from app.core.exceptions import ConflictError
 from app.db.session import get_db_session
 from app.dependencies.auth import CurrentUser, require_roles
 from app.schemas.clinical import PatientInput, SimulationRequest
+from app.services.audit import PATIENT_AUDIT_FIELDS, pick_patient_fields, record_audit
 from app.services.clinical_queries import patient_uuid, resolve_patient
 from app.services.response_model import project_scenarios
 
@@ -574,22 +575,58 @@ async def create_patient(
     return {"ok": True, "data": _patient_response(row), "message": "Patient created."}
 
 
+def _value_differs(old: object, new: object) -> bool:
+    """Numeric-tolerant comparison, so an unchanged `5` vs `5.0` is not logged as a change."""
+    try:
+        return float(old) != float(new)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return old != new
+
+
 @router.patch("/patients/{patient_id}")
 async def update_patient(
     patient_id: str,
     payload: PatientInput,
     session: AsyncSession = Depends(get_db_session),
-    _current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     values = payload.model_dump(exclude_unset=True, exclude_none=True)
     if not values:
         raise HTTPException(status_code=400, detail="At least one patient field is required.")
+    # Lock the row and read the current values: they are the audit `before`.
+    # Column names are PatientInput attribute names, never raw request keys.
+    current = (
+        await session.execute(
+            text(
+                f"SELECT id, patient_code, {', '.join(dict.fromkeys([*values, *PATIENT_AUDIT_FIELDS]))} "
+                "FROM patients WHERE deleted_at IS NULL AND (patient_code = :patient_id OR id = :patient_id) "
+                "FOR UPDATE"
+            ),
+            {"patient_id": patient_id},
+        )
+    ).mappings().first()
+    if current is None:
+        raise HTTPException(status_code=404, detail="Patient not found.")
+    changed = [key for key, new in values.items() if _value_differs(current[key], new)]
+
     assignments = ", ".join(f"{key} = :{key}" for key in values)
-    values["patient_id"] = patient_id
-    result = await session.execute(text(f"UPDATE patients SET {assignments} WHERE deleted_at IS NULL AND (patient_code = :patient_id OR id = :patient_id) RETURNING {PATIENT_COLUMNS}"), values)
+    values["patient_id"] = str(current["id"])
+    result = await session.execute(text(f"UPDATE patients SET {assignments} WHERE id = :patient_id RETURNING {PATIENT_COLUMNS}"), values)
     row = result.mappings().first()
     if row is None:
         raise HTTPException(status_code=404, detail="Patient not found.")
+    if changed:
+        # Values are recorded only for allow-listed clinical fields; any other changed
+        # column (name, contact details, notes, ...) appears by name in `changedFields` only.
+        audited = [key for key in changed if key in PATIENT_AUDIT_FIELDS]
+        await record_audit(
+            session,
+            actor=current_user,
+            action="patient.updated",
+            target=row["patient_code"],
+            before=pick_patient_fields(current, audited),
+            after={**pick_patient_fields(row, audited), "changedFields": changed},
+        )
     await session.commit()
     return {"ok": True, "data": _patient_response(row), "message": "Patient updated."}
 
@@ -598,11 +635,23 @@ async def update_patient(
 async def delete_patient(
     patient_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
-    result = await session.execute(text("UPDATE patients SET deleted_at = now() WHERE deleted_at IS NULL AND (patient_code = :patient_id OR id = :patient_id)"), {"patient_id": patient_id})
-    if result.rowcount == 0:
+    removed = (
+        await session.execute(
+            text("UPDATE patients SET deleted_at = now() WHERE deleted_at IS NULL AND (patient_code = :patient_id OR id = :patient_id) RETURNING id, patient_code"),
+            {"patient_id": patient_id},
+        )
+    ).mappings().first()
+    if removed is None:
         raise HTTPException(status_code=404, detail="Patient not found.")
+    await record_audit(
+        session,
+        actor=current_user,
+        action="patient.deleted",
+        target=removed["patient_code"],
+        after={"patientId": str(removed["id"]), "softDeleted": True},
+    )
     await session.commit()
     return {"ok": True, "message": "Patient removed."}
 

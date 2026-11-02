@@ -37,13 +37,15 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.routers.documents import _get_document_row
-from app.api.v1.routers.twins import resync_twin
+from app.api.v1.routers.twins import cut_twin_version
 from app.core.config import get_settings
 from app.core.exceptions import ConflictError, NotFoundError, ValidationAppError
 from app.db.session import get_db_session
 from app.dependencies.auth import CurrentUser, require_roles
 from app.schemas.ocr import OcrApproveRequest, OcrRejectRequest
 from app.services import notifications, ocr_provider, storage
+from app.services.audit import record_audit
+from app.services.clinical_queries import resolve_patient
 
 router = APIRouter(tags=["ocr"])
 
@@ -199,6 +201,20 @@ async def extract_document(
             },
         )
     await _set_document_status(session, document_id, "Needs review", now)
+    # Field names and sources only - no extracted values and no raw OCR text.
+    await record_audit(
+        session,
+        actor=current_user,
+        action="ocr.extracted",
+        target=doc["patient_code"],
+        after={
+            "documentId": document_id,
+            "extractionId": extraction_id,
+            "model": ocr_provider.engine_label(),
+            "fieldCount": len(extracted),
+            "sources": {item.field: item.source for item in extracted},
+        },
+    )
     await session.commit()
 
     row = await _latest_extraction(session, document_id)
@@ -258,6 +274,32 @@ async def approve_extraction(
         raise ValidationAppError("At least one non-empty approved field is required.")
 
     now = _now()
+    extracted_by_field = {f["field_name"]: f for f in await _fields_for(session, str(row["id"]))}
+
+    # Claim the extraction first: a concurrent second approval matches no row
+    # and is rejected, so one extraction is never applied (or audited) twice.
+    claimed = await session.execute(
+        text(
+            "UPDATE ocr_extractions SET status = 'Approved', reviewed_by = :reviewer, reviewed_at = :now "
+            "WHERE id = :id AND status = 'Extracted'"
+        ),
+        {"reviewer": str(current_user.id), "now": now, "id": row["id"]},
+    )
+    if claimed.rowcount != 1:
+        raise ConflictError("This extraction was already reviewed.")
+
+    # Lock the patient row and read the values about to be replaced (the audit `before`).
+    # Column names come from FIELD_CATALOG keys only, never from request data.
+    previous = (
+        await session.execute(
+            text(f"SELECT {', '.join(updates)} FROM patients WHERE id = :patient_id AND deleted_at IS NULL FOR UPDATE"),
+            {"patient_id": patient_id},
+        )
+    ).mappings().first()
+    if previous is None:
+        raise NotFoundError("Patient not found.")
+    applied = dict(updates)
+
     assignments = ", ".join(f"{key} = :{key}" for key in updates)
     updates["patient_id"] = patient_id
     # patients.last_updated is a text column, so it keeps the ISO string.
@@ -269,19 +311,11 @@ async def approve_extraction(
 
     await session.execute(
         text(
-            "UPDATE ocr_extractions SET status = 'Approved', reviewed_by = :reviewer, reviewed_at = :now "
-            "WHERE id = :id"
+            "UPDATE ocr_extraction_fields SET status = 'approved' "
+            "WHERE extraction_id = :id AND field_name = ANY(:names)"
         ),
-        {"reviewer": str(current_user.id), "now": now, "id": row["id"]},
+        {"id": row["id"], "names": approved_field_names},
     )
-    if approved_field_names:
-        await session.execute(
-            text(
-                "UPDATE ocr_extraction_fields SET status = 'approved' "
-                "WHERE extraction_id = :id AND field_name = ANY(:names)"
-            ),
-            {"id": row["id"], "names": approved_field_names},
-        )
 
     await session.execute(
         text(
@@ -300,11 +334,40 @@ async def approve_extraction(
         },
     )
     await _set_document_status(session, document_id, "Verified", now)
-    await session.commit()
 
-    # Reuses the existing Digital Twin resync mechanism - no second
-    # twin-generation path. Runs no prediction and no treatment simulation.
-    await resync_twin(patient_id, session=session, current_user=current_user)
+    # Same transaction as everything above: the twin version is cut from the
+    # just-updated patient row by the shared twin helper (no second
+    # twin-generation path), then the audit row, then one commit. If any step
+    # fails nothing - patient, extraction, twin or audit - is persisted.
+    # Runs no prediction and no treatment simulation.
+    patient = await resolve_patient(session, patient_id)
+    cut = await cut_twin_version(session, patient, current_user)
+    reviewed: dict[str, dict[str, object]] = {}
+    for field in approved_field_names:
+        original = extracted_by_field.get(field)
+        extracted_value = original["extracted_value"] if original else None
+        reviewed[field] = {
+            "extracted": extracted_value,
+            "edited": str(extracted_value or "").strip() != str(applied[field]).strip(),
+            "confidence": original["confidence"] if original else None,
+            "source": original["source"] if original else None,
+        }
+    await record_audit(
+        session,
+        actor=current_user,
+        action="ocr.approved",
+        target=row["patient_code"],
+        before={field: previous[field] for field in applied},
+        after={
+            "documentId": document_id,
+            "extractionId": str(row["id"]),
+            "applied": applied,
+            "fields": reviewed,
+            "twinVersion": cut["version"],
+            "previousTwinVersion": cut["previousVersion"],
+        },
+    )
+    await session.commit()
 
     updated_row = await _latest_extraction(session, document_id)
     fields = await _fields_for(session, str(row["id"]))
@@ -327,13 +390,15 @@ async def reject_extraction(
         raise ConflictError(f"This extraction was already {row['status'].lower()}.")
 
     now = _now()
-    await session.execute(
+    claimed = await session.execute(
         text(
             "UPDATE ocr_extractions SET status = 'Rejected', reviewed_by = :reviewer, "
-            "reviewed_at = :now, reject_reason = :reason WHERE id = :id"
+            "reviewed_at = :now, reject_reason = :reason WHERE id = :id AND status = 'Extracted'"
         ),
         {"reviewer": str(current_user.id), "now": now, "reason": payload.reason, "id": row["id"]},
     )
+    if claimed.rowcount != 1:
+        raise ConflictError("This extraction was already reviewed.")
     await session.execute(
         text("UPDATE ocr_extraction_fields SET status = 'rejected' WHERE extraction_id = :id"),
         {"id": row["id"]},
@@ -342,6 +407,18 @@ async def reject_extraction(
     # marks the extraction; the original document and its OCR result remain
     # for audit. The document returns to "Pending OCR" so it can be re-extracted.
     await _set_document_status(session, document_id, "Pending OCR", now)
+    # The free-text reason stays in ocr_extractions.reject_reason; it is not copied into the audit log.
+    await record_audit(
+        session,
+        actor=current_user,
+        action="ocr.rejected",
+        target=row["patient_code"],
+        after={
+            "documentId": document_id,
+            "extractionId": str(row["id"]),
+            "reasonProvided": bool(payload.reason and payload.reason.strip()),
+        },
+    )
     await session.commit()
 
     updated_row = await _latest_extraction(session, document_id)
