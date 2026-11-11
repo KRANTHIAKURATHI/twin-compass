@@ -4,8 +4,17 @@ import { CheckCircle2 } from "lucide-react";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatusChip } from "@/components/common/StatusChip";
+import { InputsUsedCard, ModelStatusNotice } from "@/components/simulation/SimulationPanels";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  CONFIDENCE_EXPLANATION,
+  CONFIDENCE_NOT_APPLICABLE,
+  NOT_CALCULATED,
+  hasOutcomes,
+  runUnavailableReason,
+  unavailableExplanation,
+} from "@/lib/simulationDisplay";
 import { simulationService } from "@/services";
 import type { SimulationRun } from "@/types/models";
 
@@ -50,24 +59,13 @@ function SimulationDetail() {
   // when none matched, which showed rows that were never part of the run.
   const rows = run.scenarios ?? [];
   const selectedName = run.selected;
-  // A run whose regimen had no parameters (or whose twin lacked the inputs)
-  // stores every outcome as null. The reason itself is not persisted, so say
-  // only what the record shows rather than guessing at one cause.
-  // The reason the backend recorded when the projection could not run, shown
-  // verbatim; absent on runs stored before it was persisted.
-  const storedReason = rows
-    .map((s) => (s as { provenance?: { unavailableReason?: string | null } }).provenance?.unavailableReason)
-    .find((r): r is string => Boolean(r));
-  const noProjection =
-    rows.length > 0 &&
-    rows.every(
-      (s) =>
-        s.predictedResponse == null &&
-        s.tumorChange == null &&
-        s.survival5y == null &&
-        s.sideEffectRisk == null &&
-        s.recoveryWeeks == null,
-    );
+  // The reason the backend recorded when the projection could not run, shown verbatim; absent on runs stored before
+  // it was persisted, in which case the generic "not calculated" note is used and no cause is guessed at.
+  const storedReason = runUnavailableReason(rows);
+  const noProjection = rows.length > 0 && !rows.some(hasOutcomes);
+  const provenance = rows.find((s) => s.provenance)?.provenance ?? null;
+  const cell = (s: (typeof rows)[number], value: unknown, suffix = "") =>
+    hasOutcomes(s) ? show(value, suffix) : NOT_CALCULATED;
 
   return (
     <div className="mx-auto max-w-[1100px]">
@@ -96,32 +94,33 @@ function SimulationDetail() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         {[
-          ["Projected response", show(run.response, "%")],
-          ["Projected survival (scenario)", show(run.survival, "%")],
-          ["Model confidence", show(run.confidence, "%")],
-        ].map(([label, value]) => (
+          ["Projected response", noProjection ? NOT_CALCULATED : show(run.response, "%"), null],
+          ["Projected survival (scenario)", noProjection ? NOT_CALCULATED : show(run.survival, "%"), null],
+          [
+            "Confidence",
+            run.confidence === null || run.confidence === undefined ? CONFIDENCE_NOT_APPLICABLE : `${run.confidence}%`,
+            run.confidence === null || run.confidence === undefined ? CONFIDENCE_EXPLANATION : null,
+          ],
+        ].map(([label, value, note]) => (
           <Card key={label}>
             <CardContent className="py-6">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-              <p className="mt-1 text-2xl font-semibold">{value}</p>
+              <p className={`mt-1 text-2xl font-semibold ${noProjection || note ? "text-muted-foreground" : ""}`}>{value}</p>
+              {note && <p className="mt-1 text-xs text-muted-foreground">{note}</p>}
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {noProjection ? (
-        <p className="mt-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
-          {storedReason
-            ? `The projection could not be calculated for this run: ${storedReason}`
-            : "The projection could not be calculated for this run: no parameters exist for the regimen on file, or the twin lacked the receptor status or tumor size it needs."}{" "}
-          No values have been invented.
-        </p>
-      ) : (
-        <p className="mt-4 text-xs text-muted-foreground">
-          Kinetic projection (log-kill with exponential regrowth).{" "}
-          <span className="font-semibold text-warning">Parameters unverified — pending clinical review.</span>
+      <div className="mt-4">
+        <ModelStatusNotice parametersVerified={rows.every((s) => s.provenance?.parametersVerified === true)} />
+      </div>
+      {noProjection && (
+        <p className="mb-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+          {storedReason ?? unavailableExplanation({ provenance })} No values have been invented.
         </p>
       )}
+      <InputsUsedCard provenance={provenance} twinVersion={run.twinVersion} model={run.model} />
 
       <Card className="mt-4">
         <CardHeader>
@@ -142,7 +141,7 @@ function SimulationDetail() {
                   <TableHead>Projected tumor change</TableHead>
                   <TableHead>Projected survival (scenario)</TableHead>
                   <TableHead>Side effects</TableHead>
-                  <TableHead>Model confidence</TableHead>
+                  <TableHead>Confidence</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -158,11 +157,11 @@ function SimulationDetail() {
                         )}
                       </span>
                     </TableCell>
-                    <TableCell>{show(s.predictedResponse, "%")}</TableCell>
-                    <TableCell>{show(s.tumorChange, "%")}</TableCell>
-                    <TableCell>{show(s.survival5y, "%")}</TableCell>
-                    <TableCell>{show(s.sideEffectRisk, "%")}</TableCell>
-                    <TableCell>{show(s.confidence, "%")}</TableCell>
+                    <TableCell>{cell(s, s.predictedResponse, "%")}</TableCell>
+                    <TableCell>{cell(s, s.tumorChange, "%")}</TableCell>
+                    <TableCell>{cell(s, s.survival5y, "%")}</TableCell>
+                    <TableCell>{cell(s, s.sideEffectRisk, "%")}</TableCell>
+                    <TableCell title={s.confidence === null ? CONFIDENCE_EXPLANATION : undefined}>{s.confidence === null ? CONFIDENCE_NOT_APPLICABLE : `${s.confidence}%`}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

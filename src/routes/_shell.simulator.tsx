@@ -17,10 +17,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { resolveRunRegimen } from "@/lib/simulationRegimen";
+import { ConfidenceBadge, InputsUsedCard, ModelStatusNotice } from "@/components/simulation/SimulationPanels";
+import {
+  CONFIDENCE_NOT_APPLICABLE,
+  NOT_CALCULATED,
+  REGIMEN_OPTIONS,
+  SELECT_REGIMEN_MESSAGE,
+  describeRunRegimen,
+  hasOutcomes,
+  previousRunWithResults,
+  runUnavailableReason,
+  scenarioStatus,
+  unavailableExplanation,
+} from "@/lib/simulationDisplay";
+import { realRegimen } from "@/lib/simulationRegimen";
 import { cn } from "@/lib/utils";
 import { usePatients, usePromoteSimulation, useRunSimulation, useSimulationRuns } from "@/hooks/api";
-import type { RiskLevel, RunSimulationInput, Scenario } from "@/types/models";
+import type { RiskLevel, RunSimulationInput, Scenario, ScenarioProvenance } from "@/types/models";
 
 export const Route = createFileRoute("/_shell/simulator")({
   head: () => ({
@@ -63,6 +76,8 @@ type DisplayScenario = {
   parametersVerified: boolean;
   /** The base regimen the run was projected for, when the run recorded it. */
   requestedRegimen: string | null;
+  /** The backend's provenance block, untouched: inputs used, unavailableReason, parameter flags. */
+  provenance: ScenarioProvenance | null;
 };
 
 const fromApi = (s: Scenario): DisplayScenario => ({
@@ -82,26 +97,22 @@ const fromApi = (s: Scenario): DisplayScenario => ({
   projectedSizeMm: s.projectedSizeMm ?? null,
   cycles: s.cycles ?? null,
   basis: s.basis ?? null,
-  // Defaults to verified so an older run - recorded before the projection
-  // carried provenance - is not stamped with a warning nobody can act on.
+  // A run recorded before the projection carried provenance has no verification
+  // flag; it is treated as unverified rather than implied to be verified.
   parametersVerified: s.provenance?.parametersVerified ?? false,
   requestedRegimen: s.provenance?.requestedRegimen ?? null,
+  provenance: s.provenance ?? null,
 });
 
-/** `—` rather than `0` for anything that was never evaluated. */
+/** "Not available" rather than `0` for a single value that is absent. */
 const show = (value: number | null, suffix = "") => (value === null ? "Not available" : `${value}${suffix}`);
 
-/**
- * True when a recorded scenario carries none of the outcome measures.
- *
- * The card then says why the fields are dashed instead of leaving the reader to
- * guess whether the run failed.
- */
-const outcomesMissing = (s: DisplayScenario) =>
-  s.predictedResponse === null &&
-  s.tumorChange === null &&
-  s.sideEffectRisk === null &&
-  s.recoveryWeeks === null;
+/** A table cell: the value, or why there is none — "Not yet run" for a queued draft, "Not calculated" for a run without numbers. */
+const cell = (s: DisplayScenario, value: number | null, suffix = "") =>
+  !s.evaluated ? "Not yet run" : noOutcomes(s) ? NOT_CALCULATED : show(value, suffix);
+
+/** An unavailable scenario states why in its card; the grid of empty tiles is only for scenarios with some numbers. */
+const noOutcomes = (s: DisplayScenario) => !hasOutcomes(s);
 
 function SimulatorPage() {
   const { data: patientList = [], isLoading: patientsLoading } = usePatients();
@@ -116,6 +127,8 @@ function SimulatorPage() {
   const [promoteOpen, setPromoteOpen] = useState(false);
   const [promoteNotes, setPromoteNotes] = useState("");
   const [builder, setBuilder] = useState({ name: "", regimen: "", dosage: "", duration: "", notes: "" });
+  // Set when Run or Queue was attempted with no real regimen; cleared once one is chosen.
+  const [regimenError, setRegimenError] = useState(false);
   // The run this page is showing: either the patient's most recent recorded run
   // or one just executed here. Promotion needs its id.
   const [runId, setRunId] = useState<string | null>(null);
@@ -139,6 +152,7 @@ function SimulatorPage() {
     setRunScenarios(null);
     setPendingDraft(null);
     setSelectedScenario(null);
+    setRegimenError(false);
   }, [patientId]);
 
   // Seed from the newest recorded run so reopening the page shows what was
@@ -148,6 +162,24 @@ function SimulatorPage() {
   const activeRunId = runId ?? latest?.id ?? null;
   const allScenarios: DisplayScenario[] = [...(shown ?? []), ...(pendingDraft ? [pendingDraft] : [])];
   const selected = allScenarios.find((s) => s.id === selectedScenario) ?? null;
+
+  // The run on screen, kept apart from any older run: a latest run with no numbers is never topped up from history.
+  const shownRecord = priorRuns.find((r) => r.id === activeRunId) ?? null;
+  const shownProvenance = (shown ?? []).find((s) => s.provenance)?.provenance ?? null;
+  const shownHasOutcomes = (shown ?? []).some(hasOutcomes);
+  const shownReason = runUnavailableReason(shown ?? []);
+  const previousRun = shown && !shownHasOutcomes ? previousRunWithResults(priorRuns, activeRunId) : null;
+  const regimenToRun = describeRunRegimen(
+    builder.regimen,
+    (shown ?? []).map((s) => s.requestedRegimen),
+    patient?.currentTreatment,
+  );
+  // A regimen the builder holds that is not one of the supported choices (copied from a card) still needs an option.
+  const builderRegimen = realRegimen(builder.regimen);
+  const regimenChoices =
+    builderRegimen && !REGIMEN_OPTIONS.some((o) => o.value === builderRegimen)
+      ? [...REGIMEN_OPTIONS, { label: builderRegimen, value: builderRegimen }]
+      : REGIMEN_OPTIONS;
 
   if (patientsLoading) {
     return (
@@ -172,22 +204,18 @@ function SimulatorPage() {
     // Only a scenario that was actually projected can be selected; the pending
     // builder draft has no result and is not sent.
     const selectedName = selected?.evaluated ? selected.name : undefined;
-    // A saved draft names the regimen the next run should evaluate — this is
-    // what makes the scenario builder do something rather than only decorate
-    // the comparison table. Without one, re-run a real regimen recorded on the
-    // scenarios on screen, then the patient's recorded treatment. A placeholder
-    // such as "Current treatment" is never sent, and none is invented.
-    const regimen = resolveRunRegimen(
-      builder.regimen,
-      (shown ?? []).map((s) => s.requestedRegimen),
-      patient?.currentTreatment,
-    );
+    // A chosen regimen names what the next run should evaluate. Without one, a
+    // real regimen recorded on the scenarios on screen, then the patient's
+    // recorded treatment — the panel under the builder says which. A placeholder
+    // ("Current treatment", "Not yet started", empty) is never sent, and no
+    // other regimen is substituted.
+    const regimen = regimenToRun?.regimen;
     if (!regimen) {
-      toast.error("No regimen to simulate", {
-        description: "Enter a real regimen in Scenario Builder (the patient record has none).",
-      });
+      setRegimenError(true);
+      toast.error(SELECT_REGIMEN_MESSAGE);
       return;
     }
+    setRegimenError(false);
     const draft: RunSimulationInput = builder.regimen.trim()
       ? {
           name: builder.name.trim() || regimen,
@@ -210,8 +238,13 @@ function SimulatorPage() {
   };
 
   const saveScenario = () => {
-    if (!builder.name.trim() || !builder.regimen.trim()) {
-      toast.error("Scenario name and regimen are required");
+    if (!builderRegimen) {
+      setRegimenError(true);
+      toast.error(SELECT_REGIMEN_MESSAGE);
+      return;
+    }
+    if (!builder.name.trim()) {
+      toast.error("Scenario name is required");
       return;
     }
     const detail = [builder.dosage.trim(), builder.duration.trim() && `${builder.duration.trim()} weeks`]
@@ -222,7 +255,7 @@ function SimulatorPage() {
     setPendingDraft({
       id: "draft-pending",
       name: builder.name.trim(),
-      regimen: detail ? `${builder.regimen.trim()} · ${detail}` : builder.regimen.trim(),
+      regimen: detail ? `${builderRegimen} · ${detail}` : builderRegimen,
       recommended: false,
       evaluated: false,
       predictedResponse: null,
@@ -238,6 +271,7 @@ function SimulatorPage() {
       basis: "Queued — this is the regimen the next run will evaluate.",
       parametersVerified: false,
       requestedRegimen: null,
+      provenance: null,
     });
     toast.success("Queued for the next run", {
       description: "Replaces any previously queued scenario — only one custom regimen is evaluated per run.",
@@ -248,13 +282,16 @@ function SimulatorPage() {
     // Copies the regimen into the builder so what gets queued is exactly what
     // Run will send — a duplicate that just sat in a list, uneditable and
     // never evaluated, was indistinguishable from one that had been run.
+    // The card's label ("… · intensified") is not a regimen; the base regimen
+    // the run was projected for is, and is empty if that was only a placeholder.
     setBuilder({
       name: `${s.name} (copy)`,
-      regimen: s.regimen,
+      regimen: realRegimen(s.requestedRegimen) ?? "",
       dosage: "",
       duration: "",
       notes: "",
     });
+    setRegimenError(false);
     toast.success(`Copied ${s.name} into the builder`, {
       description: "Adjust it and run the simulation to evaluate it.",
     });
@@ -353,6 +390,34 @@ function SimulatorPage() {
           </CardContent>
         </Card>
       ) : (
+        <>
+        <ModelStatusNotice parametersVerified={(shown ?? []).every((s) => s.parametersVerified)} />
+
+        {shown && (
+          <div className="mb-3 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base font-semibold">Latest simulation</h2>
+              <StatusChip tone={shownHasOutcomes ? "primary" : "warning"}>
+                {shownHasOutcomes ? "Projected" : NOT_CALCULATED}
+              </StatusChip>
+              <span className="text-xs text-muted-foreground">
+                {shownRecord ? `Run ${new Date(shownRecord.date).toLocaleString()}` : "Just run"}
+              </span>
+            </div>
+            {!shownHasOutcomes && (
+              <p className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+                {/* The backend's own reason, verbatim; the generic note only when it sent none. */}
+                {shownReason ?? unavailableExplanation({ provenance: shownProvenance })}
+              </p>
+            )}
+            <InputsUsedCard
+              provenance={shownProvenance}
+              twinVersion={shownRecord?.twinVersion}
+              model={shownRecord?.model}
+            />
+          </div>
+        )}
+
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {allScenarios.map((s) => (
             <Card
@@ -373,17 +438,25 @@ function SimulatorPage() {
                 <CardDescription>{s.regimen}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {!s.evaluated ? (
+                {!s.evaluated && (
                   <p className="rounded-lg bg-muted/60 p-2.5 text-xs text-muted-foreground">
                     Draft scenario — not yet evaluated. Run the simulation to fill these in.
                   </p>
-                ) : (
-                  outcomesMissing(s) && (
-                    <p className="rounded-lg bg-muted/60 p-2.5 text-xs text-muted-foreground">
-                      {s.basis ?? "No projection available for this scenario."}
-                    </p>
-                  )
                 )}
+                {s.evaluated && noOutcomes(s) && (
+                  <div className="space-y-2" data-scenario-status={scenarioStatus(s)}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Projected response</span>
+                      <span className="font-semibold text-muted-foreground">{NOT_CALCULATED}</span>
+                    </div>
+                    <div className="rounded-lg bg-muted/60 p-2.5 text-xs">
+                      <p className="font-medium">Why?</p>
+                      <p className="mt-0.5 text-muted-foreground">{unavailableExplanation(s)}</p>
+                    </div>
+                  </div>
+                )}
+                {s.evaluated && !noOutcomes(s) && (
+                <>
                 <div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Projected response</span>
@@ -411,6 +484,9 @@ function SimulatorPage() {
                       <ShieldCheck className="size-3" aria-hidden="true" /> Projected survival (scenario)
                     </p>
                     <p className="mt-0.5 font-semibold">{show(s.survival5y, "%")}</p>
+                    {s.survival5y === null && s.provenance?.inputs && s.provenance.inputs.baselineSurvival == null && (
+                      <p className="text-[11px] text-muted-foreground">No baseline survival recorded on the twin</p>
+                    )}
                   </div>
                   <div className="rounded-lg bg-muted/60 p-2.5">
                     <p className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -428,12 +504,12 @@ function SimulatorPage() {
                     )}
                   </div>
                 </div>
+                </>
+                )}
 
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <RiskChip level={s.risk} />
-                  <StatusChip tone={s.confidence === null ? "neutral" : "primary"}>
-                    {s.confidence === null ? "Projected scenario · no model confidence" : `${s.confidence}% model confidence`}
-                  </StatusChip>
+                  <ConfidenceBadge confidence={s.confidence} />
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -452,7 +528,7 @@ function SimulatorPage() {
 
                 {/* Every card states where its numbers came from. A projection
                     that cannot be traced to a source is not usable clinically. */}
-                {s.evaluated && !outcomesMissing(s) && s.basis && (
+                {s.evaluated && !noOutcomes(s) && s.basis && (
                   <p className="border-t pt-3 text-[11px] leading-relaxed text-muted-foreground">
                     {s.basis}
                     {!s.parametersVerified && (
@@ -466,6 +542,48 @@ function SimulatorPage() {
             </Card>
           ))}
         </div>
+
+        {/* Shown only when the latest run produced no numbers. This is the older run exactly as stored, under its own
+            date; none of its values are copied into the latest run above. */}
+        {previousRun && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-base">Previous simulation results</CardTitle>
+              <CardDescription>
+                Stored result of an earlier run ({new Date(previousRun.date).toLocaleString()}
+                {previousRun.twinVersion ? ` · twin ${previousRun.twinVersion}` : ""}). Not the latest simulation.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Scenario</TableHead>
+                    <TableHead>Projected response</TableHead>
+                    <TableHead>Projected tumor change</TableHead>
+                    <TableHead>Projected survival (scenario)</TableHead>
+                    <TableHead>Side effects</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(previousRun.scenarios ?? []).map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="font-medium">
+                        {s.name}
+                        <span className="block text-xs font-normal text-muted-foreground">{s.regimen}</span>
+                      </TableCell>
+                      <TableCell>{show(s.predictedResponse, "%")}</TableCell>
+                      <TableCell>{show(s.tumorChange, "%")}</TableCell>
+                      <TableCell>{show(s.survival5y, "%")}</TableCell>
+                      <TableCell>{show(s.sideEffectRisk, "%")}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+        </>
       )}
 
       <section className="mt-4 grid gap-4 lg:grid-cols-[380px_1fr]">
@@ -486,14 +604,44 @@ function SimulatorPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="sc-regimen">Drug / regimen</Label>
-              <Input
-                id="sc-regimen"
-                required
-                value={builder.regimen}
-                onChange={(e) => setBuilder({ ...builder, regimen: e.target.value })}
-                placeholder="Doxorubicin + Cyclophosphamide"
-              />
+              <Label htmlFor="sc-regimen">Treatment regimen</Label>
+              {/* The choices are the regimen families the backend classifies; the value sent is text it maps to one. */}
+              <Select
+                value={builderRegimen ?? ""}
+                onValueChange={(v) => {
+                  setBuilder({ ...builder, regimen: v });
+                  setRegimenError(false);
+                }}
+              >
+                <SelectTrigger
+                  id="sc-regimen"
+                  className={cn("w-full", regimenError && "border-destructive ring-1 ring-destructive/40")}
+                  aria-invalid={regimenError}
+                  aria-describedby="sc-regimen-status"
+                >
+                  <SelectValue placeholder="Select a treatment regimen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regimenChoices.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p
+                id="sc-regimen-status"
+                role={regimenError ? "alert" : undefined}
+                className={cn("text-xs", regimenError ? "font-medium text-destructive" : "text-muted-foreground")}
+              >
+                {regimenError || !regimenToRun
+                  ? SELECT_REGIMEN_MESSAGE
+                  : regimenToRun.source === "builder"
+                    ? `Next run will evaluate: ${regimenToRun.regimen}`
+                    : regimenToRun.source === "patient-record"
+                      ? `No regimen selected — next run will use the patient's recorded treatment: ${regimenToRun.regimen}`
+                      : `No regimen selected — next run will repeat the displayed run's regimen: ${regimenToRun.regimen}`}
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -557,7 +705,7 @@ function SimulatorPage() {
                       <TableHead>Projected tumor change</TableHead>
                       <TableHead>Projected survival (scenario)</TableHead>
                       <TableHead>Side effects</TableHead>
-                      <TableHead>Model confidence</TableHead>
+                      <TableHead>Confidence</TableHead>
                       <TableHead>Risk</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -565,13 +713,13 @@ function SimulatorPage() {
                     {allScenarios.map((s) => (
                       <TableRow key={s.id} className={cn(selectedScenario === s.id && "bg-primary-soft/50")}>
                         <TableCell className="font-medium">{s.name}</TableCell>
-                        <TableCell>{show(s.predictedResponse, "%")}</TableCell>
+                        <TableCell>{cell(s, s.predictedResponse, "%")}</TableCell>
                         <TableCell className={cn((s.tumorChange ?? 0) < 0 && "text-success")}>
-                          {show(s.tumorChange, "%")}
+                          {cell(s, s.tumorChange, "%")}
                         </TableCell>
-                        <TableCell>{show(s.survival5y, "%")}</TableCell>
-                        <TableCell>{show(s.sideEffectRisk, "%")}</TableCell>
-                        <TableCell>{show(s.confidence, "%")}</TableCell>
+                        <TableCell>{cell(s, s.survival5y, "%")}</TableCell>
+                        <TableCell>{cell(s, s.sideEffectRisk, "%")}</TableCell>
+                        <TableCell>{s.confidence === null ? CONFIDENCE_NOT_APPLICABLE : `${s.confidence}%`}</TableCell>
                         <TableCell>
                           <RiskChip level={s.risk} />
                         </TableCell>

@@ -1,10 +1,10 @@
 // The backend labels a run with no regimen "Current treatment" and, having no
 // kinetic parameters for it, returns no outcomes. That label is a placeholder,
-// never a regimen, so it must not be sent back as one.
-const isPlaceholder = (value: string | null | undefined): boolean => {
-  const v = (value ?? "").trim().toLowerCase();
-  return v === "" || v === "current treatment";
-};
+// never a regimen, so it must not be sent back as one. A patient record that
+// still says "Not yet started" is the same situation: no regimen exists yet.
+const PLACEHOLDERS = new Set(["", "current treatment", "not yet started"]);
+const isPlaceholder = (value: string | null | undefined): boolean =>
+  PLACEHOLDERS.has((value ?? "").trim().toLowerCase());
 
 /** The value if it names a real regimen, else undefined. */
 export const realRegimen = (value: string | null | undefined): string | undefined =>

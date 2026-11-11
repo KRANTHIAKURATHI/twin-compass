@@ -309,6 +309,18 @@ export interface ScenarioProvenance {
   /** The regimen the run was projected for; absent on runs recorded before it was persisted. */
   requestedRegimen?: string | null;
   durationWeeks?: number | null;
+  /** The exact twin state the projection ran on. A null member was absent from the twin, not defaulted. */
+  inputs?: {
+    tumorSizeMm?: number | null;
+    ki67?: number | null;
+    ER?: string | null;
+    PR?: string | null;
+    HER2?: string | null;
+    baselineSurvival?: number | null;
+    baselineRisk?: string | null;
+  } | null;
+  /** Identifier of the hardcoded parameter table (not a statement of clinical validity). */
+  parametersVersion?: string | null;
 }
 
 export interface ScenarioDraft {

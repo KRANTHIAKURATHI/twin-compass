@@ -405,13 +405,13 @@ function PatientProfile() {
                         <TableCell className="font-medium">{s.id.slice(0, 8)}</TableCell>
                         <TableCell className="text-muted-foreground">{formatDate(s.date)}</TableCell>
                         <TableCell>{show(s.selected)}</TableCell>
-                        <TableCell>{show(s.survival, "%")}</TableCell>
+                        <TableCell>{s.survival === null || s.survival === undefined ? "Not calculated" : `${s.survival}%`}</TableCell>
                         <TableCell>
                           <StatusChip tone={s.decision === "Promoted to plan" ? "success" : "neutral"}>
                             {show(s.decision)}
                           </StatusChip>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">{show(s.model)}</TableCell>
+                        <TableCell className="text-muted-foreground">{s.model || "No model run"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
