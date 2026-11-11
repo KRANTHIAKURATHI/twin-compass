@@ -82,9 +82,9 @@ def test_prognosis_roles(client, db):
     code = client.post("/patients", json={"name": "R", "age": 40}, headers=h).json()["data"]["id"]
     assert client.get(f"/predictions/{code}/prognosis").status_code in (401, 403)
     register(client, email="researcher@example.com", role="researcher")
-    for email in ("researcher@example.com",):  # admin cannot self-register; it shares the same require_roles dependency
+    for email in ("researcher@example.com",):  # researchers have no identified patient access (Phase 6.1 / H1)
         t = login(client, email=email).json()["accessToken"]
-        assert client.get(f"/predictions/{code}/prognosis", headers={"Authorization": f"Bearer {t}"}).status_code == 200
+        assert client.get(f"/predictions/{code}/prognosis", headers={"Authorization": f"Bearer {t}"}).status_code == 403
     register(client, email="pat@example.com", role="patient")
     t = login(client, email="pat@example.com").json()["accessToken"]
     assert client.get(f"/predictions/{code}/prognosis", headers={"Authorization": f"Bearer {t}"}).status_code == 403

@@ -53,3 +53,5 @@ build/
 *.zip
 *.zip
 supabase/.temp/
+# Vercel CLI / build output
+.vercel

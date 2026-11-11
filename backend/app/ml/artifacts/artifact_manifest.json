@@ -1,0 +1,44 @@
+{
+  "note": "Frozen inventory of the four research/prototype models. JSON files are hashed with CRLF normalised to LF. If any hash changes, a model was retrained or replaced: re-verify metrics and update this file deliberately.",
+  "models": {
+    "wdbc": {
+      "dir": ".",
+      "name": "OncoTwin Malignancy Risk Model",
+      "version": "v1.0.0",
+      "dataset": "WDBC (sklearn bundled copy, 569 records)",
+      "served_by": "POST /predictions/run (synthetic severity mapping; heuristic survival/recurrence)"
+    },
+    "metabric_os": {
+      "dir": "survival",
+      "version": "metabric-os-v1",
+      "dataset": "METABRIC cBioPortal clinical files",
+      "served_by": "GET /predictions/{id}/prognosis"
+    },
+    "metabric_rfs": {
+      "dir": "survival_rfs",
+      "version": "metabric-rfs-v1",
+      "dataset": "METABRIC cBioPortal clinical files",
+      "served_by": "GET /predictions/{id}/prognosis"
+    },
+    "gse163882_pcr": {
+      "dir": "treatment_response",
+      "version": null,
+      "dataset": "GEO GSE163882",
+      "served_by": "nothing (offline research experiment; needs gene-expression input)"
+    }
+  },
+  "sha256": {
+    "metrics.json": "7c8c2417bc682ef29581d6e71df55aca9782da3204c15eaf5c6906f1bd94f271",
+    "model.joblib": "477bc4940a89a8cda44c3c9a3d99629b5e520e203b239749974b61f36084ade7",
+    "survival/metadata.json": "8ca1636a0b5a84c4c381321dd3e2d30f516b364711f7bd95a0f0ba7f5f7d8ce5",
+    "survival/metrics.json": "e5b029abad9076d9f6cc618b1b4d42cf0e4a984e1b8e5b4c24fd0a7119d69bf0",
+    "survival/model.joblib": "bc14363ce48070d5cafe5c8c93cc2cef266b5a8fe82d66ef8c3b9343dda9874e",
+    "survival_rfs/metadata.json": "8584d52a49b36e06f24947c9059235ab45c4c97afd50da0a90d7c224271cf79c",
+    "survival_rfs/metrics.json": "eae56e0c86cf15b216c2ad842f98fdd63fdd55acd3fac4303fc9259eda369d8d",
+    "survival_rfs/model.joblib": "207f94113c34d59464c37b8815e921144b936b8cba53ccce2be8931155affe0b",
+    "treatment_response/feature_names.json": "cc2eb1b0d9c0331861d6d8d5e87b6b8e96a064673aa4402586b87a1b5a632475",
+    "treatment_response/metadata.json": "3fb45430989465a1efb9315002be1ca2848208af39052328a8b2f87ca6a44b84",
+    "treatment_response/metrics.json": "9032444317008a9fb6592812220872ebfa02858b6bd6fddf501b654095453d3e",
+    "treatment_response/model.joblib": "1045e8089f5a8382e0f48c7cbd42b1c8ff56d207736263785b49c35de91025d3"
+  }
+}

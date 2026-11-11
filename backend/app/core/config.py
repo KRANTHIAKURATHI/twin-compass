@@ -82,10 +82,10 @@ class Settings(BaseSettings):
     REFRESH_COOKIE_NAME: str = "oncotwin_refresh_token"
     REFRESH_COOKIE_MAX_AGE_SECONDS: int = 60 * 60 * 24 * 30
     REFRESH_COOKIE_SECURE: bool = True  # False only makes sense over plain HTTP locally
-    # "lax" only works when the frontend and API share a registrable domain. When
-    # they are on different sites (e.g. *.vercel.app calling *.onrender.com) the
-    # browser drops a Lax cookie set by the cross-site response, so the deployment
-    # must set "none" (which requires REFRESH_COOKIE_SECURE=true).
+    # Keep "lax". The browser reaches the API through the same-origin `/api` rewrite on the frontend host
+    # (nitro.config.ts), so the cookie is first-party. "none" would only be a workaround for a cross-site
+    # topology (e.g. *.vercel.app calling *.onrender.com directly, where a Lax cookie is dropped); it is
+    # deliberately not used, and it requires REFRESH_COOKIE_SECURE=true.
     REFRESH_COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
 
     # --- Password policy ----------------------------------------------------
@@ -158,6 +158,13 @@ class Settings(BaseSettings):
                 self, "DATABASE_URL", f"sqlite+aiosqlite:///{data_dir / 'oncotwin.db'}"
             )
 
+        # Supabase (and most hosts) hand out `postgresql://...`; the async engine needs the asyncpg driver in the URL.
+        # Without this the app boots and then dies on the first query with "No module named 'psycopg2'".
+        for plain in ("postgresql://", "postgres://"):
+            if self.DATABASE_URL.startswith(plain):
+                object.__setattr__(self, "DATABASE_URL", "postgresql+asyncpg://" + self.DATABASE_URL[len(plain):])
+                break
+
         if self.AUTH_PROVIDER == "supabase":
             missing = [
                 name
@@ -189,6 +196,9 @@ class Settings(BaseSettings):
                     )
                 object.__setattr__(self, "LOCAL_JWT_SECRET", secrets.token_urlsafe(48))
 
+        if any(o.strip() == "*" for o in self.CORS_ALLOWED_ORIGINS):
+            # The API answers credentialed requests; a wildcard origin there lets any site act with the cookie.
+            raise ValueError("CORS_ALLOWED_ORIGINS must list explicit origins; '*' is not allowed.")
         if self.ENVIRONMENT == "prod" and not self.REFRESH_COOKIE_SECURE:
             raise ValueError("REFRESH_COOKIE_SECURE must stay true in production.")
         if self.REFRESH_COOKIE_SAMESITE == "none" and not self.REFRESH_COOKIE_SECURE:

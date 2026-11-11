@@ -16,9 +16,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import ConflictError
 from app.db.session import get_db_session
 from app.dependencies.auth import CurrentUser, require_roles
 from app.services.audit import record_audit
+from app.services.patient_access import access_predicate
 from app.services.clinical_queries import resolve_patient
 
 router = APIRouter(tags=["digital-twins"])
@@ -35,9 +37,10 @@ def _version_response(row) -> dict[str, object]:
         "status": row["status"] or "Archived",
         "author": row["author"] or "",
         "summary": row["summary"] or "",
-        "tumorSizeMm": row["tumor_size_mm"] or 0,
-        "survival": row["survival"] or 0,
-        "risk": row["risk"] or "low",
+        # NULL stays NULL: a version that holds no value must not read as 0 mm / 0% / "low".
+        "tumorSizeMm": row["tumor_size_mm"],
+        "survival": row["survival"],
+        "risk": row["risk"],
         "model": row["model"] or "",
     }
 
@@ -80,9 +83,10 @@ def _next_version(versions: list[dict[str, object]]) -> str:
 @router.get("/digital-twins")
 async def list_twins(
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
     """One entry per patient, described by that patient's active version."""
+    predicate, params = access_predicate(_user, "p.id")
     result = await session.execute(
         text(
             """
@@ -97,10 +101,11 @@ async def list_twins(
                 ORDER BY (t.status = 'Active') DESC, t.created_at DESC
                 LIMIT 1
             ) tv ON TRUE
-            WHERE p.deleted_at IS NULL
+            WHERE p.deleted_at IS NULL AND """ + predicate + """
             ORDER BY p.patient_code
             """
-        )
+        ),
+        params,
     )
     twins = []
     for row in result.mappings():
@@ -117,7 +122,7 @@ async def list_twins(
                 "summary": row["summary"] or "",
                 "tumorSizeMm": row["tumor_size_mm"] if row["version"] else row["patient_tumor"],
                 "survival": _twin_survival(row["version"], row["survival"]),
-                "risk": row["risk"] or row["patient_risk"] or "low",
+                "risk": row["risk"] or row["patient_risk"],
                 "model": row["model"] or "",
             }
         )
@@ -128,15 +133,21 @@ async def list_twins(
 async def get_twin(
     patient_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _user)
     versions = await _versions_for(session, str(patient["id"]))
     active = next((v for v in versions if v["status"] == "Active"), versions[0] if versions else None)
+    sync_status = (patient["twin_status"] or None) if versions else None
     return {
         "patientId": patient["patient_code"],
         "patient": patient["name"],
-        "twinStatus": (patient["twin_status"] or "Not created") if versions else "Not created",
+        # Kept for existing clients: the patient's synchronization status (Synced/Recalculating/Stale).
+        "twinStatus": sync_status or "Not created",
+        "syncStatus": sync_status,
+        # Version lifecycle status of `active`, computed exactly as the list endpoint does
+        # (Active / Superseded / Archived / Draft, or "Not created" with no version).
+        "status": _twin_status(active["version"] if active else None, active["status"] if active else None, patient["twin_status"]),
         "active": active,
         "versions": versions,
     }
@@ -146,9 +157,9 @@ async def get_twin(
 async def twin_versions(
     patient_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _user)
     return await _versions_for(session, str(patient["id"]))
 
 
@@ -156,9 +167,9 @@ async def twin_versions(
 async def twin_snapshots(
     patient_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _user)
     result = await session.execute(
         text(
             'SELECT id, version, taken_at, "trigger", size FROM twin_snapshots '
@@ -266,7 +277,7 @@ async def resync_twin(
     current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     """Cut a new active version from the patient's current record."""
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, current_user)
     cut = await cut_twin_version(session, patient, current_user)
     await record_audit(
         session,
@@ -293,7 +304,7 @@ async def restore_twin_version(
     one's values rather than mutating the original, so the audit trail of
     what the twin looked like at each point survives.
     """
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, current_user)
     pid = str(patient["id"])
     source = (
         await session.execute(
@@ -319,7 +330,7 @@ async def restore_twin_version(
                  tumor_size_mm, survival, risk, model, snapshot)
             VALUES
                 (:id, :pid, :version, :created_at, 'Active', :author, :summary,
-                 :tumor_size_mm, :survival, :risk, :model, :snapshot)
+                 :tumor_size_mm, :survival, :risk, :model, CAST(:snapshot AS jsonb))
             """
         ),
         {
@@ -333,7 +344,12 @@ async def restore_twin_version(
             "survival": source["survival"],
             "risk": source["risk"],
             "model": source["model"],
-            "snapshot": source["snapshot"],
+            # asyncpg returns jsonb as a dict, but a jsonb parameter must be sent as JSON text.
+            "snapshot": (
+                json.dumps(source["snapshot"], default=str)
+                if isinstance(source["snapshot"], (dict, list))
+                else source["snapshot"]
+            ),
         },
     )
     await session.execute(
@@ -367,15 +383,42 @@ async def archive_twin(
     session: AsyncSession = Depends(get_db_session),
     current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
-    patient = await resolve_patient(session, patient_id)
+    """Archive the twin's Active version; older (Superseded) versions are left as they are.
+
+    "Archived" is a version lifecycle state (`twin_versions.status`). The patient's
+    `twin_status` is a sync state with its own CHECK (Synced/Recalculating/Stale), so an
+    archived twin is marked Stale there - it no longer tracks the record.
+    """
+    patient = await resolve_patient(session, patient_id, current_user)
     pid = str(patient["id"])
-    versions = await _versions_for(session, pid)
+    # Lock the patient, then read what is archivable under the lock: a concurrent archive
+    # waits here and then finds no Active version.
+    locked = (
+        await session.execute(
+            text("SELECT twin_status FROM patients WHERE id = :pid AND deleted_at IS NULL FOR UPDATE"),
+            {"pid": pid},
+        )
+    ).mappings().first()
+    if locked is None:
+        raise HTTPException(status_code=404, detail="Patient not found.")
+    active = (
+        await session.execute(
+            text(
+                "SELECT version FROM twin_versions WHERE patient_id = :pid AND status = 'Active' "
+                "ORDER BY created_at DESC"
+            ),
+            {"pid": pid},
+        )
+    ).mappings().first()
+    if active is None:
+        raise ConflictError("This patient has no active digital twin to archive.")
+
     await session.execute(
-        text("UPDATE twin_versions SET status = 'Archived' WHERE patient_id = :pid"),
+        text("UPDATE twin_versions SET status = 'Archived' WHERE patient_id = :pid AND status = 'Active'"),
         {"pid": pid},
     )
     await session.execute(
-        text("UPDATE patients SET twin_status = 'Archived', last_updated = :now WHERE id = :pid"),
+        text("UPDATE patients SET twin_status = 'Stale', last_updated = :now WHERE id = :pid"),
         {"pid": pid, "now": _now()},
     )
     await record_audit(
@@ -383,8 +426,8 @@ async def archive_twin(
         actor=current_user,
         action="twin.archived",
         target=patient["patient_code"],
-        before={"twinStatus": patient["twin_status"], "activeVersion": _active_version(versions)},
-        after={"twinStatus": "Archived"},
+        before={"twinStatus": locked["twin_status"], "activeVersion": active["version"]},
+        after={"twinStatus": "Stale", "versionStatus": "Archived", "archivedVersion": active["version"]},
     )
     await session.commit()
     return {"ok": True, "message": "Digital twin archived."}

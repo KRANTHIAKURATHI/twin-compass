@@ -24,6 +24,7 @@ import {
   useReportVersions,
 } from "@/hooks/api";
 import type { ReportDetail, RiskLevel } from "@/types/models";
+import { NOT_AVAILABLE } from "@/lib/provenance";
 
 export const Route = createFileRoute("/_shell/reports")({
   head: () => ({
@@ -56,13 +57,13 @@ function reportToCsv(report: ReportDetail): string {
   if (c.digitalTwin) {
     lines.push(`Digital twin,Version,${c.digitalTwin.version}`);
     lines.push(`Digital twin,Status,${c.digitalTwin.status}`);
-    lines.push(`Digital twin,Survival,${c.digitalTwin.survival ?? ""}`);
+    lines.push(`Digital twin,Survival value on record (not a prediction),${c.digitalTwin.survival ?? "Not available"}`);
     lines.push(`Digital twin,Risk,${c.digitalTwin.risk ?? ""}`);
   }
   if (c.prediction.basis === "measured") {
-    lines.push(`Prediction,Survival estimate (heuristic; not validated),${c.prediction.survival ?? ""}`);
-    lines.push(`Prediction,Recurrence estimate (heuristic; not validated),${c.prediction.recurrence ?? ""}`);
-    lines.push(`Prediction,Classifier confidence (RF malignancy probability),${c.prediction.confidence ?? ""}`);
+    lines.push(`Prediction,Survival - Heuristic estimate (Not clinically validated),${c.prediction.survival ?? "Not available"}`);
+    lines.push(`Prediction,Recurrence - Heuristic estimate (Not clinically validated),${c.prediction.recurrence ?? "Not available"}`);
+    lines.push(`Prediction,Malignancy classifier probability (Heuristic estimate; Not clinically validated),${c.prediction.confidence ?? "Not available"}`);
     lines.push(`Prediction,Model,${c.prediction.model ?? ""}`);
     lines.push(`Prediction,Risk band,${c.prediction.riskBand ?? ""}`);
   } else {
@@ -70,7 +71,7 @@ function reportToCsv(report: ReportDetail): string {
   }
   lines.push(`Simulations,Basis,${c.simulations.caveat}`);
   c.simulations.runs.forEach((run, i) => {
-    lines.push(`Simulations,Run ${i + 1} (${run.selected ?? "—"}),survival=${run.survival ?? ""} response=${run.response ?? ""}`);
+    lines.push(`Simulations,Projected scenario - Research / experimental - Run ${i + 1} (${run.selected ?? "Not available"}),projected survival=${run.survival ?? "Not available"} projected response=${run.response ?? "Not available"}`);
   });
   lines.push(`Documents,Count,${c.documents.count}`);
   return lines.join("\n");
@@ -276,32 +277,32 @@ function ReportsPage() {
                 <div className="mt-3 space-y-2 text-sm">
                   <div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Survival estimate</span>
+                      <span className="text-muted-foreground">Survival — Heuristic estimate</span>
                       <span className="font-medium">
-                        {activeReport.content.prediction.survival == null ? "—" : `${activeReport.content.prediction.survival}%`}
+                        {activeReport.content.prediction.survival == null ? NOT_AVAILABLE : `${activeReport.content.prediction.survival}%`}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Heuristic estimate — not a validated 5-year survival prediction
+                      Heuristic estimate — Not clinically validated. Not a survival-model output.
                     </p>
                   </div>
                   <div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Recurrence estimate</span>
+                      <span className="text-muted-foreground">Recurrence — Heuristic estimate</span>
                       <span className="font-medium">
-                        {activeReport.content.prediction.recurrence == null ? "—" : `${activeReport.content.prediction.recurrence}%`}
+                        {activeReport.content.prediction.recurrence == null ? NOT_AVAILABLE : `${activeReport.content.prediction.recurrence}%`}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">Heuristic estimate — not independently validated</p>
+                    <p className="text-xs text-muted-foreground">Heuristic estimate — Not clinically validated</p>
                   </div>
                   <div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Classifier confidence</span>
+                      <span className="text-muted-foreground">Malignancy classifier probability</span>
                       <span className="font-medium">
-                        {activeReport.content.prediction.confidence == null ? "—" : `${activeReport.content.prediction.confidence}%`}
+                        {activeReport.content.prediction.confidence == null ? NOT_AVAILABLE : `${activeReport.content.prediction.confidence}%`}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">Random Forest malignancy-classification probability</p>
+                    <p className="text-xs text-muted-foreground">Heuristic estimate · Random Forest malignancy-classification probability · Not clinically validated</p>
                   </div>
                   {activeReport.content.prediction.model && (
                     <p className="text-xs text-muted-foreground">Model: {activeReport.content.prediction.model}</p>
@@ -328,8 +329,8 @@ function ReportsPage() {
                       <TableHead>Date</TableHead>
                       <TableHead>Selected regimen</TableHead>
                       <TableHead>Decision</TableHead>
-                      <TableHead>Projected survival</TableHead>
-                      <TableHead>Confidence</TableHead>
+                      <TableHead>Projected survival (scenario · research / experimental)</TableHead>
+                      <TableHead>Model confidence</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -338,8 +339,8 @@ function ReportsPage() {
                         <TableCell>{run.date}</TableCell>
                         <TableCell className="font-medium">{run.selected ?? "—"}</TableCell>
                         <TableCell>{run.decision ?? "—"}</TableCell>
-                        <TableCell>{run.survival == null ? "—" : `${run.survival}%`}</TableCell>
-                        <TableCell>{run.confidence == null ? "—" : `${run.confidence}%`}</TableCell>
+                        <TableCell>{run.survival == null ? NOT_AVAILABLE : `${run.survival}%`}</TableCell>
+                        <TableCell>{run.confidence == null ? NOT_AVAILABLE : `${run.confidence}%`}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

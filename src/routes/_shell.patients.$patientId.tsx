@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { NOT_AVAILABLE, NOT_VALIDATED, PROVENANCE } from "@/lib/provenance";
 import { patientService } from "@/services";
 import {
   usePatient,
@@ -51,9 +52,9 @@ export const Route = createFileRoute("/_shell/patients/$patientId")({
   component: withPageStates(PatientProfile, { variant: "detail" }),
 });
 
-/** `—` rather than `0` for anything the record simply does not carry. */
+/** "Not available" rather than `0` for anything the record simply does not carry. */
 const show = (value: unknown, suffix = "") =>
-  value === null || value === undefined || value === "" ? "—" : `${value}${suffix}`;
+  value === null || value === undefined || value === "" ? "Not available" : `${value}${suffix}`;
 
 const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleDateString() : "—");
 
@@ -393,7 +394,7 @@ function PatientProfile() {
                       <TableHead>Run</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Scenario</TableHead>
-                      <TableHead>Survival</TableHead>
+                      <TableHead>Projected survival (scenario)</TableHead>
                       <TableHead>Decision</TableHead>
                       <TableHead>Model</TableHead>
                     </TableRow>
@@ -464,17 +465,20 @@ function PatientProfile() {
                 )}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Risk level</span>
+                <span className="text-sm text-muted-foreground">Risk level (stored on record)</span>
                 <RiskChip level={p.risk} />
               </div>
               <div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">5-year survival</span>
-                  <span className="font-semibold">{show(p.survivalProbability, "%")}</span>
+                  <span className="text-muted-foreground">Survival value on record</span>
+                  <span className="font-semibold">{show(p.survivalProbability == null ? null : Math.round(p.survivalProbability * 1000) / 10, "%")}</span>
                 </div>
                 {p.survivalProbability != null && (
-                  <Progress value={p.survivalProbability} className="mt-2 h-2" />
+                  <Progress value={p.survivalProbability * 100} className="mt-2 h-2" />
                 )}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {PROVENANCE.stored}. Not a 5-year prediction. {NOT_VALIDATED}. For research-model estimates see Predictions.
+                </p>
               </div>
               <Button className="w-full" asChild>
                 <Link to="/digital-twins">Open twin</Link>
@@ -484,7 +488,7 @@ function PatientProfile() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Prediction summary</CardTitle>
+              <CardTitle className="text-base">Prediction summary — {PROVENANCE.heuristic}</CardTitle>
               <CardDescription>
                 {latestPrediction
                   ? `Run ${latestPrediction.id.slice(0, 8)} · ${formatDate(latestPrediction.date)}`
@@ -498,15 +502,15 @@ function PatientProfile() {
                 [
                   // Labelled "Treatment response" until the field it reads was
                   // traced: it has only ever carried the twin's risk band.
-                  { k: "Risk band at run", v: latestPrediction.riskBand ?? "—", tone: "success" as const },
+                  { k: "Risk band at run", v: latestPrediction.riskBand ?? NOT_AVAILABLE, tone: "success" as const },
                   {
-                    k: "Recurrence risk (5y)",
-                    v: latestPrediction.recurrence == null ? "—" : `${latestPrediction.recurrence}%`,
+                    k: "Recurrence estimate (heuristic)",
+                    v: latestPrediction.recurrence == null ? NOT_AVAILABLE : `${latestPrediction.recurrence}%`,
                     tone: p.risk === "high" ? ("risk" as const) : ("warning" as const),
                   },
                   {
-                    k: "Model confidence",
-                    v: latestPrediction.confidence == null ? "Not recorded" : `${latestPrediction.confidence}%`,
+                    k: "Malignancy classifier probability",
+                    v: latestPrediction.confidence == null ? NOT_AVAILABLE : `${latestPrediction.confidence}%`,
                     tone: "primary" as const,
                   },
                 ].map((row) => (
@@ -516,6 +520,9 @@ function PatientProfile() {
                   </div>
                 ))
               )}
+              <p className="text-xs text-muted-foreground">
+                {PROVENANCE.heuristic} from a malignancy classifier — {NOT_VALIDATED}. Not a survival prediction.
+              </p>
               <Button variant="outline" className="w-full" asChild>
                 <Link to="/predictions">View predictions</Link>
               </Button>

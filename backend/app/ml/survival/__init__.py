@@ -1,4 +1,4 @@
-"""METABRIC overall-survival research model (offline; not wired into any API).
+"""METABRIC overall-/relapse-free-survival research models (served read-only via app/ml/prognosis.py).
 
 Research model - not clinically validated. See README.md in this directory.
 """

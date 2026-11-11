@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "test": "node --experimental-strip-types --test src/hooks/api.guards.test.mjs src/lib/provenance.guard.test.mjs src/services/api-proxy.guard.test.mjs src/services/auth-refresh.guard.test.mjs src/services/auth-refresh-crosstab.guard.test.mjs src/services/auth-signout.guard.test.mjs",
     "format": "prettier --write ."
   },
   "dependencies": {

@@ -26,9 +26,9 @@ export const Route = createFileRoute("/_shell/simulator")({
   head: () => ({
     meta: [
       { title: "Treatment Simulator — OncoTwin" },
-      { name: "description", content: "Compare treatment scenarios side by side with projected response, risk and survival estimate." },
+      { name: "description", content: "Compare projected treatment scenarios (research / experimental, not clinically validated)." },
       { property: "og:title", content: "Treatment Simulator — OncoTwin" },
-      { property: "og:description", content: "Compare treatment scenarios side by side with projected response, risk and survival estimate." },
+      { property: "og:description", content: "Compare projected treatment scenarios (research / experimental, not clinically validated)." },
     ],
   }),
   errorComponent: RouteErrorState,
@@ -89,7 +89,7 @@ const fromApi = (s: Scenario): DisplayScenario => ({
 });
 
 /** `—` rather than `0` for anything that was never evaluated. */
-const show = (value: number | null, suffix = "") => (value === null ? "—" : `${value}${suffix}`);
+const show = (value: number | null, suffix = "") => (value === null ? "Not available" : `${value}${suffix}`);
 
 /**
  * True when a recorded scenario carries none of the outcome measures.
@@ -280,7 +280,7 @@ function SimulatorPage() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Treatment Simulator"
-        description="Run the digital twin forward under different regimens and compare projected outcomes (kinetic projection; parameters unverified — pending clinical review)."
+        description="Projected scenario — Research / experimental. Runs the digital twin forward under different regimens (kinetic projection; parameters unverified). These are projections, not recorded patient outcomes, and are not clinically validated."
         crumbs={[{ label: "Home", to: "/" }, { label: "Treatment Simulator" }]}
         actions={
           <>
@@ -408,7 +408,7 @@ function SimulatorPage() {
                   </div>
                   <div className="rounded-lg bg-muted/60 p-2.5">
                     <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <ShieldCheck className="size-3" aria-hidden="true" /> Survival estimate
+                      <ShieldCheck className="size-3" aria-hidden="true" /> Projected survival (scenario)
                     </p>
                     <p className="mt-0.5 font-semibold">{show(s.survival5y, "%")}</p>
                   </div>
@@ -432,7 +432,7 @@ function SimulatorPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <RiskChip level={s.risk} />
                   <StatusChip tone={s.confidence === null ? "neutral" : "primary"}>
-                    {s.confidence === null ? "No confidence — kinetic projection" : `${s.confidence}% confidence`}
+                    {s.confidence === null ? "Projected scenario · no model confidence" : `${s.confidence}% model confidence`}
                   </StatusChip>
                 </div>
 
@@ -553,11 +553,11 @@ function SimulatorPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Scenario</TableHead>
-                      <TableHead>Response</TableHead>
-                      <TableHead>Tumor change</TableHead>
-                      <TableHead>Survival estimate</TableHead>
+                      <TableHead>Projected response</TableHead>
+                      <TableHead>Projected tumor change</TableHead>
+                      <TableHead>Projected survival (scenario)</TableHead>
                       <TableHead>Side effects</TableHead>
-                      <TableHead>Confidence</TableHead>
+                      <TableHead>Model confidence</TableHead>
                       <TableHead>Risk</TableHead>
                     </TableRow>
                   </TableHeader>

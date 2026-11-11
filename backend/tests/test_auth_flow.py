@@ -18,12 +18,12 @@ from tests.conftest import TEST_JWT_SECRET, login, register
 # --- registration -----------------------------------------------------------
 
 def test_register_creates_profile_and_role(client):
-    r = register(client)
+    r = register(client, role="patient")  # doctor/researcher registrations are pending approval (test_authorization_phase61.py)
     assert r.status_code == 201, r.text
     body = r.json()
     assert body["ok"] is True
     assert body["data"]["email"] == "doc@example.com"
-    assert body["data"]["role"] == "doctor"
+    assert body["data"]["role"] == "patient"
     assert "password" not in r.text.lower()
 
 

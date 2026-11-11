@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { NOT_AVAILABLE, PROVENANCE } from "@/lib/provenance";
 import { cn } from "@/lib/utils";
 import {
   useArchiveTwin,
@@ -49,9 +50,9 @@ const tooltipStyle = {
   fontSize: 12,
 };
 
-/** `—` rather than `0` for anything the record simply does not carry. */
+/** "Not available" rather than `0` for anything the record simply does not carry. */
 const show = (value: unknown, suffix = "") =>
-  value === null || value === undefined || value === "" ? "—" : `${value}${suffix}`;
+  value === null || value === undefined || value === "" ? "Not available" : `${value}${suffix}`;
 
 const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleString() : "—");
 
@@ -230,13 +231,13 @@ function DigitalTwinsPage() {
 
                 <div className="mt-5">
                   <div className="flex items-center justify-between text-sm">
-                    {/* Stored on the twin version (a heuristic estimate, not a validated
-                        prediction); a patient with no version has none to show. */}
+                    {/* Copied from the patient record when the version was cut (model "Patient record
+                        snapshot"): not a model output. A patient with no version has none to show. */}
                     <span className="text-muted-foreground">
-                      Survival estimate <span className="text-xs">(heuristic, unvalidated)</span>
+                      Survival value on record <span className="text-xs">({PROVENANCE.stored}; not a prediction)</span>
                     </span>
                     <span className="font-semibold">
-                      {twinRow?.survival != null ? `${Math.round(twinRow.survival * 100)}%` : "—"}
+                      {twinRow?.survival != null ? `${Math.round(twinRow.survival * 100)}%` : NOT_AVAILABLE}
                     </span>
                   </div>
                   <Progress value={twinRow?.survival != null ? twinRow.survival * 100 : 0} className="mt-2 h-2" />
@@ -376,7 +377,7 @@ function DigitalTwinsPage() {
                             <p className="mt-2 text-sm font-medium">{show(v.summary)}</p>
                             <p className="text-xs text-muted-foreground">
                               {show(v.author)} · {show(v.model)} · {show(v.tumorSizeMm, " mm")} ·{" "}
-                              {v.survival != null ? `${Math.round(v.survival * 100)}% survival` : "no survival recorded"}
+                              {v.survival != null ? `${Math.round(v.survival * 100)}% survival value on record` : `survival value: ${NOT_AVAILABLE}`}
                             </p>
                             <div className="mt-3 flex flex-wrap items-center gap-2">
                               <Button
@@ -461,8 +462,8 @@ function DigitalTwinsPage() {
                     ["Model", (v: (typeof compared)[number]) => show(v.model)],
                     ["Tumor size", (v: (typeof compared)[number]) => show(v.tumorSizeMm, " mm")],
                     [
-                      "Survival estimate",
-                      (v: (typeof compared)[number]) => (v.survival != null ? `${Math.round(v.survival * 100)}%` : "—"),
+                      "Survival value on record (not a prediction)",
+                      (v: (typeof compared)[number]) => (v.survival != null ? `${Math.round(v.survival * 100)}%` : NOT_AVAILABLE),
                     ],
                     ["Risk", (v: (typeof compared)[number]) => show(v.risk)],
                     ["Change", (v: (typeof compared)[number]) => show(v.summary)],

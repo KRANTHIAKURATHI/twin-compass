@@ -29,6 +29,7 @@ from typing import Any
 
 from app.ml import model as _rf
 from app.ml import regimens as _regimens
+from app.ml.inputs import require_model_fields
 
 METRICS_PATH = Path(__file__).parent / "artifacts" / "metrics.json"
 
@@ -155,17 +156,21 @@ class HeuristicRandomForestModel(PredictionModel):
         return self._metadata
 
     def predict(self, patient_fields: dict[str, Any]) -> dict[str, Any]:
+        require_model_fields(patient_fields)
         return _rf.predict_from_patient(patient_fields)
 
     def explain(self, patient_fields: dict[str, Any], top_n: int = 8) -> list[dict[str, Any]]:
         # Deliberately not `_rf.feature_importances`: that one is patient-
         # invariant after normalization (see its docstring).
+        require_model_fields(patient_fields)
         return _rf.clinical_factor_importances(patient_fields, top_n=top_n)
 
     def simulate(self, patient_fields: dict[str, Any], regimen_name: str) -> dict[str, Any]:
+        require_model_fields(patient_fields)
         return _regimens.simulate_scenario(patient_fields, regimen_name)
 
     def simulate_all(self, patient_fields: dict[str, Any]) -> list[dict[str, Any]]:
+        require_model_fields(patient_fields)
         return _regimens.simulate_all(patient_fields)
 
     def regimen_names(self) -> list[str]:

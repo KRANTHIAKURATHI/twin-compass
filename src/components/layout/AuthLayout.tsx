@@ -32,7 +32,7 @@ export function AuthLayout({
           </p>
           <ul className="mt-8 space-y-3 text-sm">
             {[
-              { icon: Brain, text: "Outcome prediction with calibrated confidence" },
+              { icon: Brain, text: "Research-only outcome estimates (not clinically validated)" },
               { icon: LineChart, text: "Side-by-side treatment scenario comparison" },
               { icon: ShieldCheck, text: "Hospital-grade privacy and audit trails" },
             ].map((f) => (

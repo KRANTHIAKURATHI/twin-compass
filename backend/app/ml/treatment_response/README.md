@@ -55,6 +55,12 @@ Not used: Random Forest (not run — the primary models are linear), XGBoost (n 
 6. Clinical: median (age, grade, stage) / mode (ER, PR, HER2) imputation and standardisation from training rows; grade and stage are
    ordinal scores. No missing-stage indicator (it could proxy the site).
 
+**Inference input rules (`predict.py`).** The training matrix had no missing expression values, and age/ER/PR/HER2 had no missing
+values, so the stored imputation values for those were never exercised or validated. `predict()` therefore raises `ValueError`
+(no score) when the expression profile is absent, empty or malformed, when any gene the chosen model uses is missing, non-numeric or
+negative, or when age/ER/PR/HER2 is not recorded. Only grade and stage (missing for 1 and 14 training patients) may be left out and
+take their training median. The clinical-only variant ignores expression.
+
 k, l1_ratio, C (and the clinical scale for C) are chosen by inner 4-fold stratified patient-grouped CV on the outer training set
 (pooled out-of-fold log-loss; ties go to the smaller k, l1_ratio, C). The decision threshold used for sensitivity/specificity is the one
 maximising balanced accuracy on those inner out-of-fold predictions. Gene screening is redone inside every inner fold. Tests scramble

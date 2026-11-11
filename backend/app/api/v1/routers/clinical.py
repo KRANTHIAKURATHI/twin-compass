@@ -15,7 +15,8 @@ from app.db.session import get_db_session
 from app.dependencies.auth import CurrentUser, require_roles
 from app.schemas.clinical import PatientInput, SimulationRequest
 from app.services.audit import PATIENT_AUDIT_FIELDS, pick_patient_fields, record_audit
-from app.services.clinical_queries import patient_uuid, resolve_patient
+from app.services.clinical_queries import resolve_patient
+from app.services.patient_access import access_predicate, grant_care_team, require_patient_access
 from app.services.response_model import project_scenarios
 
 _NO_DEFAULT_CLINICAL_COLUMNS = ("stage", "grade", "nodes_involved", "er_status", "pr_status", "her2_status")
@@ -162,16 +163,16 @@ def _resolve_promoted(
 @router.get("/simulations")
 async def list_simulations(
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
     patientId: str | None = None,
 ):
     # The patient detail page asks for one patient's runs; the simulations
     # index asks for all of them. Same shape either way.
-    params: dict[str, object] = {}
-    where = ""
+    predicate, params = access_predicate(_user, "sr.patient_id")
+    where = f"WHERE {predicate}"
     if patientId:
-        params["pid"] = await patient_uuid(session, patientId)
-        where = "WHERE sr.patient_id = :pid"
+        params["pid"] = str((await resolve_patient(session, patientId, _user))["id"])
+        where += " AND sr.patient_id = :pid"
     result = await session.execute(
         text(
             "SELECT sr.*, p.patient_code FROM simulation_runs sr "
@@ -187,7 +188,7 @@ async def list_simulations(
 async def get_simulation(
     simulation_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ):
     row = (
         await session.execute(
@@ -201,6 +202,7 @@ async def get_simulation(
     ).mappings().first()
     if row is None:
         raise HTTPException(status_code=404, detail="Simulation run not found.")
+    await require_patient_access(session, _user, row["patient_id"])
     return _simulation_response(row)
 
 
@@ -208,7 +210,7 @@ async def get_simulation(
 async def save_scenario(
     payload: SimulationRequest,
     session: AsyncSession = Depends(get_db_session),
-    current_user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     """Evaluate and persist a single custom regimen as its own run.
 
@@ -235,6 +237,7 @@ async def save_scenario(
     ).mappings().first()
     if patient is None:
         raise HTTPException(status_code=404, detail="Patient not found.")
+    await require_patient_access(session, current_user, patient["id"])
 
     state, twin_version = await _twin_state(session, patient)
     risk = str(state["risk"]).lower() if state["risk"] else None
@@ -310,7 +313,7 @@ async def save_scenario(
 async def duplicate_simulation(
     simulation_id: str,
     session: AsyncSession = Depends(get_db_session),
-    current_user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     """Clone a persisted run's configuration and results under a new id.
 
@@ -324,6 +327,7 @@ async def duplicate_simulation(
     ).mappings().first()
     if original is None:
         raise HTTPException(status_code=404, detail="Simulation run not found.")
+    await require_patient_access(session, current_user, original["patient_id"])
 
     new_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
@@ -380,6 +384,7 @@ async def promote_simulation(
     simulation = (await session.execute(text("SELECT * FROM simulation_runs WHERE id = :id"), {"id": simulation_id})).mappings().first()
     if simulation is None:
         raise HTTPException(status_code=404, detail="Simulation run not found.")
+    await require_patient_access(session, _user, simulation["patient_id"])
 
     scenarios = simulation["scenarios"] or []
     if isinstance(scenarios, str):  # driver returned the jsonb column as text
@@ -515,11 +520,14 @@ async def list_patients(
     search: str | None = None,
 ) -> list[dict[str, object]]:
     search_clause = "AND (name ILIKE :search OR patient_code ILIKE :search)" if search else ""
+    predicate, params = access_predicate(_current_user, "id")
+    if search:
+        params["search"] = f"%{search}%"
     result = await session.execute(
         text(
-            f"SELECT {PATIENT_LIST_COLUMNS} FROM patients WHERE deleted_at IS NULL {search_clause} ORDER BY patient_code"
+            f"SELECT {PATIENT_LIST_COLUMNS} FROM patients WHERE deleted_at IS NULL AND {predicate} {search_clause} ORDER BY patient_code"
         ),
-        {"search": f"%{search}%"} if search else {},
+        params,
     )
     return [_patient_response(row) for row in result.mappings()]
 
@@ -553,6 +561,8 @@ async def create_patient(
     params = ", ".join(f":{key}" for key in values)
     try:
         await session.execute(text(f"INSERT INTO patients ({columns}) VALUES ({params})"), values)
+        if str(current_user.role) == "doctor":  # the creating doctor is the first member of the care team
+            await grant_care_team(session, values["id"], current_user.id, current_user.id)
         await session.execute(
             text(
                 "INSERT INTO audit_logs (id, time, actor, actor_role, action, target, after) "
@@ -607,6 +617,7 @@ async def update_patient(
     ).mappings().first()
     if current is None:
         raise HTTPException(status_code=404, detail="Patient not found.")
+    await require_patient_access(session, current_user, current["id"])
     changed = [key for key, new in values.items() if _value_differs(current[key], new)]
 
     assignments = ", ".join(f"{key} = :{key}" for key in values)
@@ -637,10 +648,11 @@ async def delete_patient(
     session: AsyncSession = Depends(get_db_session),
     current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
+    target = await resolve_patient(session, patient_id, current_user)
     removed = (
         await session.execute(
-            text("UPDATE patients SET deleted_at = now() WHERE deleted_at IS NULL AND (patient_code = :patient_id OR id = :patient_id) RETURNING id, patient_code"),
-            {"patient_id": patient_id},
+            text("UPDATE patients SET deleted_at = now() WHERE deleted_at IS NULL AND id = :pid RETURNING id, patient_code"),
+            {"pid": str(target["id"])},
         )
     ).mappings().first()
     if removed is None:
@@ -699,7 +711,7 @@ async def get_patient(
     session: AsyncSession = Depends(get_db_session),
     _current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _current_user)
     response = _patient_response(patient)
     response["timeline"] = await _timeline_for(session, str(patient["id"]))
     response["reports"] = await _reports_for(session, str(patient["id"]))
@@ -712,7 +724,7 @@ async def patient_labs(
     session: AsyncSession = Depends(get_db_session),
     _current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _current_user)
     result = await session.execute(
         text(
             'SELECT date, panel, marker, value, unit, "range", flag '
@@ -740,7 +752,7 @@ async def patient_imaging(
     session: AsyncSession = Depends(get_db_session),
     _current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _current_user)
     result = await session.execute(
         text(
             "SELECT id, modality, region, date, finding, radiologist, status "
@@ -768,7 +780,7 @@ async def patient_timeline(
     session: AsyncSession = Depends(get_db_session),
     _current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _current_user)
     return await _timeline_for(session, str(patient["id"]))
 
 
@@ -778,7 +790,7 @@ async def patient_treatment_plan(
     session: AsyncSession = Depends(get_db_session),
     _current_user: CurrentUser = Depends(require_roles("doctor", "patient", "admin")),
 ) -> dict[str, object] | None:
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _current_user)
     row = (
         await session.execute(
             text(
@@ -812,7 +824,7 @@ async def run_simulation(
     # Matches list/get/promote: running a comparison against a twin is a
     # clinical decision-support action, not something a patient account
     # should be able to trigger against any patient_id it names.
-    current_user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     patient = (
         await session.execute(
@@ -831,6 +843,7 @@ async def run_simulation(
     ).mappings().first()
     if patient is None:
         raise HTTPException(status_code=404, detail="Patient not found.")
+    await require_patient_access(session, current_user, patient["id"])
 
     state, twin_version = await _twin_state(session, patient)
     # No default risk band. An unassessed patient is unassessed, not moderate.

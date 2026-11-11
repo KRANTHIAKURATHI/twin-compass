@@ -10,9 +10,9 @@ export const Route = createFileRoute("/_research/research/models")({
   head: () => ({
     meta: [
       { title: "Models — OncoTwin Research" },
-      { name: "description", content: "Production and staging models powering progression, survival, response and OCR extraction." },
+      { name: "description", content: "Registry of research / prototype models (not clinically validated)." },
       { property: "og:title", content: "Models — OncoTwin Research" },
-      { property: "og:description", content: "Production and staging models powering progression, survival, response and OCR extraction." },
+      { property: "og:description", content: "Registry of research / prototype models (not clinically validated)." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -37,5 +37,5 @@ const columns: Column<Row>[] = [
 
 function ModelsPage() {
   const { data = [] } = useResearchModels();
-  return <DataTablePage title="Models" description="The model suite behind every twin and prediction." columns={columns} rows={data.length ? data : models} />;
+  return <DataTablePage title="Models" description="Model registry. Entries are research / prototype models and are not clinically validated, whatever status is listed." columns={columns} rows={data.length ? data : models} />;
 }

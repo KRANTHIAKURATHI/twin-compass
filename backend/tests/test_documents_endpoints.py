@@ -84,12 +84,10 @@ def test_researcher_cannot_upload(client):
     assert r.status_code == 403
 
 
-def test_researcher_can_reach_list_route(client):
-    """Confirms the read roles pass RBAC (the request then fails downstream
-    on the missing `documents` table - real behaviour on SQLite, not what
-    this test is asserting)."""
+def test_researcher_is_rejected_from_document_list(client):
+    """Phase 6.1 / H1: documents are identified patient files."""
     register(client, email="researcher2@example.com", role="researcher")
     token = login(client, email="researcher2@example.com").json()["accessToken"]
     headers = {"Authorization": f"Bearer {token}"}
     r = client.get("/documents", headers=headers)
-    assert r.status_code != 403 and r.status_code != 401
+    assert r.status_code == 403

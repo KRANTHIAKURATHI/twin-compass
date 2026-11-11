@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 
+import { useSignOut } from "@/components/auth/useSignOut";
 import { cn } from "@/lib/utils";
 
 export interface PortalNavItem {
@@ -24,6 +25,7 @@ export function PortalShell({
   children: ReactNode;
 }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const signOut = useSignOut(); // real logout (revokes the session, clears local state), then /login
 
   return (
     <div className="flex min-h-screen w-full bg-surface">
@@ -56,9 +58,13 @@ export function PortalShell({
           })}
         </nav>
         <div className="border-t border-border p-3">
-          <Link to="/login" className="block rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="block w-full rounded-lg px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
             Sign out
-          </Link>
+          </button>
         </div>
       </aside>
 

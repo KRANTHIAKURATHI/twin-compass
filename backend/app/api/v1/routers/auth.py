@@ -33,6 +33,7 @@ from slowapi.util import get_remote_address
 from app.core.config import get_settings
 from app.core.exceptions import AuthenticationError
 from app.dependencies.auth import CurrentUser, get_current_user
+from app.dependencies.csrf import require_trusted_origin
 from app.dependencies.services import get_auth_service
 from app.schemas.auth import (
     AuthSession,
@@ -103,7 +104,7 @@ async def login(
     return session
 
 
-@router.post("/auth/refresh", response_model=AuthSession)
+@router.post("/auth/refresh", response_model=AuthSession, dependencies=[Depends(require_trusted_origin)])
 async def refresh(
     request: Request,
     response: Response,
@@ -117,7 +118,7 @@ async def refresh(
     return session
 
 
-@router.post("/auth/logout", response_model=MutationResult)
+@router.post("/auth/logout", response_model=MutationResult, dependencies=[Depends(require_trusted_origin)])
 async def logout(
     request: Request,
     response: Response,

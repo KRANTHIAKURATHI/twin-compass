@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Bell, Search, HelpCircle, LogOut } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useSignOut } from "@/components/auth/useSignOut";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,8 @@ export function TopBar() {
   const { data: notifications = [] } = useNotifications("doctor");
   const unread = notifications.filter((n) => n.unread).length;
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const signOut = useSignOut(); // same centralised flow as every other sign-out control
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur-md sm:px-6">
@@ -88,10 +90,7 @@ export function TopBar() {
             size="icon"
             className="min-h-10 min-w-10"
             aria-label="Sign out"
-            onClick={async () => {
-              await logout();
-              navigate({ to: "/login" });
-            }}
+            onClick={() => void signOut()}
           >
             <LogOut className="size-5" aria-hidden="true" />
           </Button>

@@ -26,7 +26,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import jwt
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import anyio
@@ -166,7 +166,9 @@ class LocalAuthProvider:
                 log_security_event(
                     logger, "login.lockout_triggered", email=email, profile_id=str(profile.id)
                 )
-            await self._session.flush()
+            # Commit, not just flush: the exception below makes the session
+            # dependency roll back, which would otherwise discard the counter.
+            await self._session.commit()
             log_security_event(logger, "login.failed", email=email)
             raise generic
 
@@ -177,31 +179,54 @@ class LocalAuthProvider:
 
     async def refresh(self, refresh_token: str) -> tuple[ProviderIdentity, ProviderTokens]:
         expired = AuthenticationError("Session expired. Please sign in again.")
-        stmt = select(AuthToken).where(
-            AuthToken.token_hash == _hash_token(refresh_token), AuthToken.kind == REFRESH_KIND
-        )
-        record = (await self._session.execute(stmt)).scalar_one_or_none()
-        if record is None:
-            raise expired
+        token_hash = _hash_token(refresh_token)
+        now = _now()
 
-        if record.used_at is not None:
-            # Replay of an already-rotated token: assume the token was stolen
-            # and drop every live session for this user.
-            log_security_event(
-                logger, "refresh.replay_detected", profile_id=str(record.profile_id)
+        # Consume the token with ONE conditional UPDATE. The database decides the winner: of any number of
+        # simultaneous requests carrying the same token exactly one matches `used_at IS NULL` (the others
+        # block on the row lock, then re-evaluate the predicate and match nothing). A SELECT-then-check-
+        # then-UPDATE here would let two requests both pass the check.
+        claimed = (
+            await self._session.execute(
+                update(AuthToken)
+                .where(
+                    AuthToken.token_hash == token_hash,
+                    AuthToken.kind == REFRESH_KIND,
+                    AuthToken.used_at.is_(None),
+                    AuthToken.revoked_at.is_(None),
+                )
+                .values(used_at=now)
+                .returning(AuthToken.profile_id, AuthToken.expires_at)
+                .execution_options(synchronize_session=False)
             )
-            await self._revoke_all_refresh_tokens(record.profile_id)
-            await self._session.flush()
+        ).first()
+
+        if claimed is None:
+            # Nothing was claimed: unknown, revoked, or already used. Only "already used" is a replay.
+            record = (
+                await self._session.execute(
+                    select(AuthToken).where(AuthToken.token_hash == token_hash, AuthToken.kind == REFRESH_KIND)
+                )
+            ).scalar_one_or_none()
+            if record is not None and record.used_at is not None:
+                # Replay of an already-rotated token (or the loser of a concurrent race): assume the token
+                # was stolen and drop every live session for this user.
+                log_security_event(
+                    logger, "refresh.replay_detected", profile_id=str(record.profile_id)
+                )
+                await self._revoke_all_refresh_tokens(record.profile_id)
+                # Commit before raising, otherwise the rollback undoes the revocation.
+                await self._session.commit()
             raise expired
 
-        if record.revoked_at is not None or (_aware(record.expires_at) or _now()) <= _now():
+        profile_id, expires_at = claimed
+        if (_aware(expires_at) or now) <= now:
             raise expired
 
-        profile = await self._session.get(Profile, record.profile_id)
+        profile = await self._session.get(Profile, profile_id)
         if profile is None or not profile.is_active or profile.deleted_at is not None:
             raise expired
 
-        record.used_at = _now()
         tokens = await self._session_for(profile)
         return ProviderIdentity(id=profile.id, email=profile.email), tokens
 

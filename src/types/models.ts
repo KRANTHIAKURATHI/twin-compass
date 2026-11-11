@@ -163,9 +163,9 @@ export interface TwinVersion {
   status: LifecycleStatus;
   author: string;
   summary: string;
-  tumorSizeMm: number;
-  survival: number;
-  risk: RiskLevel;
+  tumorSizeMm: number | null;
+  survival: number | null;
+  risk: RiskLevel | null;
   model: string;
 }
 
@@ -254,7 +254,7 @@ export interface TumorSizePoint {
   version: string;
   date: ISODate;
   tumorSizeMm: number;
-  survival: number;
+  survival: number | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -268,7 +268,7 @@ export interface TumorSizePoint {
  * treatment-response and toxicity data this deployment does not hold. The API
  * returns null rather than a plausible-looking percentage, and the UI renders
  * an em dash. Only the regimen label, the patient's recorded risk band and
- * their recorded survival probability are ever populated today.
+ * their stored survival value are ever populated today.
  */
 export interface Scenario {
   id: ID;

@@ -74,15 +74,14 @@ def test_prediction_routes_reject_patient_role(client, method, _template, path):
 
 
 @pytest.mark.parametrize("method,_template,path", PREDICTION_ROUTES)
-def test_researcher_role_reaches_read_and_write_routes(client, method, _template, path):
-    """Researchers may read prediction data and record runs - both are
-    doctor/researcher/admin per require_roles in predictions.py."""
+def test_researcher_role_is_rejected_from_identified_prediction_routes(client, method, _template, path):
+    """Phase 6.1 / H1: predictions are patient-linked clinical data; researchers get none of it (read or write)."""
     register(client, email="researcher@example.com", role="researcher")
     token = login(client, email="researcher@example.com").json()["accessToken"]
     headers = {"Authorization": f"Bearer {token}"}
     kwargs = {"json": {"patientId": "PT-1"}} if path == RUN_PATH else {}
     r = getattr(client, method.lower())(path, headers=headers, **kwargs)
-    assert r.status_code not in (401, 403)
+    assert r.status_code == 403
 
 
 @pytest.mark.parametrize("method,_template,path", PREDICTION_ROUTES)

@@ -14,7 +14,7 @@ import pytest
 from sqlalchemy import text
 
 from app.services.response_model import project_scenarios
-from tests.conftest import login, register
+from tests.conftest import grant_access, login, register
 from tests.test_response_model import HER2_TWIN
 
 SCENARIOS, _ = project_scenarios(regimen="AC-T", **HER2_TWIN)
@@ -43,6 +43,7 @@ def db(db_sessionmaker, client):
 def _promote(client, body):
     register(client, email="promo-doc@example.com", role="doctor")
     token = login(client, email="promo-doc@example.com").json()["accessToken"]
+    grant_access(client, "promo-doc@example.com", "p1")   # the run's patient is not in this fixture's patients table
     return client.post("/simulations/s1/promote", json=body, headers={"Authorization": f"Bearer {token}"})
 
 

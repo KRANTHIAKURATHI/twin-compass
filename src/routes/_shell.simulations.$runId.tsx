@@ -37,9 +37,9 @@ export const Route = createFileRoute("/_shell/simulations/$runId")({
   component: withPageStates(SimulationDetail, { variant: "detail" }),
 });
 
-/** `—` rather than `0` for anything the record simply does not carry. */
+/** "Not available" rather than `0` for anything the record simply does not carry. */
 const show = (value: unknown, suffix = "") =>
-  value === null || value === undefined || value === "" ? "—" : `${value}${suffix}`;
+  value === null || value === undefined || value === "" ? "Not available" : `${value}${suffix}`;
 
 const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleString() : "—");
 
@@ -74,6 +74,7 @@ function SimulationDetail() {
       <PageHeader
         title={`Simulation ${run.id.slice(0, 8)}`}
         description={[
+          "Projected scenario · Research / experimental",
           run.patient,
           run.twinVersion ? `twin ${run.twinVersion}` : null,
           run.model ? `model ${run.model}` : null,
@@ -96,8 +97,8 @@ function SimulationDetail() {
       <div className="grid gap-4 lg:grid-cols-3">
         {[
           ["Projected response", show(run.response, "%")],
-          ["Survival estimate", show(run.survival, "%")],
-          ["Confidence", show(run.confidence, "%")],
+          ["Projected survival (scenario)", show(run.survival, "%")],
+          ["Model confidence", show(run.confidence, "%")],
         ].map(([label, value]) => (
           <Card key={label}>
             <CardContent className="py-6">
@@ -137,11 +138,11 @@ function SimulationDetail() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Scenario</TableHead>
-                  <TableHead>Response</TableHead>
-                  <TableHead>Tumor change</TableHead>
-                  <TableHead>Survival estimate</TableHead>
+                  <TableHead>Projected response</TableHead>
+                  <TableHead>Projected tumor change</TableHead>
+                  <TableHead>Projected survival (scenario)</TableHead>
                   <TableHead>Side effects</TableHead>
-                  <TableHead>Confidence</TableHead>
+                  <TableHead>Model confidence</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

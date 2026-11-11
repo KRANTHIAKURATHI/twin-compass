@@ -26,9 +26,9 @@ export const Route = createFileRoute("/_shell/simulations/")({
   component: withPageStates(SimulationsPage, { variant: "list" }),
 });
 
-/** `—` rather than `0` for anything the record simply does not carry. */
+/** "Not available" rather than `0` for anything the record simply does not carry. */
 const show = (value: unknown, suffix = "") =>
-  value === null || value === undefined || value === "" ? "—" : `${value}${suffix}`;
+  value === null || value === undefined || value === "" ? "Not available" : `${value}${suffix}`;
 
 function SimulationsPage() {
   const { data: runs = [], isLoading } = useSimulationRuns();
@@ -37,7 +37,7 @@ function SimulationsPage() {
     <div className="mx-auto max-w-[1200px]">
       <PageHeader
         title="Simulation runs"
-        description="Every scenario comparison executed against a patient digital twin."
+        description="Every projected scenario comparison executed against a patient digital twin — research / experimental, not recorded outcomes."
         crumbs={[{ label: "Home", to: "/" }, { label: "Simulations" }]}
         actions={
           <Button asChild>
@@ -68,7 +68,7 @@ function SimulationsPage() {
                   <TableHead>Patient</TableHead>
                   <TableHead>Twin</TableHead>
                   <TableHead>Selected scenario</TableHead>
-                  <TableHead>Confidence</TableHead>
+                  <TableHead>Model confidence</TableHead>
                   <TableHead>Decision</TableHead>
                   <TableHead className="text-right">Detail</TableHead>
                 </TableRow>

@@ -129,18 +129,17 @@ async def readiness() -> dict[str, object]:
     from app.db.session import get_sessionmaker
 
     database_ok = True
-    detail: str | None = None
     try:
         async with get_sessionmaker()() as session:
             await session.execute(text("SELECT 1"))
-    except Exception as exc:  # pragma: no cover - depends on live infra
+    except Exception:  # pragma: no cover - depends on live infra
         database_ok = False
-        detail = str(exc)
+        # The cause goes to the log only: this endpoint is public and a driver error can name the host and user.
+        logger.exception("readiness check: database unreachable")
 
     return {
         "status": "ok" if database_ok else "degraded",
         "auth_provider": settings.AUTH_PROVIDER,
         "database": "sqlite" if settings.is_sqlite else "postgresql",
         "database_ok": database_ok,
-        "detail": detail,
     }

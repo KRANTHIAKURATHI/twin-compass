@@ -47,9 +47,9 @@ const statusTone: Record<PatientStatus, ChipTone> = {
 
 const PAGE_SIZE = 8;
 
-/** `—` rather than `0` for anything the record simply does not carry. */
+/** "Not available" rather than `0` for anything the record simply does not carry. */
 const show = (value: unknown, suffix = "") =>
-  value === null || value === undefined || value === "" ? "—" : `${value}${suffix}`;
+  value === null || value === undefined || value === "" ? "Not available" : `${value}${suffix}`;
 
 const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleDateString() : "—");
 

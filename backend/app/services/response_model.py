@@ -213,7 +213,7 @@ def project_scenarios(
     family = classify_regimen(regimen)
     effect = REGIMEN_PARAMETERS.get((family, subtype)) if family and subtype else None
 
-    reason = _unavailable_reason(subtype, family, effect, tumor_size_mm, regimen)
+    reason = _unavailable_reason(subtype, family, effect, tumor_size_mm, regimen, ki67)
     provenance: dict[str, object] = {
         "kind": "kinetic-projection",
         "subtype": subtype,
@@ -354,6 +354,7 @@ def _unavailable_reason(
     effect: RegimenEffect | None,
     tumor_size_mm: float | None,
     regimen: str,
+    ki67: float | None = None,
 ) -> str | None:
     if subtype is None:
         return "The twin does not record enough receptor status to determine a subtype."
@@ -367,6 +368,10 @@ def _unavailable_reason(
         return f"{family} is not a standard option in {subtype} disease, so the table holds no parameters for it."
     if tumor_size_mm is None or tumor_size_mm <= 0:
         return "The twin records no tumour size, so there is nothing to project forward."
+    if ki67 is None or not 0 < ki67 <= 100:
+        # Ki-67 sets both the regimen sensitivity and the regrowth rate. Without it the projection would run with a
+        # neutral modifier and no regrowth, i.e. on a silently assumed value, so no projection is made.
+        return "The twin records no valid Ki-67 proliferation index (0-100%), which the projection requires."
     return None
 
 

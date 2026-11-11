@@ -252,7 +252,8 @@ def test_artifact_loads_and_predicts_probabilities(artifact_dir):
     genes = [g["ensembl_id"] for g in names["combined"]["genes"]]
     assert names["combined"]["clinical_features"] == CLINICAL_FEATURES and len(genes) == art.metadata["selected_gene_count"]
     clin = [{"age": 50, "er": 1, "pr": 0, "her2": 0, "grade": 2, "stage": None}, {"age": 61, "er": 0, "pr": 0, "her2": 0, "grade": 3, "stage": 2}]
-    expr = [{g: 10.0 for g in genes}, {}]                            # second sample: every gene missing -> training medians
+    all_genes = art.models["combined"].expression.all_ids
+    expr = [{g: 10.0 for g in all_genes}, {g: 3.5 for g in all_genes}]   # complete profiles: every gene any variant uses
     for variant in pl.KINDS:
         out = art.predict(clin, expr, model=variant)
         assert len(out) == 2 and all(0.0 <= o["pcr_probability"] <= 1.0 for o in out)
@@ -262,6 +263,66 @@ def test_artifact_loads_and_predicts_probabilities(artifact_dir):
         art.predict(clin, expr[:1])
     with pytest.raises(ValueError):
         art.predict(clin, expr, model="nope")
+
+
+_CLIN_OK = {"age": 55, "er": 1, "pr": 0, "her2": 0, "grade": 2, "stage": 2}
+
+
+def _used_genes(art, variant):
+    return art.models[variant].expression.selected_ids(int(art.models[variant].config["k"]))
+
+
+@pytest.mark.parametrize("variant", ["combined", "expression"])
+@pytest.mark.parametrize("bad_profile", [{}, None, [], "GENE", 5, {"unrelated_gene": 4.0}], ids=["empty", "none", "list", "string", "number", "no-model-genes"])
+def test_models_that_use_expression_reject_an_absent_empty_or_malformed_profile(artifact_dir, variant, bad_profile):
+    art = load_artifact(artifact_dir)
+    with pytest.raises(ValueError):
+        art.predict([_CLIN_OK], [bad_profile], model=variant)
+
+
+@pytest.mark.parametrize("variant", ["combined", "expression"])
+def test_a_partial_profile_is_rejected_not_imputed(artifact_dir, variant):
+    art = load_artifact(artifact_dir)
+    used = _used_genes(art, variant)
+    profile = {g: 8.0 for g in art.models[variant].expression.all_ids}
+    assert art.predict([_CLIN_OK], [profile], model=variant)[0]["pcr_probability"] >= 0.0   # complete: accepted
+    for tamper in (lambda p: p.pop(used[0]), lambda p: p.update({used[0]: float("nan")}), lambda p: p.update({used[0]: -1.0}),
+                   lambda p: p.update({used[0]: "9.5"}), lambda p: p.update({used[0]: True}), lambda p: p.update({used[0]: None})):
+        broken = dict(profile)
+        tamper(broken)
+        with pytest.raises(ValueError, match="gene"):
+            art.predict([_CLIN_OK], [broken], model=variant)
+    # genes the model does not use are irrelevant: a profile holding only the used genes is accepted
+    assert art.predict([_CLIN_OK], [{g: profile[g] for g in used}], model=variant)
+
+
+def test_valid_profile_gives_the_same_score_as_the_model_computes_directly(artifact_dir):
+    art = load_artifact(artifact_dir)
+    profile = {g: 6.0 + (i % 7) for i, g in enumerate(art.models["combined"].expression.all_ids)}
+    out = art.predict([_CLIN_OK], [profile])[0]
+    m = art.models["combined"]
+    clin = pd.DataFrame([{c: float(_CLIN_OK[c]) for c in CLINICAL_FEATURES}], columns=CLINICAL_FEATURES)
+    tpm = np.array([[profile[g] for g in m.expression.all_ids]], dtype=float)
+    assert out["pcr_probability"] == pytest.approx(float(m.predict_proba(clin, tpm)[0]))
+    assert out["variant"] == "combined" and out["status"] == STATUS
+
+
+def test_clinical_only_variant_needs_no_expression_but_still_needs_its_clinical_inputs(artifact_dir):
+    art = load_artifact(artifact_dir)
+    assert 0.0 <= art.predict([_CLIN_OK], [{}], model="clinical")[0]["pcr_probability"] <= 1.0
+    assert art.predict([{**_CLIN_OK, "grade": None, "stage": None}], [{}], model="clinical")      # only grade/stage may be absent
+    for broken in ({}, {**_CLIN_OK, "age": None}, {**_CLIN_OK, "er": None}, {**_CLIN_OK, "her2": 2}, {**_CLIN_OK, "age": 0},
+                   {**_CLIN_OK, "age": float("nan")}, {**_CLIN_OK, "grade": "high"}):
+        with pytest.raises(ValueError):
+            art.predict([broken], [{}], model="clinical")
+
+
+@pytest.mark.parametrize("variant", pl.KINDS)
+def test_malformed_batches_are_rejected(artifact_dir, variant):
+    art = load_artifact(artifact_dir)
+    for clinical, expression in (([], []), (None, [{}]), ([_CLIN_OK], None), ([None], [{}]), ([_CLIN_OK], [{}, {}])):
+        with pytest.raises(ValueError):
+            art.predict(clinical, expression, model=variant)
 
 
 def test_subgroup_and_site_underpowered_flags(artifact_dir):

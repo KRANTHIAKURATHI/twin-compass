@@ -21,6 +21,9 @@ logger = get_logger(__name__)
 # server-side regardless of what the client sends, on top of the schema-level
 # Literal that already excludes it.
 PRIVILEGED_ROLES = {"admin"}
+# Roles that open clinical / research data. They are NEVER self-assigned: registering for one creates the account
+# with no role at all, and an administrator grants the role (POST /admin/users/{id}/role) after verifying the person.
+APPROVAL_REQUIRED_ROLES = {"doctor", "researcher"}
 
 
 def _to_auth_user(profile, role_name: str) -> AuthUser:
@@ -73,7 +76,7 @@ class AuthService:
                 profile_id=identity.id,
                 full_name=payload.name,
                 email=identity.email,
-                role_name=payload.role,
+                role_name=None if payload.role in APPROVAL_REQUIRED_ROLES else payload.role,
                 hospital=payload.hospital,
                 title=payload.title,
             )
@@ -100,6 +103,15 @@ class AuthService:
             "user registered",
             extra={"extra_fields": {"user_id": str(profile.id), "role": payload.role}},
         )
+        if payload.role in APPROVAL_REQUIRED_ROLES:
+            return MutationResult(
+                ok=True,
+                data=None,
+                message=(
+                    f"Account created. {payload.role.capitalize()} access must be approved by an administrator "
+                    "before you can sign in."
+                ),
+            )
         return MutationResult(
             ok=True,
             data=_to_auth_user(profile, payload.role),

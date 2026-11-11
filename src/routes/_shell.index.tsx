@@ -267,7 +267,7 @@ function DashboardPage() {
           <CardHeader>
             <CardTitle>Treatment comparison</CardTitle>
             <CardDescription>
-              Average recorded survival vs. its complement, per regimen on file
+              Projected scenarios (research / experimental, not recorded outcomes): average projected response and projected survival complement across simulation runs, per selected regimen
             </CardDescription>
           </CardHeader>
           <CardContent className="h-64">
@@ -296,8 +296,8 @@ function DashboardPage() {
                       return row ? `${label} (${row.runs} patients)` : label;
                     }}
                   />
-                  <Bar dataKey="response" name="Avg. survival %" fill="var(--color-chart-2)" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="recurrence" name="Complement %" fill="var(--color-chart-4)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="response" name="Avg. projected response %" fill="var(--color-chart-2)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="recurrence" name="100 − projected survival %" fill="var(--color-chart-4)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}

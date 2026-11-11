@@ -23,6 +23,7 @@ import {
   useRunPrediction,
   useTumorSizeHistory,
 } from "@/hooks/api";
+import { NOT_AVAILABLE, NOT_VALIDATED, PROVENANCE } from "@/lib/provenance";
 import type { PredictionRun, RiskLevel } from "@/types/models";
 
 export const Route = createFileRoute("/_shell/predictions")({
@@ -42,7 +43,7 @@ const axis = { stroke: "var(--color-muted-foreground)", fontSize: 12 };
 const tooltipStyle = { borderRadius: 12, border: "1px solid var(--color-border)", background: "var(--color-card)", fontSize: 12 };
 
 const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleString() : "—");
-const pct = (value?: number | null) => (value === null || value === undefined ? "—" : `${value}%`);
+const pct = (value?: number | null) => (value === null || value === undefined ? NOT_AVAILABLE : `${value}%`);
 
 type Card = {
   icon: typeof Brain;
@@ -93,31 +94,31 @@ function buildCards(
     },
     {
       icon: Gauge,
-      title: "Survival estimate",
-      value: run?.survival != null ? `${run.survival}%` : "—",
-      status: run ? (run.survival != null ? "Estimated" : "Not recorded") : "No run yet",
+      title: "Survival — heuristic estimate",
+      value: run?.survival != null ? `${run.survival}%` : NOT_AVAILABLE,
+      status: run ? (run.survival != null ? PROVENANCE.heuristic : NOT_AVAILABLE) : "No run yet",
       tone: run?.survival != null ? "primary" : "neutral",
       confidence: run?.confidence ?? null,
       explanation: run
-        ? "Heuristic estimate — not a validated 5-year survival prediction"
+        ? "Heuristic estimate from a malignancy classifier — Not clinically validated. Not a survival-model output; see the research models below."
         : "No prediction run has been recorded for this patient.",
     },
     {
       icon: Repeat,
-      title: "Recurrence estimate",
-      value: run?.recurrence != null ? `${run.recurrence}%` : "—",
-      status: run ? (run.recurrence != null ? "Estimated" : "Not recorded") : "No run yet",
+      title: "Recurrence — heuristic estimate",
+      value: run?.recurrence != null ? `${run.recurrence}%` : NOT_AVAILABLE,
+      status: run ? (run.recurrence != null ? PROVENANCE.heuristic : NOT_AVAILABLE) : "No run yet",
       tone: run?.recurrence != null ? "warning" : "neutral",
       confidence: run?.confidence ?? null,
       explanation: run
-        ? "Heuristic estimate — not independently validated"
+        ? "Heuristic estimate — Not clinically validated"
         : "No prediction run has been recorded for this patient.",
     },
     {
       icon: HeartPulse,
       title: "Current treatment",
-      value: patient?.currentTreatment || "—",
-      status: patient?.currentTreatment ? "On record" : "None recorded",
+      value: patient?.currentTreatment || NOT_AVAILABLE,
+      status: patient?.currentTreatment ? PROVENANCE.recorded : NOT_AVAILABLE,
       tone: patient?.currentTreatment ? "success" : "neutral",
       confidence: null,
       explanation: "The regimen stored on the patient record.",
@@ -125,12 +126,12 @@ function buildCards(
     {
       icon: Brain,
       title: "Risk band",
-      value: patient?.risk ? patient.risk[0].toUpperCase() + patient.risk.slice(1) : "—",
-      status: run?.status ?? "No run yet",
+      value: patient?.risk ? patient.risk[0].toUpperCase() + patient.risk.slice(1) : NOT_AVAILABLE,
+      status: patient?.risk ? PROVENANCE.stored : NOT_AVAILABLE,
       tone: "primary",
       risk: patient?.risk,
       confidence: run?.confidence ?? null,
-      explanation: "The risk level stored on the patient record.",
+      explanation: "The risk level stored on the patient record; not a model output unless a run states otherwise.",
     },
   ];
 }
@@ -325,11 +326,11 @@ function PredictionsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Survival estimate by risk band</CardTitle>
+            <CardTitle>Stored survival value by risk band</CardTitle>
             <CardDescription>
               {survival?.caveat ??
-                "Average of the survival estimate stored on each patient record, grouped by risk band."}{" "}
-              Recorded heuristic estimates — not clinically validated.
+                "Average of the survival value stored on each patient record (origin not tracked), grouped by risk band."}{" "}
+              Not a model prediction. Not clinically validated.
             </CardDescription>
           </CardHeader>
           <CardContent className="h-72">
@@ -379,22 +380,24 @@ function PredictionsPage() {
 
       <section className="mt-4 grid gap-4 lg:grid-cols-2">
         {([
-          ["Overall survival estimate — METABRIC research model", prognosis?.overallSurvival],
-          ["Relapse-free survival estimate — METABRIC research model", prognosis?.relapseFreeSurvival],
+          [PROVENANCE.os, prognosis?.overallSurvival],
+          [PROVENANCE.rfs, prognosis?.relapseFreeSurvival],
         ] as const).map(([title, est]) => (
           <Card key={title}>
             <CardHeader>
               <CardTitle>{title}</CardTitle>
               <CardDescription>
-                Research only — not clinically validated. Prognostic model on clinical variables; not a treatment-response
-                prediction and not the malignancy classification above.
+                METABRIC research model · {NOT_VALIDATED}. Prognostic model on clinical variables; not a
+                treatment-response prediction and not the heuristic malignancy classification above.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               {prognosisLoading || !est ? (
                 <Skeleton className="h-16 w-full" />
               ) : est.status !== "available" ? (
-                <p className="text-muted-foreground">Unavailable: {est.reason}</p>
+                <p className="text-muted-foreground">
+                  {NOT_AVAILABLE} — {est.reason}
+                </p>
               ) : (
                 <>
                   <p>
@@ -478,9 +481,9 @@ function PredictionsPage() {
                       <TableHead>Run</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Twin</TableHead>
-                      <TableHead>Survival estimate</TableHead>
-                      <TableHead>Recurrence estimate</TableHead>
-                      <TableHead>Classifier confidence</TableHead>
+                      <TableHead>Survival (heuristic)</TableHead>
+                      <TableHead>Recurrence (heuristic)</TableHead>
+                      <TableHead>Malignancy classifier probability</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>

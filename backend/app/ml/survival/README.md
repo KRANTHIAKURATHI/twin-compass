@@ -1,8 +1,14 @@
 # METABRIC overall-survival model
 
-**Research model — not clinically validated.** An offline research/prototype
-model. It is not connected to `POST /predictions/run` or any other API, and it
-is not a clinical-grade predictor or a treatment-response model.
+**Research model — not clinically validated.** A research/prototype prognostic
+model. It is served read-only through `app/ml/prognosis.py` at
+`GET /predictions/{patient_id}/prognosis` (and as an additive `prognosis` field of
+`POST /predictions/run`), computed on request from the patient's recorded clinical
+fields and never stored. It is not a clinical-grade predictor or a treatment-response
+model. Reproduce the saved metrics with `python -m app.ml.survival.train --patient ...
+--sample ... --endpoint OS|RFS --out <scratch dir>`; `tests/test_survival_real_data.py`
+re-derives the split, the train-only preprocessing and the held-out C-index from the
+real files.
 
 ## Data
 METABRIC, from the official cBioPortal clinical files `data_clinical_patient.txt`
@@ -72,7 +78,8 @@ python -m app.ml.survival.train --patient PATH/data_clinical_patient.txt --sampl
 # METABRIC relapse-free-survival (RFS) model
 
 **Research model — not clinically validated.** A second offline model on the same
-pipeline; artifacts in `artifacts/survival_rfs/`. It is not connected to any API.
+pipeline; artifacts in `artifacts/survival_rfs/`. Served alongside the OS model by
+`GET /predictions/{patient_id}/prognosis` (research estimate only).
 
 - **What it is:** relapse-free survival is a prognostic *outcome* endpoint. This is outcome
   modelling only. It is **not** treatment-response prediction: no treatment-response label

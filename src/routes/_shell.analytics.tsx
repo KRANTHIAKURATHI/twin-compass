@@ -26,9 +26,9 @@ export const Route = createFileRoute("/_shell/analytics")({
   head: () => ({
     meta: [
       { title: "Analytics — OncoTwin" },
-      { name: "description", content: "Cohort analytics: age and stage distribution, treatment frequency, risk and survival trends." },
+      { name: "description", content: "Cohort analytics: age and stage distribution, treatment frequency, risk and stored-survival-value trends." },
       { property: "og:title", content: "Analytics — OncoTwin" },
-      { property: "og:description", content: "Cohort analytics: age and stage distribution, treatment frequency, risk and survival trends." },
+      { property: "og:description", content: "Cohort analytics: age and stage distribution, treatment frequency, risk and stored-survival-value trends." },
     ],
   }),
   errorComponent: RouteErrorState,
@@ -146,8 +146,8 @@ function AnalyticsPage() {
         </ChartCard>
 
         <ChartCard
-          title="Treatment frequency"
-          description="Average recorded survival vs. its complement, per regimen on file"
+          title="Projected treatment comparison"
+          description="Projected scenarios (research / experimental, not recorded outcomes): average projected response and projected survival complement across simulation runs, per selected regimen"
         >
           {isLoading ? (
             <Skeleton className="h-full rounded-xl" />
@@ -176,8 +176,8 @@ function AnalyticsPage() {
                     return row ? `${label} (${row.runs} patients)` : label;
                   }}
                 />
-                <Bar dataKey="response" name="Avg. survival %" fill="var(--color-chart-2)" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="recurrence" name="Complement %" fill="var(--color-chart-4)" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="response" name="Avg. projected response %" fill="var(--color-chart-2)" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="recurrence" name="100 − projected survival %" fill="var(--color-chart-4)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -232,11 +232,11 @@ function AnalyticsPage() {
         </ChartCard>
 
         <ChartCard
-          title="Survival estimates"
-          description={survival?.caveat ?? "Average recorded survival probability, grouped by risk band"}
+          title="Stored survival values by risk band"
+          description={survival?.caveat ?? "Average stored survival value (origin not tracked; not a prediction), grouped by risk band"}
         >
           {!survival?.points.length ? (
-            <ChartEmpty>No survival probabilities recorded yet.</ChartEmpty>
+            <ChartEmpty>Not available — no survival values stored yet.</ChartEmpty>
           ) : (
             // Two anchor points, not a six-year curve: baseline and the
             // probability actually recorded. Nothing in between was measured.

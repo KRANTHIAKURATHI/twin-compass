@@ -101,8 +101,91 @@ def register(client: TestClient, **overrides) -> dict:
         "role": "doctor",
         **overrides,
     }
-    return client.post("/auth/register", json=payload)
+    resp = client.post("/auth/register", json=payload)
+    if resp.status_code == 201 and payload["role"] in ("doctor", "researcher"):
+        approve(client, payload["email"], payload["role"])  # tests stand in for the administrator's approval
+    return resp
+
+
+def approve(client: TestClient, email: str, role: str) -> None:
+    """Grant a pending account its role directly in the per-test database (what POST /admin/users/{id}/role does)."""
+    import asyncio
+
+    from sqlalchemy import select
+
+    from app.models.identity import Profile, Role, UserRole
+
+    async def _go():
+        agen = app.dependency_overrides[get_db_session]()
+        session = await agen.__anext__()
+        try:
+            profile = (await session.execute(select(Profile).where(Profile.email == email.strip().lower()))).scalar_one()
+            role_row = (await session.execute(select(Role).where(Role.name == role))).scalar_one()
+            session.add(UserRole(profile_id=profile.id, role_id=role_row.id))
+            await session.commit()
+        finally:
+            await agen.aclose()
+
+    asyncio.run(_go())
 
 
 def login(client: TestClient, email="doc@example.com", password="secret123"):
-    return client.post("/auth/login", json={"email": email, "password": password})
+    resp = client.post("/auth/login", json={"email": email, "password": password})
+    if resp.status_code == 200 and resp.json()["user"]["role"] == "doctor":
+        grant_care_team_for_all(client, email)
+    return resp
+
+
+def grant_access(client: TestClient, email: str, patient_id: str) -> None:
+    """Test convenience: care-team grant for one patient id (raw SQLite)."""
+    import asyncio
+
+    from sqlalchemy import select, text
+
+    from app.models.identity import Profile
+
+    async def _go():
+        agen = app.dependency_overrides[get_db_session]()
+        session = await agen.__anext__()
+        try:
+            await session.execute(text(
+                "CREATE TABLE IF NOT EXISTS patient_access (id INTEGER PRIMARY KEY AUTOINCREMENT, patient_id TEXT, profile_id TEXT, "
+                "relationship TEXT, granted_by TEXT, granted_at TEXT DEFAULT CURRENT_TIMESTAMP, UNIQUE (patient_id, profile_id, relationship))"))
+            profile = (await session.execute(select(Profile).where(Profile.email == email.strip().lower()))).scalar_one()
+            await session.execute(text("INSERT OR IGNORE INTO patient_access (patient_id, profile_id, relationship) VALUES (:p, :u, 'care_team')"),
+                                  {"p": patient_id, "u": str(profile.id)})
+            await session.commit()
+        finally:
+            await agen.aclose()
+
+    asyncio.run(_go())
+
+
+def grant_care_team_for_all(client: TestClient, email: str) -> None:
+    """Test convenience: put a doctor on the care team of every patient that already exists in the per-test database
+    (creating the SQLite `patient_access` table if the test's fixtures did not). Tests of the access rules themselves
+    do not use this - see test_authorization_phase61.py, which runs on PostgreSQL."""
+    import asyncio
+
+    from sqlalchemy import select, text
+
+    from app.models.identity import Profile
+
+    async def _go():
+        agen = app.dependency_overrides[get_db_session]()
+        session = await agen.__anext__()
+        try:
+            await session.execute(text(
+                "CREATE TABLE IF NOT EXISTS patient_access (id INTEGER PRIMARY KEY AUTOINCREMENT, patient_id TEXT, profile_id TEXT, "
+                "relationship TEXT, granted_by TEXT, granted_at TEXT DEFAULT CURRENT_TIMESTAMP, UNIQUE (patient_id, profile_id, relationship))"))
+            profile = (await session.execute(select(Profile).where(Profile.email == email.strip().lower()))).scalar_one()
+            has_patients = (await session.execute(text("SELECT 1 FROM sqlite_master WHERE type='table' AND name='patients'"))).first()
+            if has_patients:
+                await session.execute(
+                    text("INSERT OR IGNORE INTO patient_access (patient_id, profile_id, relationship) "
+                         "SELECT id, :uid, 'care_team' FROM patients"), {"uid": str(profile.id)})
+            await session.commit()
+        finally:
+            await agen.aclose()
+
+    asyncio.run(_go())

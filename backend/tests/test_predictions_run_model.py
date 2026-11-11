@@ -73,7 +73,7 @@ def db(db_sessionmaker, client):
     run("CREATE TABLE timeline_events (id, patient_id, date, title, detail, kind)")
     run("INSERT INTO patients (id, patient_code, name, age, stage, tumor_size_mm, er_status, pr_status, "
         "her2_status, ki67, grade, nodes_involved) VALUES ('p1', 'PT-1', 'Pat One', 55, 'II', 25, "
-        "'Positive', 'Positive', 'Negative', NULL, 2, 1)")
+        "'Positive', 'Positive', 'Negative', 18, 2, 1)")
     return run
 
 
@@ -90,9 +90,9 @@ def test_run_invokes_model_and_records_its_output(client, db):
 
     assert r.status_code == 201, r.text
     assert len(fake.calls) == 1
-    # Mapped via patient_to_model_fields; NULL ki67 dropped so the model default applies.
-    assert fake.calls[0]["stage"] == "II" and fake.calls[0]["nodesInvolved"] == 1
-    assert "ki67" not in fake.calls[0]
+    # Every recorded input reaches the model unchanged; none is defaulted or dropped.
+    assert fake.calls[0] == {"stage": "II", "grade": 2, "ki67": 18, "nodesInvolved": 1, "tumorSizeMm": 25,
+                             "erStatus": "Positive", "prStatus": "Positive", "her2Status": "Negative", "age": 55}
 
     data = r.json()["data"]
     assert data["survival"] == 90.0 and data["recurrence"] == 20.0 and data["confidence"] == 85.0
@@ -134,7 +134,7 @@ def test_run_uses_the_real_random_forest_artifact(client, db):
     r = client.post("/predictions/run", json={"patientId": "PT-1"}, headers=_doctor_headers(client))
     assert r.status_code == 201, r.text
 
-    expected = predict_from_patient({"stage": "II", "grade": 2, "nodesInvolved": 1, "tumorSizeMm": 25,
+    expected = predict_from_patient({"stage": "II", "grade": 2, "ki67": 18, "nodesInvolved": 1, "tumorSizeMm": 25,
                                      "erStatus": "Positive", "prStatus": "Positive",
                                      "her2Status": "Negative", "age": 55})
     data = r.json()["data"]

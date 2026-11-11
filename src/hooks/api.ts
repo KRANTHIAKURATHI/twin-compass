@@ -153,11 +153,17 @@ export const useArchiveTwin = () =>
 
 /* --------------------------- Predictions --------------------------- */
 export const usePrediction = (patientId: string) =>
-  useApiQuery(queryKeys.predictions.latest(patientId), () => predictionService.forPatient(patientId));
+  useApiQuery(queryKeys.predictions.latest(patientId), () => predictionService.forPatient(patientId), {
+    enabled: Boolean(patientId),
+  });
 export const usePredictionHistory = (patientId: string) =>
-  useApiQuery(queryKeys.predictions.history(patientId), () => predictionService.history(patientId));
+  useApiQuery(queryKeys.predictions.history(patientId), () => predictionService.history(patientId), {
+    enabled: Boolean(patientId),
+  });
 export const useConfidenceTrend = (patientId: string) =>
-  useApiQuery(queryKeys.predictions.trend(patientId), () => predictionService.confidenceTrend(patientId));
+  useApiQuery(queryKeys.predictions.trend(patientId), () => predictionService.confidenceTrend(patientId), {
+    enabled: Boolean(patientId),
+  });
 /** Measured tumour size per twin version — real history, not a forecast. */
 export const useTumorSizeHistory = (patientId: string) =>
   useApiQuery(queryKeys.predictions.progression(patientId), () => predictionService.progression(patientId), {

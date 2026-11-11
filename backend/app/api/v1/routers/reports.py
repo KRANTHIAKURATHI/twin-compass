@@ -41,6 +41,7 @@ from app.db.session import get_db_session
 from app.dependencies.auth import CurrentUser, require_roles
 from app.schemas.reports import ExportReportRequest, GenerateReportRequest
 from app.services.clinical_queries import resolve_patient
+from app.services.patient_access import access_predicate, require_patient_access
 
 router = APIRouter(tags=["reports"])
 
@@ -105,12 +106,14 @@ def _report_content(row) -> dict[str, object]:
     }
 
 
-async def _get_report_row(session: AsyncSession, report_id: str):
+async def _get_report_row(session: AsyncSession, report_id: str, user: object | None = None):
     row = (
         await session.execute(text(f"{_REPORT_SELECT} WHERE r.id = :id"), {"id": report_id})
     ).mappings().first()
     if row is None:
         raise HTTPException(status_code=404, detail="Report not found.")
+    if user is not None:
+        await require_patient_access(session, user, row["patient_id"])
     return row
 
 
@@ -118,12 +121,12 @@ async def _get_report_row(session: AsyncSession, report_id: str):
 async def list_reports(
     patientId: str | None = None,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
-    where = ""
-    params: dict[str, object] = {}
+    predicate, params = access_predicate(_user, "r.patient_id")
+    where = f"WHERE {predicate}"
     if patientId:
-        where = "WHERE p.patient_code = :patient_id OR p.id::text = :patient_id"
+        where += " AND (p.patient_code = :patient_id OR p.id::text = :patient_id)"
         params["patient_id"] = patientId
     result = await session.execute(
         text(f"{_REPORT_SELECT} {where} ORDER BY COALESCE(r.generated_at, r.created) DESC"), params
@@ -136,18 +139,19 @@ async def list_reports(
 async def download_history(
     reportId: str | None = None,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
-    where = ""
-    params: dict[str, object] = {}
+    predicate, params = access_predicate(_user, "rp.patient_id")
+    where = f"WHERE {predicate}"
     if reportId:
-        where = "WHERE d.report_id = :report_id"
+        where += " AND d.report_id = :report_id"
         params["report_id"] = reportId
     result = await session.execute(
         text(
             f"""
             SELECT d.id, d.report_id, d.format, d.downloaded_at, pr.email AS by_email
             FROM report_downloads d
+            JOIN reports rp ON rp.id = d.report_id
             LEFT JOIN profiles pr ON CAST(pr.id AS text) = d.downloaded_by
             {where}
             ORDER BY d.downloaded_at DESC
@@ -171,9 +175,9 @@ async def download_history(
 async def get_report(
     report_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
-    row = await _get_report_row(session, report_id)
+    row = await _get_report_row(session, report_id, _user)
     base = await _report_response(session, row)
     return {**base, "content": _report_content(row)}
 
@@ -182,11 +186,11 @@ async def get_report(
 async def report_versions(
     report_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
     """Every version generated for this report's (patient, type) lineage -
     not just the one `report_id` names - so history shows the full chain."""
-    anchor = await _get_report_row(session, report_id)
+    anchor = await _get_report_row(session, report_id, _user)
     result = await session.execute(
         text(
             """
@@ -229,12 +233,12 @@ async def _next_version(session: AsyncSession, patient_uuid: str, report_type: s
 async def generate_report(
     payload: GenerateReportRequest,
     session: AsyncSession = Depends(get_db_session),
-    current_user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     """Aggregate the patient's current real clinical state into a new,
     immutable report version. Nothing is invented: a section with no
     underlying data is represented as absent, not filled in."""
-    patient = await resolve_patient(session, payload.patient_id)
+    patient = await resolve_patient(session, payload.patient_id, current_user)
     pid = str(patient["id"])
 
     twin = (
@@ -396,7 +400,7 @@ async def generate_report(
     )
     await session.commit()
 
-    row = await _get_report_row(session, report_id)
+    row = await _get_report_row(session, report_id, current_user)
     data = await _report_response(session, row)
     return {"ok": True, "data": data, "message": f"{payload.type} generated (v{version})."}
 
@@ -406,12 +410,12 @@ async def export_report(
     report_id: str,
     payload: ExportReportRequest,
     session: AsyncSession = Depends(get_db_session),
-    current_user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     """Record a real export/download event and return the report's frozen
     content so the caller can render it (print) or serialize it (CSV) from
     actual data, rather than a client-side placeholder."""
-    row = await _get_report_row(session, report_id)
+    row = await _get_report_row(session, report_id, current_user)
     fmt = payload.format.lower()
     if fmt not in ("pdf", "csv"):
         raise HTTPException(status_code=422, detail="format must be 'pdf' or 'csv'.")

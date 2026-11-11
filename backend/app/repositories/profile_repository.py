@@ -61,14 +61,16 @@ class ProfileRepository:
         profile_id: uuid.UUID,
         full_name: str,
         email: str,
-        role_name: str,
+        role_name: str | None,
         hospital: str | None = None,
         title: str | None = None,
         department: str | None = None,
     ) -> Profile:
-        role = await self.get_role_by_name(role_name)
-        if role is None:
-            raise ValueError(f"Unknown role '{role_name}' - was the roles table seeded?")
+        role = None
+        if role_name is not None:  # None = no privileges yet (pending administrator approval)
+            role = await self.get_role_by_name(role_name)
+            if role is None:
+                raise ValueError(f"Unknown role '{role_name}' - was the roles table seeded?")
 
         profile = Profile(
             id=profile_id,
@@ -81,8 +83,9 @@ class ProfileRepository:
         self._session.add(profile)
         await self._session.flush()  # satisfy the FK before linking the role
 
-        self._session.add(UserRole(profile_id=profile.id, role_id=role.id))
-        await self._session.flush()
+        if role is not None:
+            self._session.add(UserRole(profile_id=profile.id, role_id=role.id))
+            await self._session.flush()
         # Re-read through the loader options so `primary_role_name` has the
         # role relationship populated without a lazy load on an async session.
         refreshed = await self.get_by_id(profile.id)

@@ -71,7 +71,7 @@ def _assert_broadcast_rows(rows, roles, type_):
 
 
 def _patch_ocr(monkeypatch, extract):
-    async def fake_doc(session, document_id):
+    async def fake_doc(session, document_id, user=None):
         return {"id": document_id, "storage_path": "p", "mime_type": "application/pdf", "patient_code": "PT-1001"}
 
     async def fake_download(path):
@@ -116,7 +116,7 @@ async def test_ocr_extract_notifies_doctor_and_admin_after_commit(monkeypatch):
     assert first_commit < first_notification
     # Minimal content: identifiers only, never extracted values.
     for r in rows:
-        assert "doc-1" in r["body"] and "PT-1001" in r["body"]
+        assert "doc-1" in r["body"] and "PT-" not in r["body"]  # notifications never name patients (Phase 6.1)
         assert "SECRET-VALUE" not in r["title"] + r["body"]
 
 
@@ -159,7 +159,7 @@ async def test_ocr_notification_failure_does_not_fail_or_undo_extraction(monkeyp
 
 
 def _patch_prediction(monkeypatch, run_model=None):
-    async def fake_resolve(session, patient_id):
+    async def fake_resolve(session, patient_id, user=None):
         return {"id": "pid-1", "patient_code": "PT-2002"}
 
     async def fake_history(session, patient_uuid):
@@ -178,20 +178,20 @@ async def _run_prediction(session):
     return await pred_router.run_prediction(PredictionRequest(patient_id="PT-2002"), session=session, _user=USER)
 
 
-async def test_prediction_notifies_doctor_admin_researcher_after_commit(monkeypatch):
+async def test_prediction_notifies_doctor_and_admin_only_after_commit(monkeypatch):
     _patch_prediction(monkeypatch)
     session, events = _session()
     result = await _run_prediction(session)
 
     assert result["ok"] is True
     rows = _inserts(events)
-    _assert_broadcast_rows(rows, ["doctor", "admin", "researcher"], "prediction")
+    _assert_broadcast_rows(rows, ["doctor", "admin"], "prediction")  # not researchers (Phase 6.1)
     run_id = next(e[2]["id"] for e in events if e[0] == "sql" and "INSERT INTO prediction_runs" in e[1])
     first_commit = _index(events, lambda e: e[0] == "commit")
     first_notification = _index(events, lambda e: e[0] == "sql" and "INSERT INTO notifications" in e[1])
     assert first_commit < first_notification
     for r in rows:
-        assert run_id in r["body"] and "PT-2002" in r["body"]
+        assert run_id in r["body"] and "PT-" not in r["body"]  # notifications never name patients (Phase 6.1)
         # No clinical results in the message.
         assert not any(token in r["title"] + r["body"] for token in ("survival", "recurrence", "risk", "model-x", "Complete"))
 

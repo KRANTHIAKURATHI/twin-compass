@@ -24,15 +24,15 @@ from __future__ import annotations
 import statistics
 import uuid
 from datetime import datetime, timezone
-from types import SimpleNamespace
 
 import anyio.to_thread
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ModelUnavailableError
+from app.core.exceptions import ModelUnavailableError, ValidationAppError
 from app.db.session import get_db_session
+from app.ml.inputs import WDBC_RULES as _WDBC_RULES, check_patient_columns
 from app.dependencies.auth import CurrentUser, require_roles
 from app.schemas.clinical import PredictionRequest
 from app.services.clinical_queries import resolve_patient
@@ -81,10 +81,10 @@ async def _history(session: AsyncSession, patient_uuid: str) -> list[dict[str, o
 async def latest_prediction(
     patient_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object] | None:
     """The most recent recorded run, or null when none has been run."""
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _user)
     runs = await _history(session, str(patient["id"]))
     return runs[0] if runs else None
 
@@ -101,11 +101,11 @@ def _prognosis(patient: dict[str, object]) -> dict[str, object]:
 async def patient_prognosis(
     patient_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     """Computed on request from the patient's recorded clinical fields (not stored). Research models, not validated;
     prognostic only - not treatment response."""
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _user)
     return await anyio.to_thread.run_sync(_prognosis, dict(patient))
 
 
@@ -113,9 +113,9 @@ async def patient_prognosis(
 async def prediction_history(
     patient_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _user)
     return await _history(session, str(patient["id"]))
 
 
@@ -123,11 +123,11 @@ async def prediction_history(
 async def confidence_trend(
     patient_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
     """Confidence of each recorded run, oldest first - a real series, so it
     is empty until runs exist rather than being back-filled."""
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _user)
     result = await session.execute(
         text(
             "SELECT date, confidence FROM prediction_runs WHERE patient_id = :pid ORDER BY date ASC"
@@ -147,7 +147,7 @@ async def confidence_trend(
 async def tumor_size_history(
     patient_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
     """Measured tumour size across the patient's twin versions.
 
@@ -155,7 +155,7 @@ async def tumor_size_history(
     point is a real recorded measurement at a real timestamp; there is no
     projection past the latest version.
     """
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _user)
     result = await session.execute(
         text(
             "SELECT version, created_at, tumor_size_mm, survival FROM twin_versions "
@@ -167,10 +167,12 @@ async def tumor_size_history(
         {
             "version": row["version"],
             "date": row["created_at"],
-            "tumorSizeMm": row["tumor_size_mm"] or 0,
-            "survival": round((row["survival"] or 0) * 100, 1),
+            "tumorSizeMm": row["tumor_size_mm"],
+            "survival": round(row["survival"] * 100, 1) if row["survival"] is not None else None,
         }
         for row in result.mappings()
+        # A version with no tumour size (or the former default 0) holds no measurement, so it is not a data point.
+        if row["tumor_size_mm"] is not None and row["tumor_size_mm"] > 0
     ]
 
 
@@ -221,7 +223,7 @@ def _pearson(xs: list[float], ys: list[float]) -> float:
 async def explainability(
     patient_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     """Cohort-derived factor weights - explicitly NOT a model explanation.
 
@@ -235,7 +237,7 @@ async def explainability(
     `caveat` so the UI can label it truthfully. Swap this for real SHAP
     values once a model exists.
     """
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, _user)
     rows = (
         await session.execute(
             text(
@@ -255,6 +257,7 @@ async def explainability(
             "cohortSize": cohort_size,
             "reliability": "insufficient",
             "factors": [],
+            "unavailableFactors": [],
             "caveat": (
                 "Not enough patient records to compute cohort statistics "
                 f"(have {cohort_size}, need at least 3)."
@@ -264,13 +267,33 @@ async def explainability(
     survival = [float(r["survival_probability"]) for r in rows]
     raw: list[tuple[str, float]] = []
 
+    # A record that lacks a factor is left out of THAT factor's correlation. It is never counted as 0 / "negative":
+    # a missing Ki-67 or receptor status is unknown, not a recorded low value.
+    unavailable: list[str] = []
     for label, column, higher_is_worse in _FACTORS:
-        values = [float(r[column]) if r[column] is not None else 0.0 for r in rows]
-        raw.append((label, _pearson(values, survival)))
+        pairs = [(float(r[column]), s) for r, s in zip(rows, survival) if r[column] is not None]
+        if len(pairs) < 3:
+            unavailable.append(label)
+            continue
+        raw.append((label, _pearson([x for x, _ in pairs], [y for _, y in pairs])))
 
     for label, column in (("ER status", "er_status"), ("PR status", "pr_status"), ("HER2 status", "her2_status")):
-        values = [1.0 if (r[column] or "").lower() == "positive" else 0.0 for r in rows]
-        raw.append((label, _pearson(values, survival)))
+        pairs = [(1.0 if str(r[column]).lower() == "positive" else 0.0, s)
+                 for r, s in zip(rows, survival) if r[column] is not None and str(r[column]).lower() in ("positive", "negative")]
+        if len(pairs) < 3:
+            unavailable.append(label)
+            continue
+        raw.append((label, _pearson([x for x, _ in pairs], [y for _, y in pairs])))
+
+    if not raw:
+        return {
+            "basis": "cohort",
+            "cohortSize": cohort_size,
+            "reliability": "insufficient",
+            "factors": [],
+            "unavailableFactors": unavailable,
+            "caveat": "No factor is recorded for at least 3 patients with a recorded survival, so no cohort statistic is available.",
+        }
 
     total = sum(abs(c) for _, c in raw)
     if total == 0:
@@ -279,6 +302,7 @@ async def explainability(
             "cohortSize": cohort_size,
             "reliability": "insufficient",
             "factors": [],
+            "unavailableFactors": unavailable,
             "caveat": (
                 "Every recorded factor is constant across the cohort, so no "
                 "factor can be distinguished from another."
@@ -317,25 +341,43 @@ async def explainability(
         "cohortSize": cohort_size,
         "reliability": "reasonable" if reliable else "indicative",
         "factors": factors,
-        "caveat": caveat,
+        "unavailableFactors": unavailable,
+        "caveat": caveat + (
+            f" Not computed (recorded for fewer than 3 patients): {', '.join(unavailable)}." if unavailable else ""
+        ),
     }
+
+
+def _wdbc_model_inputs(patient: dict[str, object]) -> dict[str, object]:
+    """The model input dict for a patient, or a 422 naming every field that is missing or unusable.
+
+    Nothing is defaulted, corrected or estimated (rules: `app.ml.inputs`)."""
+    fields, missing, invalid = check_patient_columns(patient)
+    if missing or invalid:
+        parts = []
+        if missing:
+            parts.append("not recorded: " + ", ".join(missing))
+        if invalid:
+            parts.append("outside the supported range or not a recognised value: " + ", ".join(invalid))
+        raise ValidationAppError(
+            "A prediction needs every clinical input of the model to be recorded for this patient (" + "; ".join(parts)
+            + "). No prediction was made and nothing was saved.",
+            field=(missing + invalid)[0],
+        )
+    return fields
 
 
 def _run_model(patient: dict[str, object]) -> tuple[dict[str, object], str]:
     """Runs the `app.ml` model synchronously (call from a worker thread).
 
-    `app.ml` is imported here, not at module level, so missing ML dependencies
-    or a missing artifact surface as a 503 on this endpoint instead of
-    preventing the whole API from starting.
+    Required inputs are validated first (422), before the model is touched and before the caller writes anything.
+    `app.ml` is imported inside the try, not at module level, so missing ML dependencies or a missing artifact
+    surface as a 503 on this endpoint instead of preventing the whole API from starting.
     """
+    fields = _wdbc_model_inputs(patient)
     try:
-        from app.ml.interface import get_prediction_model, patient_to_model_fields
+        from app.ml.interface import get_prediction_model
 
-        # `None` fields are dropped so the model's documented per-field
-        # defaults apply, exactly as for a field that was never recorded.
-        fields = {
-            k: v for k, v in patient_to_model_fields(SimpleNamespace(**patient)).items() if v is not None
-        }
         model = get_prediction_model()
         result = model.predict(fields)
         meta = model.metadata
@@ -354,7 +396,7 @@ def _run_model(patient: dict[str, object]) -> tuple[dict[str, object], str]:
 async def run_prediction(
     payload: PredictionRequest,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     """Record a prediction run produced by the existing `app.ml` model.
 
@@ -369,7 +411,7 @@ async def run_prediction(
     If the model cannot be loaded the request fails with 503; nothing is
     recorded and no snapshot value is substituted.
     """
-    patient = await resolve_patient(session, payload.patient_id)
+    patient = await resolve_patient(session, payload.patient_id, _user)
     pid = str(patient["id"])
     active = (
         await session.execute(
@@ -434,10 +476,10 @@ async def run_prediction(
     # Best-effort and only after the run is committed; identifiers only, no results.
     await notify_roles(
         session,
-        ("doctor", "admin", "researcher"),
+        ("doctor", "admin"),
         type_="prediction",
         title="Prediction run recorded",
-        body=f"Prediction run {run_id} was recorded for patient {patient['patient_code']}.",
+        body=f"Prediction run {run_id} was recorded.",
     )
 
     runs = await _history(session, pid)

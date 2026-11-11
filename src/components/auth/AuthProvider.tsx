@@ -1,9 +1,14 @@
 /**
  * Pluggable auth layer.
  *
- * Today the session is resolved from the (mock) `authService` and persisted in
- * local storage. When the backend arrives, only `authService` changes — the
- * provider, the `useAuth` hook, and the route guards stay identical.
+ * The access token lives ONLY in memory (React state + a ref). Nothing that authenticates a request is written
+ * to localStorage/sessionStorage, so a script injected into the page cannot lift a stored token. The session
+ * survives a reload through the HttpOnly refresh cookie alone: on start the provider calls `/auth/refresh`
+ * once (the same single-flight refresh the API client uses for 401s) and keeps the fresh token in memory.
+ *
+ * Sign-out is a single centralised flow (`logout`, via the session controller): local state is always cleared,
+ * other tabs are told with a data-free BroadcastChannel event, and while a sign-out is unconfirmed on the
+ * server no automatic refresh is allowed to undo it. See session-controller.ts / auth-signout.ts.
  */
 import {
   createContext,
@@ -11,15 +16,18 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 
 import { authService, USING_MOCKS } from "@/services";
-import { setAuthRefreshHandler, setAuthTokenGetter } from "@/services/api-client";
+import { refreshSessionOnce, setAuthRefreshHandler, setAuthTokenGetter } from "@/services/api-client";
+import { createLogoutMarker, createSignOutBus } from "@/services/auth-signout";
+import { createSessionController, type LogoutResult, type SessionController } from "@/services/session-controller";
 import type { AuthSession, AuthUser, Credentials, UserRole } from "@/types/models";
 
-const SESSION_KEY = "oncotwin.session";
+// UI-only "viewing as" preference. Not a credential: the backend decides what the account may do.
 const ROLE_KEY = "oncotwin.role";
 
 /** Guards only enforce once a real backend is wired up. */
@@ -31,7 +39,9 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: Credentials) => Promise<AuthSession>;
-  logout: () => Promise<void>;
+  /** Intentional sign-out. Always clears local auth state and never rejects; `serverRevoked` says whether the
+   * server confirmed the refresh session is revoked. */
+  logout: () => Promise<LogoutResult>;
   /** UI-only role switch used by the sidebar "Viewing as" control. */
   setRole: (role: UserRole) => void;
   /** Refreshes the cached user in the current session after a profile edit
@@ -44,88 +54,82 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function readStoredSession(): AuthSession | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as AuthSession) : null;
-  } catch {
-    return null;
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [role, setRoleState] = useState<UserRole>("doctor");
   const [isLoading, setIsLoading] = useState(true);
+  // The request-time token. Updated synchronously with `session` so a request issued right after a refresh
+  // never sees a stale value. Memory only.
+  const tokenRef = useRef<string | null>(null);
 
+  const applySession = useCallback((next: AuthSession | null) => {
+    tokenRef.current = next?.accessToken ?? null;
+    setSession(next);
+  }, []);
+
+  // Session rules (boot, 401 recovery, intentional sign-out, cross-tab sign-out) live in one controller.
+  const controllerRef = useRef<SessionController<AuthSession> | null>(null);
+  const getController = useCallback((): SessionController<AuthSession> => {
+    controllerRef.current ??= createSessionController<AuthSession>({
+      refresh: () => authService.refresh(),
+      logout: () => authService.logout(), // revokes the refresh token and clears the cookie server-side
+      apply: applySession,
+      getToken: () => tokenRef.current,
+      refreshOnce: () => refreshSessionOnce(),
+      marker: createLogoutMarker(),
+      bus: createSignOutBus(),
+      onRefreshed: (refreshed) => setRoleState(refreshed.user.role),
+    });
+    return controllerRef.current;
+  }, [applySession]);
+
+  // API client wiring: the in-memory token, the single refresh shared by boot and 401 retries, and the
+  // listener for another tab's sign-out.
+  useEffect(() => {
+    const controller = getController();
+    setAuthTokenGetter(() => tokenRef.current);
+    setAuthRefreshHandler(() => controller.refreshHandler());
+    const stopListening = controller.start();
+    return () => {
+      setAuthRefreshHandler(null);
+      stopListening();
+    };
+  }, [getController]);
+
+  // Boot: restore the session from the refresh cookie (unless the user had intentionally signed out). No
+  // localStorage session gate and no separate refresh path - `refreshSessionOnce` joins any refresh already
+  // running, so a reload sends exactly one `/auth/refresh`.
   useEffect(() => {
     let cancelled = false;
+    const storedRole = window.localStorage.getItem(ROLE_KEY) as UserRole | null;
+    if (storedRole) setRoleState(storedRole);
 
-    const restoreSession = async () => {
-      const stored = readStoredSession();
-      const storedRole = window.localStorage.getItem(ROLE_KEY) as UserRole | null;
-      if (storedRole && !cancelled) setRoleState(storedRole);
-
-      if (!stored) {
+    if (USING_MOCKS) {
+      // Fixture mode has no backend and no cookie to restore from.
+      setIsLoading(false);
+      return;
+    }
+    void getController()
+      .boot()
+      .finally(() => {
         if (!cancelled) setIsLoading(false);
-        return;
-      }
-
-      try {
-        const refreshed = await authService.refresh();
-        if (!cancelled) {
-          setSession(refreshed);
-          setRoleState(refreshed.user.role);
-          window.localStorage.setItem(SESSION_KEY, JSON.stringify(refreshed));
-        }
-      } catch {
-        if (!cancelled) {
-          setSession(null);
-          window.localStorage.removeItem(SESSION_KEY);
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    void restoreSession();
+      });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [getController]);
 
-  useEffect(() => {
-    setAuthTokenGetter(() => session?.accessToken ?? null);
-    setAuthRefreshHandler(async () => {
-      try {
-        const refreshed = await authService.refresh();
-        setSession(refreshed);
-        setRoleState(refreshed.user.role);
-        window.localStorage.setItem(SESSION_KEY, JSON.stringify(refreshed));
-        return refreshed.accessToken;
-      } catch {
-        setSession(null);
-        window.localStorage.removeItem(SESSION_KEY);
-        return null;
-      }
-    });
-    return () => setAuthRefreshHandler(null);
-  }, [session]);
+  const login = useCallback(
+    async (credentials: Credentials) => {
+      const next = await authService.login(credentials);
+      getController().signedIn(next);
+      setRoleState(next.user.role);
+      return next;
+    },
+    [getController],
+  );
 
-  const login = useCallback(async (credentials: Credentials) => {
-    const next = await authService.login(credentials);
-    setSession(next);
-    setRoleState(next.user.role);
-    window.localStorage.setItem(SESSION_KEY, JSON.stringify(next));
-    return next;
-  }, []);
-
-  const logout = useCallback(async () => {
-    await authService.logout();
-    setSession(null);
-    window.localStorage.removeItem(SESSION_KEY);
-  }, []);
+  const logout = useCallback(() => getController().logout(), [getController]);
 
   const setRole = useCallback((next: UserRole) => {
     setRoleState(next);
@@ -133,12 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setUser = useCallback((nextUser: AuthUser) => {
-    setSession((prev) => {
-      if (!prev) return prev; // no-op if somehow called while signed out
-      const next = { ...prev, user: nextUser };
-      window.localStorage.setItem(SESSION_KEY, JSON.stringify(next));
-      return next;
-    });
+    setSession((prev) => (prev ? { ...prev, user: nextUser } : prev)); // no-op while signed out; token unchanged
     setRoleState(nextUser.role);
   }, []);
 

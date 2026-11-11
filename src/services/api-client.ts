@@ -6,9 +6,13 @@
  * layer resolves local fixtures instead of issuing network calls — flipping
  * the env var is the only change needed to go live.
  */
+import { resolveApiBase } from "@/services/api-base";
+import { createRefreshCoordinator } from "@/services/auth-refresh";
 
-export const API_BASE_URL: string =
-  (import.meta.env["VITE_API_BASE_URL"] as string | undefined) ?? "";
+export const API_BASE_URL: string = resolveApiBase(
+  import.meta.env["VITE_API_BASE_URL"] as string | undefined,
+  import.meta.env.PROD,
+);
 
 /** True while no backend is configured. Services fall back to fixtures. */
 export const USING_MOCKS = API_BASE_URL.length === 0;
@@ -35,15 +39,35 @@ export class ApiError extends Error {
 type TokenGetter = () => string | null;
 
 let getToken: TokenGetter = () => null;
-let refreshSession: (() => Promise<string | null>) | null = null;
+
+/** One shared, single-flight refresh for boot restoration AND the 401 retry (refresh tokens are single-use). */
+const coordinator = createRefreshCoordinator();
+
+/** Auth endpoints are not retried via refresh: a 401 there is a credential/session answer, not a stale token. */
+const NO_REFRESH_PATHS = new Set([
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/logout",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+]);
 
 /** Plug the auth provider in without touching call sites. */
 export function setAuthTokenGetter(fn: TokenGetter) {
   getToken = fn;
 }
 
+/**
+ * Refresh the session now (or join the refresh already in flight). Resolves to the new access token, or null
+ * when the session could not be refreshed. Never issues a second `/auth/refresh` while one is running.
+ */
+export function refreshSessionOnce(): Promise<string | null> {
+  return coordinator.refresh();
+}
+
 export function setAuthRefreshHandler(fn: (() => Promise<string | null>) | null) {
-  refreshSession = fn;
+  coordinator.setHandler(fn);
 }
 
 export interface RequestOptions {
@@ -102,12 +126,10 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
           ? (options.body as FormData)
           : JSON.stringify(options.body),
   });
-  let response = await request(getToken());
-
-  if (response.status === 401 && path !== "/auth/refresh" && refreshSession) {
-    const refreshedToken = await refreshSession();
-    if (refreshedToken) response = await request(refreshedToken);
-  }
+  // 401 -> (shared) refresh -> retry exactly once; see auth-refresh.ts.
+  const response = await coordinator.run(request, () => getToken(), {
+    allowRefresh: !NO_REFRESH_PATHS.has(path),
+  });
 
   const isJson = response.headers.get("content-type")?.includes("application/json");
   const payload = isJson

@@ -36,6 +36,7 @@ from app.db.session import get_db_session
 from app.dependencies.auth import CurrentUser, require_roles
 from app.services import storage
 from app.services.clinical_queries import resolve_patient
+from app.services.patient_access import access_predicate
 
 router = APIRouter(tags=["documents"])
 
@@ -101,7 +102,7 @@ def _document_response(row) -> dict[str, object]:
 
 
 _DOCUMENT_SELECT = """
-    SELECT d.id, d.name, d.category, d.mime_type, d.size_bytes, d.storage_path,
+    SELECT d.id, d.patient_id, d.name, d.category, d.mime_type, d.size_bytes, d.storage_path,
            d.version, d.status, COALESCE(d.created_at, d.date) AS created_at,
            p.patient_code, p.name AS patient_name
     FROM documents d
@@ -114,10 +115,10 @@ async def list_documents(
     patientId: str | None = None,
     search: str | None = None,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
-    where = ["p.deleted_at IS NULL"]
-    params: dict[str, object] = {}
+    predicate, params = access_predicate(_user, "d.patient_id")
+    where = ["p.deleted_at IS NULL", predicate]
     if patientId:
         where.append("(p.patient_code = :patient_id OR p.id::text = :patient_id)")
         params["patient_id"] = patientId
@@ -132,7 +133,7 @@ async def list_documents(
     return [_document_response(row) for row in result.mappings()]
 
 
-async def _get_document_row(session: AsyncSession, document_id: str):
+async def _get_document_row(session: AsyncSession, document_id: str, user: object | None = None):
     row = (
         await session.execute(
             text(f"{_DOCUMENT_SELECT} WHERE d.id = :id AND p.deleted_at IS NULL"),
@@ -141,6 +142,10 @@ async def _get_document_row(session: AsyncSession, document_id: str):
     ).mappings().first()
     if row is None:
         raise HTTPException(status_code=404, detail="Document not found.")
+    if user is not None:
+        from app.services.patient_access import require_patient_access
+
+        await require_patient_access(session, user, row["patient_id"])
     return row
 
 
@@ -148,9 +153,9 @@ async def _get_document_row(session: AsyncSession, document_id: str):
 async def get_document(
     document_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
-    row = await _get_document_row(session, document_id)
+    row = await _get_document_row(session, document_id, _user)
     return _document_response(row)
 
 
@@ -163,7 +168,7 @@ async def upload_document(
     current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     settings = get_settings()
-    patient = await resolve_patient(session, patient_id)
+    patient = await resolve_patient(session, patient_id, current_user)
 
     content = await file.read()
     if not content:
@@ -246,9 +251,9 @@ async def upload_document(
 async def document_versions(
     document_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
-    await _get_document_row(session, document_id)  # 404s if missing/isolated
+    await _get_document_row(session, document_id, _user)  # 404s if missing/isolated
     result = await session.execute(
         text(
             "SELECT version, COALESCE(created_at, date) AS created_at, author, note "
@@ -272,11 +277,11 @@ async def document_versions(
 async def document_timeline(
     document_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> list[dict[str, object]]:
     """The document's own version history as a timeline - not a fabricated
     cross-module trail (see module docstring)."""
-    await _get_document_row(session, document_id)
+    await _get_document_row(session, document_id, _user)
     versions = await document_versions(document_id, session=session, _user=_user)
     return [
         {
@@ -293,11 +298,11 @@ async def document_timeline(
 async def document_links(
     document_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     """Only the patient link is backed by real data - see module docstring
     for why twin/prediction/report links are not fabricated here."""
-    row = await _get_document_row(session, document_id)
+    row = await _get_document_row(session, document_id, _user)
     return {
         "patientId": row["patient_code"],
         "patient": row["patient_name"],
@@ -311,9 +316,9 @@ async def document_links(
 async def download_document(
     document_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
-    row = await _get_document_row(session, document_id)
+    row = await _get_document_row(session, document_id, _user)
     if not row["storage_path"]:
         # Rows created before file storage existed have metadata only.
         raise HTTPException(status_code=404, detail="No stored file for this document.")
@@ -328,9 +333,9 @@ _PREVIEWABLE_MIME_TYPES = {"application/pdf", "image/jpeg", "image/png"}
 async def preview_document(
     document_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
-    row = await _get_document_row(session, document_id)
+    row = await _get_document_row(session, document_id, _user)
     mime_type = row["mime_type"] or ""
     if mime_type not in _PREVIEWABLE_MIME_TYPES or not row["storage_path"]:
         return {"available": False, "mimeType": mime_type, "url": None}

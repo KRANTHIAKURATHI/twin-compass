@@ -79,7 +79,7 @@ function ExplainabilityPage() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Explainability"
-        description="Which recorded clinical variables track with survival across this cohort."
+        description="Which recorded clinical variables track with the stored survival value across this cohort (a correlation, not a model explanation)."
         crumbs={[{ label: "Home", to: "/" }, { label: "Explainability" }]}
         actions={
           <Select value={patientId} onValueChange={setPatientId}>
@@ -118,8 +118,8 @@ function ExplainabilityPage() {
             <CardTitle>Factor weights across the cohort</CardTitle>
             <CardDescription>
               {explain
-                ? `Correlation with recorded survival across ${explain.cohortSize} patient records, normalised to relative weights`
-                : "Correlation with recorded survival across the patient records in this database"}
+                ? `Correlation with the stored survival value (origin not tracked) across ${explain.cohortSize} patient records, normalised to relative weights`
+                : "Correlation with the stored survival value (origin not tracked) across the patient records in this database"}
             </CardDescription>
           </CardHeader>
           <CardContent className="h-80">
@@ -172,10 +172,10 @@ function ExplainabilityPage() {
               <>
                 <div className="flex flex-wrap gap-2">
                   <StatusChip tone="primary">{latest.model}</StatusChip>
-                  {latest.confidence != null && <StatusChip tone="neutral">{latest.confidence}% confidence</StatusChip>}
+                  {latest.confidence != null && <StatusChip tone="neutral">{latest.confidence}% malignancy classifier probability</StatusChip>}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Last run {new Date(latest.date).toLocaleString()} recorded {latest.survival}% survival. The weights
+                  Last run {new Date(latest.date).toLocaleString()} recorded a heuristic survival estimate of {latest.survival ?? "Not available"}% (Not clinically validated). The weights
                   above are not an attribution of that run.
                 </p>
               </>
@@ -192,7 +192,7 @@ function ExplainabilityPage() {
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base text-success">Tracks with better survival</CardTitle>
+            <CardTitle className="text-base text-success">Tracks with higher stored survival value</CardTitle>
             <CardDescription>Positive correlation across the cohort</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2.5">
@@ -214,7 +214,7 @@ function ExplainabilityPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base text-risk">Tracks with worse survival</CardTitle>
+            <CardTitle className="text-base text-risk">Tracks with lower stored survival value</CardTitle>
             <CardDescription>Negative correlation across the cohort</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2.5">
@@ -258,7 +258,7 @@ function ExplainabilityPage() {
                 <AccordionTrigger className="text-sm">How is this computed?</AccordionTrigger>
                 <AccordionContent className="space-y-2 text-sm text-muted-foreground">
                   <p>
-                    Each factor's value is correlated (Pearson) against the survival probability recorded on every
+                    Each factor's value is correlated (Pearson) against the stored survival value on every
                     non-deleted patient record. ER, PR and HER2 status are encoded as 1 for positive, 0 otherwise. The
                     absolute correlations are then normalised to sum to 100%, which is the weight shown.
                   </p>

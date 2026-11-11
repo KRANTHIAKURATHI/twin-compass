@@ -30,11 +30,11 @@ export const Route = createFileRoute("/_shell/help")({
 const faqs = [
   {
     q: "How is a digital twin built?",
-    a: "Each twin combines demographics, staging, biomarkers (ER/PR/HER2, Ki-67), imaging-derived tumor volumetrics and treatment exposure into a longitudinal model that projects tumor trajectory and survival.",
+    a: "Each twin combines demographics, staging, biomarkers (ER/PR/HER2, Ki-67), imaging-derived tumor volumetrics and treatment exposure into a versioned record of the patient. Values copied onto a twin are recorded values, not predictions; projected scenarios are research / experimental.",
   },
   {
     q: "How accurate are the predictions?",
-    a: "The production progression model reports an AUC of 0.91 on the Northfield longitudinal cohort. Every prediction ships with a calibrated confidence interval and a feature-attribution breakdown on the Explainability page.",
+    a: "Estimates are labelled by source: a heuristic malignancy-classifier estimate, METABRIC research models for overall and recurrence-free survival, and projected treatment scenarios. All are research-only and not clinically validated; none has external validation or assessed calibration. The Explainability page shows cohort correlations, not a per-prediction attribution.",
   },
   {
     q: "Why must OCR fields be verified?",

@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db_session
 from app.dependencies.auth import CurrentUser, require_roles
+from app.services.patient_access import access_predicate
 
 router = APIRouter(tags=["analytics"])
 
@@ -105,7 +106,7 @@ async def dashboard(
         {"key": "predictions", "label": "Prediction Runs", "value": int(predictions), "format": "count"},
         {
             "key": "survival",
-            "label": "Avg. Survival Probability",
+            "label": "Avg. Stored Survival Value",
             # Averaged over the patients that actually carry a recorded
             # probability; null when none do.
             "value": round(float(avg_survival) * 100, 1) if avg_survival is not None else None,
@@ -130,8 +131,8 @@ async def dashboard(
         "stageDistribution": await _stage_distribution(session),
         "treatmentComparison": await _treatment_comparison(session),
         "accuracy": await _accuracy(session),
-        "recentActivity": await _recent_activity(session),
-        "followUps": await _follow_ups(session),
+        "recentActivity": await _recent_activity(session) if str(_user.role) == "admin" else [],  # audit rows name patients
+        "followUps": await _follow_ups(session, _user),
     }
 
 
@@ -334,7 +335,7 @@ async def _survival_by_risk(session: AsyncSession) -> dict[str, object]:
     by_band = {r["risk"]: (float(r["s"]), r["n"]) for r in rows}
 
     baseline: dict[str, object] = {"point": "At diagnosis"}
-    recorded: dict[str, object] = {"point": "Recorded probability"}
+    recorded: dict[str, object] = {"point": "Stored value"}
     cohort_sizes: dict[str, int] = {}
     for band in RISK_BANDS:
         value, n = by_band.get(band, (None, 0))
@@ -346,8 +347,8 @@ async def _survival_by_risk(session: AsyncSession) -> dict[str, object]:
         "points": [baseline, recorded],
         "cohortSizes": cohort_sizes,
         "caveat": (
-            "Average of the survival probability recorded on each patient "
-            "record, grouped by risk band. Not a longitudinal survival curve - "
+            "Average of the survival value stored on each patient record (origin "
+            "not tracked; not a model prediction), grouped by risk band. Not a longitudinal survival curve - "
             "this database holds no year-by-year outcome data."
         ),
     }
@@ -374,18 +375,19 @@ async def _recent_activity(session: AsyncSession) -> list[dict[str, object]]:
     ]
 
 
-async def _follow_ups(session: AsyncSession) -> list[dict[str, object]]:
+async def _follow_ups(session: AsyncSession, user: object) -> list[dict[str, object]]:
     """Upcoming appointments. Empty until appointments are recorded."""
     now = datetime.now(timezone.utc).isoformat()
+    predicate, params = access_predicate(user, "a.patient_id")  # appointments name patients: care team / admin only
     rows = (
         await session.execute(
             text(
                 "SELECT a.id, a.title, a.date, a.time, a.status, p.patient_code, p.name "
                 "FROM appointments a LEFT JOIN patients p ON p.id = a.patient_id "
-                "WHERE a.date >= :now AND lower(coalesce(a.status,'')) <> 'cancelled' "
+                f"WHERE a.date >= :now AND lower(coalesce(a.status,'')) <> 'cancelled' AND {predicate} "
                 "ORDER BY a.date ASC, a.time ASC LIMIT 6"
             ),
-            {"now": now[:10]},
+            {"now": now[:10], **params},
         )
     ).mappings().all()
     return [

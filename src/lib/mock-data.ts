@@ -112,7 +112,7 @@ export const dashboardStats = [
   { label: "High Risk Patients", value: "112", delta: "+1.8%", tone: "risk" as const, icon: "alert" },
   { label: "Treatment Simulations", value: "3,470", delta: "+12.4%", tone: "primary" as const, icon: "flask" },
   { label: "Successful Predictions", value: "89.4%", delta: "+2.0%", tone: "success" as const, icon: "check" },
-  { label: "Avg. Survival Probability", value: "76.2%", delta: "-0.6%", tone: "warning" as const, icon: "heart" },
+  { label: "Avg. Stored Survival Value", value: "76.2%", delta: "-0.6%", tone: "warning" as const, icon: "heart" },
 ];
 
 export const patientGrowth = [

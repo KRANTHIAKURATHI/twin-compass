@@ -65,22 +65,19 @@ def test_report_routes_reject_patient_role(client, method, _template, path):
     assert r.status_code == 403
 
 
-def test_researcher_can_reach_list_route(client):
-    """Confirms read roles pass RBAC (the request then fails downstream on
-    the missing `reports` table - real behaviour on SQLite, not what this
-    test is asserting)."""
+def test_researcher_is_rejected_from_report_list(client):
+    """Phase 6.1 / H1: reports embed patient names and clinical content."""
     register(client, email="researcher-reports@example.com", role="researcher")
     token = login(client, email="researcher-reports@example.com").json()["accessToken"]
     headers = {"Authorization": f"Bearer {token}"}
     r = client.get("/reports", headers=headers)
-    assert r.status_code != 403 and r.status_code != 401
+    assert r.status_code == 403
 
 
-def test_researcher_can_reach_generate_route(client):
-    """Generation is allowed for doctor/researcher/admin (matches the
-    existing pattern for /predictions/run and /simulations)."""
+def test_researcher_is_rejected_from_report_generation(client):
+    """Phase 6.1 / H1: researchers may not create patient-linked records."""
     register(client, email="researcher-reports2@example.com", role="researcher")
     token = login(client, email="researcher-reports2@example.com").json()["accessToken"]
     headers = {"Authorization": f"Bearer {token}"}
     r = client.post("/reports/generate", json={"patientId": "PT-0001"}, headers=headers)
-    assert r.status_code != 403 and r.status_code != 401
+    assert r.status_code == 403

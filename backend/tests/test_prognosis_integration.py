@@ -102,15 +102,19 @@ def test_no_synthetic_expression_generation(monkeypatch):
     assert not any("expression" in k.lower() or k.startswith("ENSG") for r in seen for k in r)
 
 
+FULL_WDBC = {"stage": "II", "nodesInvolved": 1, "tumorSizeMm": 25, "grade": 2, "age": 55, "ki67": 18,
+             "erStatus": "Positive", "prStatus": "Positive", "her2Status": "Negative"}
+
+
 def test_wdbc_prediction_unchanged():
     pytest.importorskip("sklearn")
     from app.ml.interface import get_prediction_model
 
     set_prediction_model(None)
     model = get_prediction_model()
-    before = model.predict({"stage": "II", "nodesInvolved": 1, "tumorSizeMm": 25, "grade": 2, "age": 55})
+    before = model.predict(FULL_WDBC)
     pg.prognosis_for_patient(PATIENT)
-    assert model.predict({"stage": "II", "nodesInvolved": 1, "tumorSizeMm": 25, "grade": 2, "age": 55}) == before
+    assert model.predict(FULL_WDBC) == before
     assert {"survival", "recurrence", "confidence", "risk", "status"} <= set(before)
 
 

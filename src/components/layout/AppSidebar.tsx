@@ -41,6 +41,7 @@ import {
 
 import { roleLabels, ROLES, type Role } from "@/lib/roles";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useSignOut } from "@/components/auth/useSignOut";
 
 interface NavItem {
   title: string;
@@ -92,6 +93,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { role, setRole } = useAuth();
+  const signOut = useSignOut();
 
   const isActive = (url: string) => (url === "/" ? pathname === "/" : pathname.startsWith(url));
 
@@ -170,11 +172,9 @@ export function AppSidebar() {
         <SidebarMenu>
 
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Logout">
-              <Link to="/login" className="flex items-center gap-3 text-muted-foreground">
-                <LogOut className="size-4 shrink-0" aria-hidden="true" />
-                <span>Logout</span>
-              </Link>
+            <SidebarMenuButton tooltip="Logout" onClick={() => void signOut()} className="text-muted-foreground">
+              <LogOut className="size-4 shrink-0" aria-hidden="true" />
+              <span>Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

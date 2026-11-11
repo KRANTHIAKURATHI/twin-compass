@@ -80,13 +80,13 @@ def test_twin_routes_reject_patient_role(client, method, _template, path):
     "method,_template,path",
     [rt for rt in TWIN_ROUTES if rt[2] not in MUTATING_PATHS],
 )
-def test_researcher_role_reaches_read_routes(client, method, _template, path):
-    """Researchers may read twin data but not mutate it."""
+def test_researcher_role_is_rejected_from_twin_read_routes(client, method, _template, path):
+    """Phase 6.1 / H1: twins are patient-linked; researchers get no identified patient data."""
     register(client, email="researcher@example.com", role="researcher")
     token = login(client, email="researcher@example.com").json()["accessToken"]
     headers = {"Authorization": f"Bearer {token}"}
     r = getattr(client, method.lower())(path, headers=headers)
-    assert r.status_code not in (401, 403)
+    assert r.status_code == 403
 
 
 @pytest.mark.parametrize("method,_template,path", [rt for rt in TWIN_ROUTES if rt[2] in MUTATING_PATHS])

@@ -78,6 +78,8 @@ class FakeSession:
         if self.fail_on and self.fail_on in sql:
             raise RuntimeError("injected failure")
         self.calls.append((sql, params or {}))
+        if "FROM patient_access" in sql:  # patient-level authorization: these handler tests act as an authorised caller
+            return _Result([{"x": 1}], 1)
         for needle, rows, rowcount in self.rules:
             if needle in sql:
                 return _Result(rows, rowcount)
@@ -352,7 +354,7 @@ async def test_reject_failure_and_lost_claim_commit_nothing(monkeypatch):
 
 
 def _patch_extract(monkeypatch):
-    async def fake_doc(session, document_id):
+    async def fake_doc(session, document_id, user=None):
         return {"id": document_id, "storage_path": "p", "mime_type": "application/pdf", "patient_code": "PT-1001"}
 
     async def fake_download(path):
@@ -463,7 +465,8 @@ async def test_patient_update_audit_failure_commits_nothing():
 
 
 async def test_patient_delete_is_audited_atomically():
-    session = FakeSession(rules=[("UPDATE patients SET deleted_at", [{"id": "pat-uuid-1", "patient_code": "PT-1001"}], 1)])
+    session = FakeSession(rules=[("UPDATE patients SET deleted_at", [{"id": "pat-uuid-1", "patient_code": "PT-1001"}], 1),
+                                 ("FROM patients WHERE deleted_at IS NULL AND (patient_code", [PATIENT], 1)])
     await clinical_router.delete_patient("PT-1001", session=session, current_user=ACTOR)
     assert_audit_is_last_write_before_single_commit(session)
     event = session.audit()
@@ -474,13 +477,14 @@ async def test_patient_delete_is_audited_atomically():
     assert_no_sentinels(session)
 
     failing = FakeSession(
-        rules=[("UPDATE patients SET deleted_at", [{"id": "p", "patient_code": "PT-1"}], 1)], fail_on="INSERT INTO audit_logs"
+        rules=[("UPDATE patients SET deleted_at", [{"id": "p", "patient_code": "PT-1"}], 1),
+               ("FROM patients WHERE deleted_at IS NULL AND (patient_code", [PATIENT], 1)], fail_on="INSERT INTO audit_logs"
     )
     with pytest.raises(RuntimeError):
         await clinical_router.delete_patient("PT-1", session=failing, current_user=ACTOR)
     assert failing.commits == 0
 
-    missing = FakeSession(rules=[("UPDATE patients SET deleted_at", [], 0)])
+    missing = FakeSession(rules=[("UPDATE patients SET deleted_at", [], 0), ("FROM patients WHERE deleted_at IS NULL AND (patient_code", [PATIENT], 1)])
     with pytest.raises(HTTPException):
         await clinical_router.delete_patient("PT-9", session=missing, current_user=ACTOR)
     assert missing.audit_rows() == [] and missing.commits == 0
@@ -525,6 +529,21 @@ async def test_restore_audits_source_and_new_version():
     assert_no_sentinels(session)
 
 
+async def test_restore_sends_a_dict_snapshot_as_json_text_with_a_jsonb_cast():
+    # asyncpg returns jsonb as a dict; a jsonb parameter must be bound as JSON text (regression)
+    session = FakeSession(
+        rules=[
+            ("SELECT * FROM twin_versions", [{**VERSIONS[1], "snapshot": {"stage": "I", "grade": 2}}], 1),
+            ("FROM twin_versions WHERE patient_id", VERSIONS, 1),
+            ("FROM patients", [PATIENT], 1),
+        ]
+    )
+    await twins_router.restore_twin_version("PT-1001", "v1", session=session, current_user=ACTOR)
+    sql, params = next((s, p) for s, p in session.calls if "INSERT INTO twin_versions" in s)
+    assert "CAST(:snapshot AS jsonb)" in sql
+    assert isinstance(params["snapshot"], str) and json.loads(params["snapshot"]) == {"stage": "I", "grade": 2}
+
+
 async def test_archive_audits_previous_state():
     session = _twin_session()
     await twins_router.archive_twin("PT-1001", session=session, current_user=ACTOR)
@@ -532,7 +551,22 @@ async def test_archive_audits_previous_state():
     event = session.audit()
     assert event["action"] == "twin.archived" and event["actor"] == str(ACTOR_ID)
     assert event["before"] == {"twinStatus": "Synced", "activeVersion": "v2"}
-    assert event["after"]["twinStatus"] == "Archived"
+    assert event["after"] == {"twinStatus": "Stale", "versionStatus": "Archived", "archivedVersion": "v2"}
+    # only the Active version is archived, and the patient is marked Stale (the CHECK-allowed sync state)
+    archive_sql, _ = next((s, p) for s, p in session.calls if "UPDATE twin_versions SET status = 'Archived'" in s)
+    assert "status = 'Active'" in archive_sql
+    assert any("twin_status = 'Stale'" in s for s, _ in session.calls)
+    assert not any("'Archived'" in s and "UPDATE patients" in s for s, _ in session.calls)
+
+
+async def test_archive_without_an_active_version_is_a_conflict_and_writes_nothing():
+    session = FakeSession(
+        rules=[("SELECT version FROM twin_versions", [], 1), ("FROM patients", [PATIENT], 1)]
+    )
+    with pytest.raises(ConflictError):
+        await twins_router.archive_twin("PT-1001", session=session, current_user=ACTOR)
+    assert session.commits == 0 and session.audit_rows() == []
+    assert not any(s.startswith("UPDATE") for s, _ in session.calls)
 
 
 @pytest.mark.parametrize(

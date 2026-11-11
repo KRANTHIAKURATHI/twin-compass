@@ -95,16 +95,14 @@ def test_simulation_routes_reject_patient_role(client, method, _template, path):
     "method,_template,path",
     [(m, t, p) for m, t, p in SIMULATION_ROUTES if p != "/simulations/SIM-1/promote"],
 )
-def test_researcher_role_reaches_read_and_write_routes(client, method, _template, path):
-    """Researchers may read simulation data, run projections, save and
-    duplicate scenarios - all doctor/researcher/admin. Promotion is
-    doctor/admin only and is covered separately."""
+def test_researcher_role_is_rejected_from_identified_simulation_routes(client, method, _template, path):
+    """Phase 6.1 / H1: simulations are patient-linked; researchers may not read, run, save or duplicate them."""
     register(client, email="researcher@example.com", role="researcher")
     token = login(client, email="researcher@example.com").json()["accessToken"]
     headers = {"Authorization": f"Bearer {token}"}
     kwargs = _body_for(method, path) or {}
     r = getattr(client, method.lower())(path, headers=headers, **kwargs)
-    assert r.status_code not in (401, 403)
+    assert r.status_code == 403
 
 
 def test_researcher_role_is_rejected_from_promote(client):

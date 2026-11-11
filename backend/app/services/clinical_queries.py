@@ -26,7 +26,7 @@ PATIENT_COLUMNS = (
 )
 
 
-async def resolve_patient(session: AsyncSession, patient_id: str) -> Mapping[str, Any]:
+async def resolve_patient(session: AsyncSession, patient_id: str, user: Any | None = None) -> Mapping[str, Any]:
     """Return the patient row addressed by either `patient_code` or `id`.
 
     Raises 404 rather than returning None: every caller treats a missing
@@ -48,6 +48,10 @@ async def resolve_patient(session: AsyncSession, patient_id: str) -> Mapping[str
     ).mappings().first()
     if row is None:
         raise HTTPException(status_code=404, detail="Patient not found.")
+    if user is not None:  # patient-level authorization (admin: all; doctor: care team; patient: self; researcher: none)
+        from app.services.patient_access import require_patient_access
+
+        await require_patient_access(session, user, row["id"])
     return row
 
 

@@ -83,15 +83,13 @@ def test_researcher_cannot_mutate_ocr_data(client, method, _template, path):
     assert r.status_code == 403
 
 
-def test_researcher_can_reach_fields_route(client):
-    """Confirms the read role passes RBAC (the request then fails downstream
-    on the missing `ocr_extractions` table - real behaviour on SQLite, not
-    what this test is asserting)."""
+def test_researcher_is_rejected_from_fields_route(client):
+    """Phase 6.1 / H1: extracted fields are identified clinical content."""
     register(client, email="researcher2@example.com", role="researcher")
     token = login(client, email="researcher2@example.com").json()["accessToken"]
     headers = {"Authorization": f"Bearer {token}"}
     r = client.get("/ocr/doc-1/fields", headers=headers)
-    assert r.status_code not in (401, 403)
+    assert r.status_code == 403
 
 
 @pytest.mark.parametrize("method,_template,path", OCR_ROUTES)
@@ -161,7 +159,7 @@ class TestOcrTimestampBinding:
         from app.core.config import get_settings
         from app.services import ocr_provider, storage
 
-        async def fake_doc(session, document_id):
+        async def fake_doc(session, document_id, user=None):
             return {"id": document_id, "storage_path": "p", "mime_type": "application/pdf", "patient_code": "PT-1001"}
 
         async def fake_download(path):
@@ -199,7 +197,7 @@ class TestOcrTimestampBinding:
         row = {
             "id": "e1", "status": "Extracted", "document_id": "doc-1", "patient_code": "P1",
             "model": "m", "extracted_at": None, "reviewed_at": None,
-            "reject_reason": None, "reviewed_by_email": None,
+            "reject_reason": None, "reviewed_by_email": None, "patient_id": "pat-1",
         }
 
         async def fake_latest(session, document_id):
@@ -230,7 +228,7 @@ class TestOcrTimestampBinding:
         row = {
             "id": "e1", "status": "Extracted", "document_id": "doc-1", "patient_id": "pat-1",
             "patient_code": "P1", "model": "m", "extracted_at": None, "reviewed_at": None,
-            "reject_reason": None, "reviewed_by_email": None,
+            "reject_reason": None, "reviewed_by_email": None, "patient_id": "pat-1",
         }
 
         async def fake_latest(session, document_id):
@@ -295,7 +293,7 @@ class TestOcrDocumentStatus:
         return {
             "id": "e1", "status": "Extracted", "document_id": "doc-1", "patient_id": "pat-1",
             "patient_code": "P1", "model": "m", "extracted_at": None, "reviewed_at": None,
-            "reject_reason": None, "reviewed_by_email": None,
+            "reject_reason": None, "reviewed_by_email": None, "patient_id": "pat-1",
         }
 
     def _patch_reads(self, monkeypatch):
@@ -335,7 +333,7 @@ class TestOcrDocumentStatus:
         from app.core.config import get_settings
         from app.services import ocr_provider, storage
 
-        async def fake_doc(session, document_id):
+        async def fake_doc(session, document_id, user=None):
             return {"id": document_id, "storage_path": "p", "mime_type": "application/pdf", "patient_code": "PT-1001"}
 
         async def fake_download(path):
@@ -456,7 +454,7 @@ class TestOcrDocumentStatus:
         payload = OcrApproveRequest(fields=[{"field": "stage", "value": ""}])
         with pytest.raises(ValidationAppError):
             await ocr_router.approve_extraction("doc-1", payload, session=session, current_user=self._user())
-        assert events == []
+        assert [e for e in events if "patient_access" not in e[1]] == []
 
     async def test_reject_returns_document_to_pending_ocr(self, monkeypatch):
         from app.api.v1.routers import ocr as ocr_router
@@ -493,7 +491,7 @@ class TestOcrDocumentStatus:
             await ocr_router.reject_extraction(
                 "doc-1", OcrRejectRequest(reason="x"), session=session, current_user=self._user()
             )
-        assert events == []
+        assert [e for e in events if "patient_access" not in e[1]] == []
 
 
 def test_extraction_response_serializes_null_and_numeric_confidence():

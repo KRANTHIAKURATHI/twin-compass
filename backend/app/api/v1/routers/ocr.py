@@ -46,6 +46,7 @@ from app.schemas.ocr import OcrApproveRequest, OcrRejectRequest
 from app.services import notifications, ocr_provider, storage
 from app.services.audit import record_audit
 from app.services.clinical_queries import resolve_patient
+from app.services.patient_access import require_patient_access
 
 router = APIRouter(tags=["ocr"])
 
@@ -148,7 +149,7 @@ async def extract_document(
     session: AsyncSession = Depends(get_db_session),
     current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
-    doc = await _get_document_row(session, document_id)
+    doc = await _get_document_row(session, document_id, current_user)
     settings = get_settings()
     if (doc["mime_type"] or "") not in settings.OCR_SUPPORTED_MIME_TYPES:
         raise ValidationAppError(
@@ -224,7 +225,7 @@ async def extract_document(
             ("doctor", "admin"),
             type_="ocr",
             title="OCR extraction ready for review",
-            body=f"Document {document_id} (patient {row['patient_code']}) has extracted fields awaiting verification.",
+            body=f"Document {document_id} has extracted fields awaiting verification.",
         )
     fields = await _fields_for(session, extraction_id)
     return {"ok": True, "data": _extraction_response(row, fields), "message": "Extraction complete — requires verification."}
@@ -234,9 +235,9 @@ async def extract_document(
 async def get_extraction_fields(
     document_id: str,
     session: AsyncSession = Depends(get_db_session),
-    _user: CurrentUser = Depends(require_roles("doctor", "researcher", "admin")),
+    _user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
-    await _get_document_row(session, document_id)  # 404s if missing/isolated
+    await _get_document_row(session, document_id, _user)  # 404s if missing/isolated
     row = await _latest_extraction(session, document_id)
     fields = await _fields_for(session, str(row["id"]))
     return _extraction_response(row, fields)
@@ -250,6 +251,7 @@ async def approve_extraction(
     current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     row = await _latest_extraction(session, document_id)
+    await require_patient_access(session, current_user, row["patient_id"])
     if row["status"] != "Extracted":
         raise ConflictError(f"This extraction was already {row['status'].lower()}.")
 
@@ -386,6 +388,7 @@ async def reject_extraction(
     current_user: CurrentUser = Depends(require_roles("doctor", "admin")),
 ) -> dict[str, object]:
     row = await _latest_extraction(session, document_id)
+    await require_patient_access(session, current_user, row["patient_id"])
     if row["status"] != "Extracted":
         raise ConflictError(f"This extraction was already {row['status'].lower()}.")
 
