@@ -107,7 +107,11 @@ export const inputRows = (
     { label: "ER", value: text(i?.ER) },
     { label: "PR", value: text(i?.PR) },
     { label: "HER2", value: text(i?.HER2) },
-    { label: "Baseline survival", value: text(i?.baselineSurvival, "%") },
+    {
+      // Stored as a 0–1 probability (the backend computes 1 − baselineSurvival), shown as a percentage.
+      label: "Baseline survival",
+      value: text(i?.baselineSurvival == null ? null : Math.round(i.baselineSurvival * 10000) / 100, "%"),
+    },
     { label: "Baseline risk", value: text(i?.baselineRisk) },
     { label: "Requested regimen", value: text(provenance?.requestedRegimen) },
     { label: "Twin version", value: text(extra.twinVersion) },

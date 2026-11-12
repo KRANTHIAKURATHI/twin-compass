@@ -150,6 +150,8 @@ test("inputs used come from provenance; only genuinely absent values are null", 
   assert.equal(rows["Ki-67"], "18%");
   assert.equal(rows["HER2"], "Negative");
   assert.equal(rows["Baseline survival"], "0%", "a recorded 0 is a value, not an absence");
+  const p976 = inputRows(prov({ inputs: { baselineSurvival: 0.9762 } }), {});
+  assert.equal(Object.fromEntries(p976.map((r) => [r.label, r.value]))["Baseline survival"], "97.62%", "0-1 probability shown as a percentage");
   assert.equal(rows["Baseline risk"], "low");
   assert.equal(rows["Requested regimen"], "Endocrine therapy");
   assert.equal(rows["Twin version"], "v3");
