@@ -286,3 +286,12 @@ test("a queued custom scenario is requested by name only when queued, and its ev
   assert.equal(hasOutcomes(none), false);
   assert.equal(runUnavailableReason([none]), "no regimen");
 });
+
+test("the selector is pre-filled once from a supported last-run regimen, never from a placeholder", () => {
+  const page = readFileSync(new URL("../routes/_shell.simulator.tsx", import.meta.url), "utf8");
+  assert.ok(page.includes("supportedRegimen(s.requestedRegimen)") && page.includes("prefilledFor"), "pre-fill uses supportedRegimen, once per patient");
+  assert.equal(supportedRegimen("Endocrine therapy"), "Endocrine therapy");
+  for (const v of ["Not yet started", "Current treatment", "", null, "Letrozole"]) assert.equal(supportedRegimen(v), undefined, String(v));
+  // Run itself still sends only what the selector holds.
+  assert.ok(page.includes("const regimen = regimenToRun?.regimen;"));
+});

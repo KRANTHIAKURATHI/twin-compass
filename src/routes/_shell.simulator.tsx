@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { createFileRoute } from "@tanstack/react-router";
 import { Play, Sparkles, ShieldCheck, TrendingDown, Clock, AlertTriangle, ArrowUpRight, Copy } from "lucide-react";
@@ -172,6 +172,16 @@ function SimulatorPage() {
   const shownHasOutcomes = (shown ?? []).some(hasOutcomes);
   const shownReason = runUnavailableReason(shown ?? []);
   const previousRun = shown && !shownHasOutcomes ? previousRunWithResults(priorRuns, activeRunId) : null;
+  // Once per patient, pre-select the displayed run's regimen if it is one of the supported options, so a normal
+  // run is one click. It is a visible, editable choice in the selector - never applied silently at Run time -
+  // and a placeholder or unsupported regimen leaves the selector empty.
+  const lastRunRegimen = (shown ?? []).map((s) => supportedRegimen(s.requestedRegimen)).find(Boolean);
+  const prefilledFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!patientId || !lastRunRegimen || prefilledFor.current === patientId) return;
+    prefilledFor.current = patientId;
+    setBuilder((b) => (b.regimen ? b : { ...b, regimen: lastRunRegimen }));
+  }, [patientId, lastRunRegimen]);
   // Only a supported regimen chosen in the selector can be run; nothing is inherited from the displayed run.
   const regimenToRun = describeRunRegimen(builder.regimen);
   const builderRegimen = regimenToRun?.regimen;
