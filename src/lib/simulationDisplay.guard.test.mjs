@@ -14,6 +14,7 @@ import {
   UNVERIFIED_NOTE,
   confidenceLabel,
   describeRunRegimen,
+  supportedRegimen,
   hasOutcomes,
   inputRows,
   previousRunWithResults,
@@ -56,23 +57,19 @@ test("placeholder regimens are not real regimens", () => {
   assert.equal(realRegimen("Endocrine therapy"), "Endocrine therapy");
 });
 
-test("with only placeholders there is no regimen to run, and none is substituted", () => {
+test("with only placeholders or unsupported text there is no regimen to run, and none is inherited", () => {
   assert.equal(SELECT_REGIMEN_MESSAGE, "Select a treatment regimen before running the simulation.");
-  assert.equal(describeRunRegimen("", [null, "Current treatment"], "Not yet started"), null);
-  assert.equal(describeRunRegimen("Not yet started", [], null), null);
-  assert.equal(resolveRunRegimen("", ["Current treatment"], "Not yet started"), undefined);
+  for (const v of ["", "Current treatment", "Not yet started", "Letrozole"]) {
+    assert.equal(describeRunRegimen(v), null, v);
+    assert.equal(supportedRegimen(v), undefined, v);
+  }
 });
 
-test("a real regimen wins in order: builder, displayed run, patient record - and the source is reported", () => {
-  assert.deepEqual(describeRunRegimen("Platinum-based", ["Endocrine therapy"], "Anthracycline + taxane"), {
-    regimen: "Platinum-based",
-    source: "builder",
-  });
-  assert.deepEqual(describeRunRegimen("", ["Current treatment", "Endocrine therapy"], "Platinum-based"), {
-    regimen: "Endocrine therapy",
-    source: "displayed-run",
-  });
-  assert.deepEqual(describeRunRegimen("", [], "Letrozole"), { regimen: "Letrozole", source: "patient-record" });
+test("only a supported selector value is runnable, and the source is the builder", () => {
+  for (const o of REGIMEN_OPTIONS) {
+    assert.deepEqual(describeRunRegimen(o.value), { regimen: o.value, source: "builder" });
+    assert.equal(supportedRegimen(o.value), o.value);
+  }
 });
 
 // --- the selector only offers what the backend classifies ------------------------------------------------------

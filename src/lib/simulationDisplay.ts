@@ -33,20 +33,19 @@ export const REGIMEN_OPTIONS: readonly { label: string; value: string }[] = [
   { label: "Platinum-based", value: "Platinum-based" },
 ];
 
-export type RegimenSource = "builder" | "displayed-run" | "patient-record";
+/** The supported option value matching `value` (case-insensitive), or undefined for placeholders and unsupported text. */
+export const supportedRegimen = (value: string | null | undefined): string | undefined => {
+  const real = realRegimen(value)?.toLowerCase();
+  return real ? REGIMEN_OPTIONS.find((o) => o.value.toLowerCase() === real)?.value : undefined;
+};
 
-/** Which real regimen a run would use, and where it came from. Null when none is usable — nothing is invented. */
-export const describeRunRegimen = (
-  builderRegimen: string,
-  displayedRequested: (string | null | undefined)[],
-  patientTreatment: string | null | undefined,
-): { regimen: string; source: RegimenSource } | null => {
-  const fromBuilder = realRegimen(builderRegimen);
-  if (fromBuilder) return { regimen: fromBuilder, source: "builder" };
-  const fromRun = displayedRequested.map(realRegimen).find(Boolean);
-  if (fromRun) return { regimen: fromRun, source: "displayed-run" };
-  const fromPatient = realRegimen(patientTreatment);
-  return fromPatient ? { regimen: fromPatient, source: "patient-record" } : null;
+/**
+ * The regimen a NEW run would evaluate: only what is chosen in the selector, and only if it is one of the
+ * supported options. Nothing is inherited from the displayed run or the patient record. Null when none.
+ */
+export const describeRunRegimen = (builderRegimen: string): { regimen: string; source: "builder" } | null => {
+  const regimen = supportedRegimen(builderRegimen);
+  return regimen ? { regimen, source: "builder" } : null;
 };
 
 const OUTCOMES = ["predictedResponse", "tumorChange", "survival5y", "sideEffectRisk", "recoveryWeeks"] as const;
