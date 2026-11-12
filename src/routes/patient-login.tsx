@@ -81,7 +81,7 @@ function PatientLogin() {
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="amelia.hart@mail.health"
+            placeholder="Email address"
             required
           />
         </div>

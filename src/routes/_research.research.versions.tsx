@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
 import { StatusChip } from "@/components/common/StatusChip";
-import { modelVersions } from "@/services/data";
+import type { ModelVersion } from "@/types/models";
 import { useResearchModelVersions } from "@/hooks/api";
 
 export const Route = createFileRoute("/_research/research/versions")({
@@ -21,12 +21,12 @@ export const Route = createFileRoute("/_research/research/versions")({
   component: withPageStates(VersionsPage, { variant: "table" }),
 });
 
-type Row = (typeof modelVersions)[number];
+type Row = ModelVersion & { id: string };
 
 const columns: Column<Row>[] = [
   { key: "version", header: "Version", cell: (r) => <span className="font-medium">{r.version}</span> },
   { key: "released", header: "Released", cell: (r) => r.released },
-  { key: "auc", header: "AUC", cell: (r) => r.auc.toFixed(2) },
+  { key: "auc", header: "AUC", cell: (r) => r.auc == null ? "—" : Number(r.auc).toFixed(2) },
   { key: "notes", header: "Change notes", cell: (r) => <span className="text-muted-foreground">{r.notes}</span> },
   {
     key: "stage",
@@ -36,13 +36,18 @@ const columns: Column<Row>[] = [
 ];
 
 function VersionsPage() {
-  const { data = [] } = useResearchModelVersions();
+  const { data = [], isLoading, isError, refetch } = useResearchModelVersions();
   return (
     <DataTablePage
       title="Model versions"
       description="Release history for the progression twin."
       columns={columns}
-      rows={(data.length ? data : modelVersions).map((v) => ({ ...v, id: v.version }))}
+      rows={data.map((v) => ({ ...v, id: v.version }))}
+      loading={isLoading}
+      error={isError}
+      onRetry={() => void refetch()}
+      emptyTitle="No model versions recorded"
+      emptyDescription="No model releases have been recorded yet."
     />
   );
 }

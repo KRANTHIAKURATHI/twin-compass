@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
-import { Column, DataTablePage } from "@/components/common/DataTablePage";
-import { departments } from "@/services/data";
+import { Layers } from "lucide-react";
+
+import { NotConnectedPage } from "@/components/common/NotConnectedPage";
 
 export const Route = createFileRoute("/_admin/admin/departments")({
   head: () => ({
@@ -19,22 +19,13 @@ export const Route = createFileRoute("/_admin/admin/departments")({
   component: withPageStates(DepartmentsPage, { variant: "table" }),
 });
 
-type Row = (typeof departments)[number];
-
-const columns: Column<Row>[] = [
-  { key: "name", header: "Department", cell: (r) => <span className="font-medium">{r.name}</span> },
-  { key: "head", header: "Head of service", cell: (r) => r.head },
-  { key: "staff", header: "Staff", cell: (r) => r.staff },
-  { key: "cases", header: "Active cases", cell: (r) => r.activeCases },
-];
-
 function DepartmentsPage() {
   return (
-    <DataTablePage
+    <NotConnectedPage
       title="Departments"
       description="Service lines and their current workload."
-      columns={columns}
-      rows={departments}
+      icon={Layers}
+      what="Departments"
     />
   );
 }

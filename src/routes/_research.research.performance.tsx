@@ -5,8 +5,9 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, X
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Gauge, Target } from "lucide-react";
-import { performanceTrend } from "@/services/data";
+import { Brain, Gauge, LineChart as TrendIcon, Target } from "lucide-react";
+import { EmptyState } from "@/components/common/EmptyState";
+import { PageErrorState, PageSkeleton } from "@/components/common/PageState";
 import { useResearchPerformance } from "@/hooks/api";
 
 export const Route = createFileRoute("/_research/research/performance")({
@@ -26,25 +27,55 @@ export const Route = createFileRoute("/_research/research/performance")({
 
 const axis = { stroke: "var(--color-muted-foreground)", fontSize: 12 };
 
+const num = (v: unknown) => (typeof v === "number" ? v : v == null ? null : Number(v));
+const fmt = (v: unknown) => (num(v) == null ? "—" : (num(v) as number).toFixed(2));
+/** Change from the first to the latest recorded point, or undefined when it cannot be computed. */
+const change = (first: unknown, last: unknown, points: number) => {
+  const a = num(first);
+  const b = num(last);
+  if (a == null || b == null || points < 2) return undefined;
+  const d = b - a;
+  return `${d >= 0 ? "+" : ""}${d.toFixed(2)} since first record`;
+};
+
 function PerformancePage() {
-  const { data = [] } = useResearchPerformance();
-  const points = data.length ? data : performanceTrend;
-  const latest = points[points.length - 1];
+  const { data = [], isLoading, isError, refetch } = useResearchPerformance();
+  const header = <PageHeader title="Performance" description="Evaluation on the held-out validation cohort, as recorded on the server." />;
+
+  if (isLoading) return <div className="mx-auto max-w-[1200px]">{header}<PageSkeleton variant="list" /></div>;
+  if (isError)
+    return (
+      <div className="mx-auto max-w-[1200px]">
+        {header}
+        <PageErrorState onRetry={() => void refetch()} />
+      </div>
+    );
+  if (data.length === 0)
+    return (
+      <div className="mx-auto max-w-[1200px]">
+        {header}
+        <EmptyState icon={TrendIcon} title="No performance metrics recorded" description="No model evaluation results have been recorded yet." />
+      </div>
+    );
+
+  const points = data;
+  const first = points[0]!;
+  const latest = points[points.length - 1]!;
 
   return (
     <div className="mx-auto max-w-[1200px]">
-      <PageHeader title="Performance" description="Monthly evaluation on the held-out validation cohort." />
+      {header}
 
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
-        <StatCard icon={Brain} label="AUC" value={latest.auc.toFixed(2)} delta="+0.06 YTD" />
-        <StatCard icon={Target} label="Precision" value={latest.precision.toFixed(2)} delta="+0.07 YTD" tone="success" />
-        <StatCard icon={Gauge} label="Recall" value={latest.recall.toFixed(2)} delta="+0.07 YTD" tone="warning" />
+        <StatCard icon={Brain} label="AUC" value={fmt(latest.auc)} delta={change(first.auc, latest.auc, points.length)} />
+        <StatCard icon={Target} label="Precision" value={fmt(latest.precision)} delta={change(first.precision, latest.precision, points.length)} tone="success" />
+        <StatCard icon={Gauge} label="Recall" value={fmt(latest.recall)} delta={change(first.recall, latest.recall, points.length)} tone="warning" />
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Metric trend</CardTitle>
-          <CardDescription>Rolling validation performance, Feb – Jul 2026</CardDescription>
+          <CardDescription>Validation performance, {first.month} – {latest.month}</CardDescription>
         </CardHeader>
         <CardContent className="h-80">
           <ResponsiveContainer width="100%" height="100%">

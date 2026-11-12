@@ -124,7 +124,7 @@ function PatientsPage() {
               >
                 <div className="grid gap-2 sm:col-span-2">
                   <Label htmlFor="p-name">Full name</Label>
-                  <Input id="p-name" name="name" placeholder="Jane Doe" required />
+                  <Input id="p-name" name="name" placeholder="Full name" required />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="p-age">Age</Label>

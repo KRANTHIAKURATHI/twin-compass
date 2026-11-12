@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
 import { StatusChip } from "@/components/common/StatusChip";
-import { datasets } from "@/services/data";
+import type { Dataset } from "@/types/models";
 import { useResearchDatasets } from "@/hooks/api";
 
 export const Route = createFileRoute("/_research/research/datasets")({
@@ -21,16 +21,28 @@ export const Route = createFileRoute("/_research/research/datasets")({
   component: withPageStates(DatasetsPage, { variant: "table" }),
 });
 
-type Row = (typeof datasets)[number];
+type Row = Dataset;
 
 const columns: Column<Row>[] = [
   { key: "name", header: "Dataset", cell: (r) => <span className="font-medium">{r.name}</span> },
-  { key: "records", header: "Records", cell: (r) => r.records.toLocaleString() },
+  { key: "records", header: "Records", cell: (r) => Number(r.records).toLocaleString() },
   { key: "modalities", header: "Modalities", cell: (r) => <StatusChip tone="neutral">{r.modalities}</StatusChip> },
   { key: "updated", header: "Last updated", cell: (r) => r.updated },
 ];
 
 function DatasetsPage() {
-  const { data = [] } = useResearchDatasets();
-  return <DataTablePage title="Datasets" description="Cohorts available for training and validation." columns={columns} rows={data.length ? data : datasets} />;
+  const { data = [], isLoading, isError, refetch } = useResearchDatasets();
+  return (
+    <DataTablePage
+      title="Datasets"
+      description="Cohorts available for training and validation."
+      columns={columns}
+      rows={data}
+      loading={isLoading}
+      error={isError}
+      onRetry={() => void refetch()}
+      emptyTitle="No datasets recorded"
+      emptyDescription="No research datasets are registered on the server yet."
+    />
+  );
 }

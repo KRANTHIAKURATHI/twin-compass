@@ -1,10 +1,9 @@
 /**
- * HTTP client placeholder for the future backend.
+ * HTTP client for the backend.
  *
- * Every service method routes through `apiRequest`. While
- * `VITE_API_BASE_URL` is unset the client stays in mock mode and the service
- * layer resolves local fixtures instead of issuing network calls — flipping
- * the env var is the only change needed to go live.
+ * Every service method routes through `apiRequest`. There are no fixtures: while
+ * no API base URL is configured (`VITE_API_BASE_URL` unset in development) every
+ * request fails with a clear error and the UI shows its error state.
  */
 import { resolveApiBase } from "@/services/api-base";
 import { createRefreshCoordinator } from "@/services/auth-refresh";
@@ -14,7 +13,7 @@ export const API_BASE_URL: string = resolveApiBase(
   import.meta.env.PROD,
 );
 
-/** True while no backend is configured. Services fall back to fixtures. */
+/** True while no backend is configured. Requests then fail with a clear error; nothing is faked. */
 export const USING_MOCKS = API_BASE_URL.length === 0;
 
 export class ApiError extends Error {
@@ -95,7 +94,7 @@ function buildUrl(path: string, query?: RequestOptions["query"]) {
  */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   if (USING_MOCKS) {
-    throw new ApiError(`No API base URL configured — ${path} is served from fixtures.`, 503, {
+    throw new ApiError(`No API base URL configured — cannot reach ${path}. Set VITE_API_BASE_URL.`, 503, {
       code: "MOCK_MODE",
     });
   }
@@ -155,24 +154,4 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   return payload as T;
-}
-
-/** Simulated latency used by the mock adapters so loading states are real. */
-export const MOCK_LATENCY = 220;
-
-export function mockResolve<T>(data: T, ms = MOCK_LATENCY): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(data), ms));
-}
-
-/**
- * Runs the real request when a backend is configured, otherwise the fixture
- * fallback. Service methods stay one-liners and the swap is invisible to UI.
- */
-export async function withFallback<T>(
-  request: () => Promise<T>,
-  fallback: () => T | Promise<T>,
-  ms = MOCK_LATENCY,
-): Promise<T> {
-  if (USING_MOCKS) return mockResolve(await fallback(), ms);
-  return request();
 }

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
-import { Building2, Mail, Phone, ShieldCheck, Stethoscope } from "lucide-react";
+import { Building2, Mail, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { userService } from "@/services";
 import { ApiError } from "@/services/api-client";
-import { doctor } from "@/services/data";
 
 export const Route = createFileRoute("/_shell/profile")({
   head: () => ({
@@ -46,15 +45,12 @@ function initialsOf(name: string): string {
 
 function ProfilePage() {
   const { user, setUser } = useAuth();
-  // `phone` and `experience` are not part of Module 1's profile contract
-  // (AuthUser / PATCH /users/profile only cover name, title, hospital,
-  // department, avatarUrl) — they remain fixture-backed display fields
-  // rather than silently accepting edits that wouldn't actually persist.
-  // A future Doctor-directory module is the natural home for them.
-  const displayName = user?.name ?? doctor.name;
-  const displayEmail = user?.email ?? doctor.email;
-  const displayHospital = user?.hospital ?? doctor.hospital;
-  const displaySpecialization = user?.title ?? doctor.specialization;
+  // Only what the profile contract (AuthUser / PATCH /users/profile) actually holds is shown: name, email, title,
+  // hospital, department. Phone and years of experience have no backend field, so they are not displayed.
+  const displayName = user?.name ?? "";
+  const displayEmail = user?.email ?? "";
+  const displayHospital = user?.hospital ?? "";
+  const displaySpecialization = user?.title ?? "";
 
   return (
     <div className="mx-auto max-w-[1100px]">
@@ -73,7 +69,7 @@ function ProfilePage() {
               </AvatarFallback>
             </Avatar>
             <h2 className="mt-4 text-lg font-semibold">{displayName}</h2>
-            <p className="text-sm text-muted-foreground capitalize">{user?.role ?? doctor.role}</p>
+            <p className="text-sm text-muted-foreground capitalize">{user?.role ?? ""}</p>
             <StatusChip tone="success" dot className="mt-3">
               Verified clinician
             </StatusChip>
@@ -83,9 +79,9 @@ function ProfilePage() {
                 { icon: Building2, label: displayHospital },
                 { icon: Stethoscope, label: displaySpecialization },
                 { icon: Mail, label: displayEmail },
-                { icon: Phone, label: doctor.phone },
-                { icon: ShieldCheck, label: `${doctor.experience} experience` },
-              ].map((row) => (
+              ]
+                .filter((row) => row.label)
+                .map((row) => (
                 <div key={row.label} className="flex items-start gap-2.5">
                   <row.icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
                   <span className="text-muted-foreground">{row.label}</span>
@@ -110,12 +106,13 @@ function ProfilePage() {
                   try {
                     const updated = await userService.updateProfile({
                       name: String(form.get("name") ?? ""),
-                      hospital: String(form.get("hospital") ?? ""),
-                      department: String(form.get("department") ?? ""),
+                      hospital: String(form.get("hospital") ?? "").trim() || undefined,
+                      // The session user does not carry a department, so an empty field is "leave unchanged", never "clear".
+                      department: String(form.get("department") ?? "").trim() || undefined,
                       // "Specialization" in this UI maps to the profile's
                       // `title` field (e.g. "Chief Oncologist") — the same
                       // field TopBar/AuthUser already display.
-                      title: String(form.get("specialization") ?? ""),
+                      title: String(form.get("specialization") ?? "").trim() || undefined,
                     });
                     setUser(updated);
                     toast.success("Profile updated");
@@ -142,15 +139,11 @@ function ProfilePage() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pf-dept">Department</Label>
-                  <Input id="pf-dept" name="department" defaultValue={doctor.department} />
+                  <Input id="pf-dept" name="department" placeholder="Not recorded" defaultValue="" />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pf-spec">Specialization</Label>
                   <Input id="pf-spec" name="specialization" defaultValue={displaySpecialization} />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="pf-phone">Phone</Label>
-                  <Input id="pf-phone" defaultValue={doctor.phone} disabled />
                 </div>
                 <div className="sm:col-span-2">
                   <Button type="submit">Save changes</Button>

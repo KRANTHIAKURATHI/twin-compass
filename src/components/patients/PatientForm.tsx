@@ -140,7 +140,7 @@ export function PatientForm({ patient, mode }: { patient?: Patient; mode: "creat
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="name">Full name</Label>
-            <Input id="name" value={form.name} onChange={(e) => set("name")(e.target.value)} placeholder="Jane Doe" required />
+            <Input id="name" value={form.name} onChange={(e) => set("name")(e.target.value)} placeholder="Full name" required />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="age">Age</Label>
@@ -176,12 +176,12 @@ export function PatientForm({ patient, mode }: { patient?: Patient; mode: "creat
               type="email"
               value={form.email}
               onChange={(e) => set("email")(e.target.value)}
-              placeholder="jane.doe@mail.health"
+              placeholder="Email address"
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="phone">Phone</Label>
-            <Input id="phone" value={form.phone} onChange={(e) => set("phone")(e.target.value)} placeholder="+1 (415) 555-0000" />
+            <Input id="phone" value={form.phone} onChange={(e) => set("phone")(e.target.value)} placeholder="Phone number" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="hospital">Hospital</Label>

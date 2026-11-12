@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorState, withPageStates } from "@/components/common/PageState";
 import { Column, DataTablePage } from "@/components/common/DataTablePage";
 import { StatusChip } from "@/components/common/StatusChip";
-import { trainingRuns } from "@/services/data";
+import type { TrainingRun } from "@/types/models";
 import { useResearchTrainingRuns } from "@/hooks/api";
 
 export const Route = createFileRoute("/_research/research/training")({
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_research/research/training")({
   component: withPageStates(TrainingPage, { variant: "table" }),
 });
 
-type Row = (typeof trainingRuns)[number];
+type Row = TrainingRun;
 
 const columns: Column<Row>[] = [
   { key: "id", header: "Run", cell: (r) => <span className="font-medium">{r.id}</span> },
@@ -38,6 +38,18 @@ const columns: Column<Row>[] = [
 ];
 
 function TrainingPage() {
-  const { data = [] } = useResearchTrainingRuns();
-  return <DataTablePage title="Training history" description="Runs executed on the research cluster." columns={columns} rows={data.length ? data : trainingRuns} />;
+  const { data = [], isLoading, isError, refetch } = useResearchTrainingRuns();
+  return (
+    <DataTablePage
+      title="Training history"
+      description="Training runs recorded on the server."
+      columns={columns}
+      rows={data}
+      loading={isLoading}
+      error={isError}
+      onRetry={() => void refetch()}
+      emptyTitle="No training runs recorded"
+      emptyDescription="No model training runs have been recorded yet."
+    />
+  );
 }

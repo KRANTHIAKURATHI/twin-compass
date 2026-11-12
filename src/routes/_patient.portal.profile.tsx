@@ -1,16 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
-import { Mail, Phone, ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
+import { PageErrorState, PageSkeleton, RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { User } from "lucide-react";
 
+import { EmptyState } from "@/components/common/EmptyState";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatusChip } from "@/components/common/StatusChip";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { patients } from "@/services/data";
+import { usePatients } from "@/hooks/api";
 
 export const Route = createFileRoute("/_patient/portal/profile")({
   head: () => ({
@@ -27,33 +25,56 @@ export const Route = createFileRoute("/_patient/portal/profile")({
   component: withPageStates(PatientProfilePage, { variant: "detail" }),
 });
 
-const me = patients[0];
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join("");
 
 function PatientProfilePage() {
+  const { data, isLoading, isError, refetch } = usePatients();
+  const me = data?.[0];
+  const header = <PageHeader title="My Profile" description="The details your care team has on record for you." />;
+
+  if (isLoading) return <div className="mx-auto max-w-[900px]">{header}<PageSkeleton variant="list" /></div>;
+  if (isError)
+    return (
+      <div className="mx-auto max-w-[900px]">
+        {header}
+        <PageErrorState onRetry={() => void refetch()} />
+      </div>
+    );
+  if (!me)
+    return (
+      <div className="mx-auto max-w-[900px]">
+        {header}
+        <EmptyState icon={User} title="No patient record found" description="No patient record is linked to your account yet." />
+      </div>
+    );
+
+  // Read-only: there is no endpoint for a patient to edit their own record, so no save action is offered.
   return (
     <div className="mx-auto max-w-[900px]">
-      <PageHeader
-        title="My Profile"
-        description="Keep your details up to date so your care team can reach you."
-        actions={<Button onClick={() => toast.success("Profile saved", { description: "TODO: wire PATCH /api/me" })}>Save changes</Button>}
-      />
+      {header}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="h-fit text-center">
           <CardContent className="pt-2">
             <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-primary-soft font-display text-2xl font-semibold text-primary">
-              AH
+              {initials(me.name)}
             </span>
             <p className="mt-3 text-base font-semibold">{me.name}</p>
             <p className="text-xs text-muted-foreground">
-              {me.id} · {me.age} years
+              {me.id}
+              {me.age == null ? "" : ` · ${me.age} years`}
             </p>
-            <StatusChip tone="primary" className="mt-3">
-              Stage {me.stage}
-            </StatusChip>
-            <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-              <ShieldCheck className="size-3.5 text-success" aria-hidden="true" /> Identity verified
-            </p>
+            {me.stage && (
+              <StatusChip tone="primary" className="mt-3">
+                Stage {me.stage}
+              </StatusChip>
+            )}
           </CardContent>
         </Card>
 
@@ -65,46 +86,20 @@ function PatientProfilePage() {
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="p-name">Full name</Label>
-                <Input id="p-name" defaultValue={me.name} />
+                <Input id="p-name" value={me.name} readOnly />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="p-email">Email</Label>
-                <Input id="p-email" type="email" defaultValue={me.email} />
+                <Input id="p-email" type="email" value={me.email ?? ""} placeholder="Not recorded" readOnly />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="p-phone">Phone</Label>
-                <Input id="p-phone" defaultValue={me.phone} />
+                <Input id="p-phone" value={me.phone ?? ""} placeholder="Not recorded" readOnly />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="p-emergency">Emergency contact</Label>
-                <Input id="p-emergency" defaultValue="Daniel Hart · +1 (415) 555-0177" />
+                <Label htmlFor="p-hospital">Hospital</Label>
+                <Input id="p-hospital" value={me.hospital ?? ""} placeholder="Not recorded" readOnly />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Privacy & communication</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                { id: "share", label: "Share my data with research programmes", desc: "De-identified data only", icon: ShieldCheck, on: false },
-                { id: "email", label: "Email notifications", desc: "Reports, results and reminders", icon: Mail, on: true },
-                { id: "sms", label: "SMS appointment reminders", desc: "24 hours before each visit", icon: Phone, on: true },
-              ].map((row) => (
-                <div key={row.id} className="flex items-center justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <row.icon className="mt-0.5 size-4 text-primary" aria-hidden="true" />
-                    <div>
-                      <Label htmlFor={row.id} className="text-sm">
-                        {row.label}
-                      </Label>
-                      <p className="text-xs text-muted-foreground">{row.desc}</p>
-                    </div>
-                  </div>
-                  <Switch id={row.id} defaultChecked={row.on} />
-                </div>
-              ))}
             </CardContent>
           </Card>
         </div>

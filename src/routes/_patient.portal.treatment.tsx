@@ -7,7 +7,10 @@ import { StatusChip } from "@/components/common/StatusChip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { treatmentPlan } from "@/services/data";
+import { EmptyState } from "@/components/common/EmptyState";
+import { PageErrorState, PageSkeleton } from "@/components/common/PageState";
+import { usePatients, useTreatmentPlan } from "@/hooks/api";
+import type { TreatmentPlan } from "@/types/models";
 
 export const Route = createFileRoute("/_patient/portal/treatment")({
   head: () => ({
@@ -25,9 +28,32 @@ export const Route = createFileRoute("/_patient/portal/treatment")({
 });
 
 function MyTreatment() {
+  const patients = usePatients();
+  const me = patients.data?.[0];
+  const planQuery = useTreatmentPlan(me?.id ?? "");
+  const header = <PageHeader title="My Treatment" description="Everything about your current care plan, explained in plain language." />;
+
+  if (patients.isLoading || (me && planQuery.isLoading)) return <div className="mx-auto max-w-[1100px]">{header}<PageSkeleton variant="list" /></div>;
+  if (patients.isError || planQuery.isError)
+    return (
+      <div className="mx-auto max-w-[1100px]">
+        {header}
+        <PageErrorState onRetry={() => void (patients.isError ? patients.refetch() : planQuery.refetch())} />
+      </div>
+    );
+  // The backend returns null when no plan is recorded.
+  const treatmentPlan = (planQuery.data ?? null) as TreatmentPlan | null;
+  if (!me || !treatmentPlan)
+    return (
+      <div className="mx-auto max-w-[1100px]">
+        {header}
+        <EmptyState icon={Syringe} title="No treatment plan recorded" description="Your care team has not recorded a treatment plan yet." />
+      </div>
+    );
+
   return (
     <div className="mx-auto max-w-[1100px]">
-      <PageHeader title="My Treatment" description="Everything about your current care plan, explained in plain language." />
+      {header}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -45,7 +71,7 @@ function MyTreatment() {
                   {treatmentPlan.cycle} of {treatmentPlan.totalCycles}
                 </span>
               </div>
-              <Progress value={(treatmentPlan.cycle / treatmentPlan.totalCycles) * 100} className="mt-2 h-2" />
+              <Progress value={treatmentPlan.totalCycles ? (treatmentPlan.cycle / treatmentPlan.totalCycles) * 100 : 0} className="mt-2 h-2" />
             </div>
             <div>
               <div className="flex items-center justify-between text-sm">
@@ -68,7 +94,7 @@ function MyTreatment() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {treatmentPlan.medications.map((m) => (
+                  {(treatmentPlan.medications ?? []).map((m) => (
                     <TableRow key={m.name}>
                       <TableCell className="font-medium">{m.name}</TableCell>
                       <TableCell>{m.dose}</TableCell>
@@ -88,7 +114,7 @@ function MyTreatment() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {treatmentPlan.sideEffects.map((s) => (
+            {(treatmentPlan.sideEffects ?? []).map((s) => (
               <div key={s.name} className="rounded-xl border border-border p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium">{s.name}</p>

@@ -110,7 +110,7 @@ function RegisterPage() {
           <Input
             id="r-name"
             name="name"
-            placeholder="Dr. Sarah Whitmore"
+            placeholder="Full name"
             autoComplete="name"
             required
           />

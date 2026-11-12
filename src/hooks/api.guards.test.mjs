@@ -56,3 +56,27 @@ test("the Search page reads patients and documents through the API hooks and has
   assert.ok(page.includes("isError") && page.includes("PageErrorState"), "failures surface an error state");
   assert.ok(page.includes("PageSkeleton"), "real loading state");
 });
+
+// --- no fixture / mock data anywhere in the frontend ------------------------------------------------------------
+
+import { existsSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+
+test("the frontend ships no fixture data and no fixture fallback", () => {
+  const root = new URL("../", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+  for (const gone of ["services/data.ts", "services/fixtures.ts", "lib/mock-data.ts", "lib/mock-extra.ts", "lib/mock-lifecycle.ts"]) {
+    assert.ok(!existsSync(join(root, gone)), `${gone} must stay deleted`);
+  }
+  const walk = (dir) =>
+    readdirSync(dir).flatMap((n) => {
+      const p = join(dir, n);
+      return statSync(p).isDirectory() ? walk(p) : /\.(ts|tsx)$/.test(n) ? [p] : [];
+    });
+  for (const file of walk(root)) {
+    const text = readFileSync(file, "utf8");
+    assert.ok(!/from "@\/services\/(data|fixtures)"|from "@\/lib\/mock/.test(text), `${file} imports fixture data`);
+  }
+  const client = readFileSync(join(root, "services/api-client.ts"), "utf8");
+  assert.ok(!client.includes("withFallback") && !client.includes("mockResolve"), "no fixture fallback in the API client");
+  assert.ok(!readFileSync(join(root, "services/index.ts"), "utf8").includes("withFallback"), "services call the API directly");
+});
