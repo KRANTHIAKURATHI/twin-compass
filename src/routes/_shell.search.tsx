@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { RouteErrorState, withPageStates } from "@/components/common/PageState";
+import { PageErrorState, PageSkeleton, RouteErrorState } from "@/components/common/PageState";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, Search as SearchIcon, User, Boxes } from "lucide-react";
 
@@ -8,8 +8,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { RiskChip, StatusChip } from "@/components/common/StatusChip";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { patients } from "@/services/data";
-import { documents } from "@/services/data";
+import { useDocuments, usePatients } from "@/hooks/api";
 
 export const Route = createFileRoute("/_shell/search")({
   validateSearch: (search: Record<string, unknown>) => ({ q: typeof search.q === "string" ? search.q : "" }),
@@ -24,7 +23,7 @@ export const Route = createFileRoute("/_shell/search")({
     ],
   }),
   errorComponent: RouteErrorState,
-  component: withPageStates(SearchPage, { variant: "list" }),
+  component: SearchPage,
 });
 
 function SearchPage() {
@@ -32,12 +31,35 @@ function SearchPage() {
   const [q, setQ] = useState(initialQ);
   const term = q.trim().toLowerCase();
 
+  // Real backend data via the shared hooks (same cache as the Patients and Documents pages). In dev mock mode
+  // (no VITE_API_BASE_URL) the services return fixtures by their own, explicit configuration; nothing here
+  // falls back to fixtures when a request fails.
+  const patientsQuery = usePatients();
+  const documentsQuery = useDocuments();
+
   const patientHits = term
-    ? patients.filter((p) => p.name.toLowerCase().includes(term) || p.id.toLowerCase().includes(term) || p.hospital.toLowerCase().includes(term))
+    ? (patientsQuery.data ?? []).filter(
+        (p) =>
+          p.name.toLowerCase().includes(term) ||
+          p.id.toLowerCase().includes(term) ||
+          (p.hospital ?? "").toLowerCase().includes(term),
+      )
     : [];
   const docHits = term
-    ? documents.filter((d) => d.name.toLowerCase().includes(term) || d.patient.toLowerCase().includes(term) || d.category.toLowerCase().includes(term))
+    ? (documentsQuery.data ?? []).filter(
+        (d) =>
+          d.name.toLowerCase().includes(term) ||
+          (d.patient ?? "").toLowerCase().includes(term) ||
+          (d.category ?? "").toLowerCase().includes(term),
+      )
     : [];
+
+  const loading = patientsQuery.isLoading || documentsQuery.isLoading;
+  const failed = patientsQuery.isError || documentsQuery.isError;
+  const retryFailed = () => {
+    if (patientsQuery.isError) void patientsQuery.refetch();
+    if (documentsQuery.isError) void documentsQuery.refetch();
+  };
 
   return (
     <div className="mx-auto max-w-[1000px]">
@@ -61,10 +83,25 @@ function SearchPage() {
 
       {!term ? (
         <EmptyState icon={SearchIcon} title="Start typing to search" description="Try a patient name, patient ID, hospital or document type such as MRI." />
+      ) : loading ? (
+        <PageSkeleton variant="list" />
+      ) : failed && patientHits.length + docHits.length === 0 ? (
+        <PageErrorState
+          title="Search is unavailable"
+          description={`${patientsQuery.isError ? "Patients" : "Documents"} could not be loaded from the server. No results are shown rather than placeholder data.`}
+          onRetry={retryFailed}
+        />
       ) : patientHits.length + docHits.length === 0 ? (
         <EmptyState icon={SearchIcon} title={`No results for “${q}”`} description="Check the spelling or try a broader term." />
       ) : (
         <div className="space-y-5">
+          {failed && (
+            <PageErrorState
+              title="Some results could not be loaded"
+              description={`${patientsQuery.isError ? "Patients" : "Documents"} failed to load, so only the results below are shown.`}
+              onRetry={retryFailed}
+            />
+          )}
           {patientHits.length > 0 && (
             <section>
               <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Patients · {patientHits.length}</h2>
@@ -114,7 +151,7 @@ function SearchPage() {
                           {d.patient} · {d.date}
                         </p>
                       </div>
-                      <StatusChip tone="neutral">{d.category}</StatusChip>
+                      {d.category ? <StatusChip tone="neutral">{d.category}</StatusChip> : null}
                     </CardContent>
                   </Card>
                 ))}

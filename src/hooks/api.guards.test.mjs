@@ -45,3 +45,14 @@ test("no new unguarded id-keyed hook is added", () => {
   const unexpected = unguarded.filter((n) => !KNOWN_UNGUARDED.has(n));
   assert.deepEqual(unexpected, [], `add { enabled: Boolean(id) } to: ${unexpected.join(", ")}`);
 });
+
+// --- Search page uses the real API hooks, never fixtures --------------------------------------------------------
+
+test("the Search page reads patients and documents through the API hooks and has no fixture fallback", () => {
+  const page = readFileSync(new URL("../routes/_shell.search.tsx", import.meta.url), "utf8");
+  assert.ok(!/from "@\/services\/(data|fixtures)"|from "@\/lib\/mock/.test(page), "no direct fixture/mock import");
+  assert.ok(page.includes("usePatients()") && page.includes("useDocuments()"), "uses the shared hooks");
+  assert.ok(!page.includes("withPageStates"), "no simulated loading wrapper");
+  assert.ok(page.includes("isError") && page.includes("PageErrorState"), "failures surface an error state");
+  assert.ok(page.includes("PageSkeleton"), "real loading state");
+});
