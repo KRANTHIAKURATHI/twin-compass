@@ -259,3 +259,20 @@ def test_custom_scenario_stays_unavailable_when_the_projection_cannot_run() -> N
 def test_no_custom_name_means_no_custom_scenario() -> None:
     scenarios, _ = _standard(custom_dosage="60")
     assert len(scenarios) == 4 and not any(s.get("custom") for s in scenarios)
+
+
+# --- request validation --------------------------------------------------------------------------------------
+
+
+def test_simulation_request_bounds_duration_and_text_lengths() -> None:
+    from pydantic import ValidationError
+
+    from app.schemas.clinical import SimulationRequest
+
+    ok = SimulationRequest.model_validate({"patientId": "x", "name": "A", "durationWeeks": 8})
+    assert ok.duration_weeks == 8
+    assert SimulationRequest.model_validate({"patientId": "x", "durationWeeks": 0}).duration_weeks == 0
+    for bad in ({"durationWeeks": -5}, {"durationWeeks": 105}, {"durationWeeks": 10**9}, {"name": "X" * 121},
+                {"dosage": "d" * 101}, {"notes": "n" * 2001}):
+        with pytest.raises(ValidationError):
+            SimulationRequest.model_validate({"patientId": "x", **bad})

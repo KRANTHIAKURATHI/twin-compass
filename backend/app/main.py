@@ -19,6 +19,8 @@ not a second `include_router` call on the same object.
 """
 from __future__ import annotations
 
+import os
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -142,4 +144,7 @@ async def readiness() -> dict[str, object]:
         "auth_provider": settings.AUTH_PROVIDER,
         "database": "sqlite" if settings.is_sqlite else "postgresql",
         "database_ok": database_ok,
+        # Render sets RENDER_GIT_COMMIT for the running build; null elsewhere. Lets anyone confirm which commit
+        # is actually serving requests. A commit SHA of a public repo is not a secret.
+        "commit": (os.environ.get("RENDER_GIT_COMMIT") or "")[:7] or None,
     }

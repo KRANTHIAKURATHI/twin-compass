@@ -5,11 +5,13 @@ from pydantic import AliasChoices, BaseModel, Field
 
 class SimulationRequest(BaseModel):
     patient_id: str = Field(validation_alias="patientId")
-    name: str | None = None
-    regimen: str | None = None
-    dosage: str | None = None
-    duration_weeks: int | None = Field(default=None, validation_alias="durationWeeks")
-    notes: str | None = None
+    name: str | None = Field(default=None, max_length=120)
+    regimen: str | None = Field(default=None, max_length=200)
+    dosage: str | None = Field(default=None, max_length=100)
+    # 0 means "not set" (the form sends 0 for an empty field); the UI limits the field to 1-104 weeks and the
+    # API now enforces the same ceiling, so a direct call cannot ask for an absurd number of cycles.
+    duration_weeks: int | None = Field(default=None, ge=0, le=104, validation_alias="durationWeeks")
+    notes: str | None = Field(default=None, max_length=2000)
     # The scenario the clinician picked on the comparison, by name. Optional:
     # absent or unknown falls back to the first scenario (the current plan).
     selected_scenario: str | None = Field(default=None, validation_alias="selectedScenario")
