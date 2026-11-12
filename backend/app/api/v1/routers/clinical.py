@@ -17,7 +17,7 @@ from app.schemas.clinical import PatientInput, SimulationRequest
 from app.services.audit import PATIENT_AUDIT_FIELDS, pick_patient_fields, record_audit
 from app.services.clinical_queries import resolve_patient
 from app.services.patient_access import access_predicate, grant_care_team, require_patient_access
-from app.services.response_model import project_scenarios
+from app.services.response_model import VARIANTS, project_scenarios
 
 _NO_DEFAULT_CLINICAL_COLUMNS = ("stage", "grade", "nodes_involved", "er_status", "pr_status", "her2_status")
 
@@ -849,6 +849,11 @@ async def run_simulation(
     # No default risk band. An unassessed patient is unassessed, not moderate.
     risk = str(state["risk"]).lower() if state["risk"] else None
     regimen = payload.regimen or patient["current_treatment"] or "Current treatment"
+    # A name marks a queued custom scenario: it is evaluated alongside the
+    # standard variants, so it may not reuse one of their names.
+    custom_name = (payload.name or "").strip() or None
+    if custom_name and custom_name.lower() in {v.name.lower() for v in VARIANTS}:
+        raise HTTPException(status_code=422, detail="Custom scenario name matches a standard scenario; choose another.")
 
     scenarios, provenance = project_scenarios(
         tumor_size_mm=_as_float(state["tumor_size_mm"]),
@@ -862,6 +867,9 @@ async def run_simulation(
         risk=risk,
         regimen=regimen,
         duration_weeks=payload.duration_weeks,
+        custom_name=custom_name,
+        custom_dosage=(payload.dosage or "").strip() or None,
+        custom_notes=(payload.notes or "").strip() or None,
     )
     # The patient's current plan is the baseline the others are compared against.
     # It is not a recommendation: the projection ranks tumour kill, which is only

@@ -11,6 +11,8 @@ import {
   MODEL_STATUS_TITLE,
   REGIMEN_OPTIONS,
   SELECT_REGIMEN_MESSAGE,
+  RECOVERY_LABEL,
+  RECOVERY_NOTE,
   UNVERIFIED_NOTE,
   confidenceLabel,
   describeRunRegimen,
@@ -19,6 +21,7 @@ import {
   inputRows,
   previousRunWithResults,
   runUnavailableReason,
+  scenarioRisk,
   scenarioStatus,
   unavailableExplanation,
 } from "./simulationDisplay.ts";
@@ -216,4 +219,70 @@ test("the simulator and run pages route their wording through the shared rules",
   for (const needle of ["InputsUsedCard", "ModelStatusNotice", "CONFIDENCE_NOT_APPLICABLE"]) assert.ok(detail.includes(needle), `detail: ${needle}`);
   assert.ok(!/show\(s\.confidence/.test(sim + detail), "confidence is never rendered through the numeric helper");
   assert.ok(!sim.includes("Projected scenario · no model confidence"));
+});
+
+// --- scenario risk is never the patient's baseline risk --------------------------------------------------------
+
+const withBaseline = (baselineRisk) => prov({ inputs: { baselineRisk } });
+
+test("scenario risk: a value distinct from the baseline is shown as the scenario's own", () => {
+  assert.equal(scenarioRisk("moderate", withBaseline("low")), "moderate");
+});
+
+test("scenario risk: absent risk is not assessed", () => {
+  assert.equal(scenarioRisk(null, withBaseline("low")), null);
+  assert.equal(scenarioRisk(undefined, withBaseline(null)), null);
+});
+
+test("scenario risk: the baseline risk echoed into a scenario is NOT scenario risk", () => {
+  assert.equal(scenarioRisk("low", withBaseline("low")), null);
+  assert.equal(scenarioRisk("Low", withBaseline("low")), null);
+  assert.equal(scenarioRisk("low", prov()), null, "no baseline to compare against: cannot show it as scenario-specific");
+  assert.equal(scenarioRisk("low", null), null);
+});
+
+test("a draft scenario (no risk, no provenance) renders as Risk not assessed; confidence stays Not applicable", () => {
+  assert.equal(scenarioRisk(null, null), null);
+  const chip = readFileSync(new URL("../components/common/StatusChip.tsx", import.meta.url), "utf8");
+  assert.ok(chip.includes('if (!level) return <StatusChip tone="neutral">Risk not assessed</StatusChip>'));
+  const page = readFileSync(new URL("../routes/_shell.simulator.tsx", import.meta.url), "utf8");
+  assert.ok(page.includes("risk: scenarioRisk(s.risk, s.provenance)"), "API scenarios map risk through scenarioRisk");
+  assert.equal(confidenceLabel(null), "Not applicable");
+});
+
+// --- recovery is labelled as a regimen-level estimate --------------------------------------------------------
+
+test("recovery wording is honest, values pass through untransformed, and the other labels are unchanged", () => {
+  assert.equal(RECOVERY_LABEL, "Estimated recovery");
+  assert.equal(RECOVERY_NOTE, "Regimen-level estimate · not patient-specific");
+  assert.ok(!/tumou?r|ki-?67|er|her2|risk|duration|cycle|toxicity/i.test(RECOVERY_NOTE), "implies no patient input");
+  const page = readFileSync(new URL("../routes/_shell.simulator.tsx", import.meta.url), "utf8");
+  assert.ok(page.includes('{show(s.recoveryWeeks, " wks")}'), "recovery value is shown as received");
+  assert.ok(page.includes("{RECOVERY_LABEL}") && page.includes("{RECOVERY_NOTE}"));
+  assert.ok(page.includes("risk: scenarioRisk(s.risk, s.provenance)"), "risk still goes through scenarioRisk");
+  assert.equal(confidenceLabel(null), "Not applicable");
+  assert.equal(scenarioRisk("low", prov({ inputs: { baselineRisk: "low" } })), null);
+  // A trial/unavailable scenario has no recovery number and the table reports it as not calculated.
+  assert.equal(hasOutcomes({ ...NONE }), false);
+  assert.equal(scenarioStatus(scenario("t", NONE, prov({ unavailableReason: "x" }))), "unavailable");
+});
+
+// --- queued custom scenario reaches the run --------------------------------------------------------------------
+
+test("a queued custom scenario is requested by name only when queued, and its evaluated row is not 'Not yet run'", () => {
+  const page = readFileSync(new URL("../routes/_shell.simulator.tsx", import.meta.url), "utf8");
+  assert.ok(page.includes("...(pendingDraft ? { name: pendingDraft.name } : {})"), "name is sent only for a queued scenario");
+  // The run's own result replaces the displayed set and clears the queue, so Run again cannot duplicate the row.
+  assert.ok(page.includes("setRunScenarios(next);") && page.includes("setPendingDraft(null);"));
+  // Returned scenarios (custom included) are mapped as evaluated rows, whatever their name.
+  assert.ok(page.includes("evaluated: true,") && page.includes("const next = result.scenarios.map(fromApi);"));
+  // The row shows its numbers, not the queued placeholder, once the backend returned outcomes.
+  const custom = scenario("c", NUMBERS, prov(), { name: "Dose-dense-AC-t", custom: true });
+  assert.equal(hasOutcomes(custom), true);
+  assert.equal(scenarioStatus(custom), "available");
+  assert.equal(custom.name, "Dose-dense-AC-t");
+  // An unavailable result keeps its backend reason rather than any placeholder.
+  const none = scenario("u", NONE, prov({ unavailableReason: "no regimen" }), { name: "X", custom: true });
+  assert.equal(hasOutcomes(none), false);
+  assert.equal(runUnavailableReason([none]), "no regimen");
 });

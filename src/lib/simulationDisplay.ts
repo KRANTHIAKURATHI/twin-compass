@@ -48,6 +48,25 @@ export const describeRunRegimen = (builderRegimen: string): { regimen: string; s
   return regimen ? { regimen, source: "builder" } : null;
 };
 
+/**
+ * A scenario's own risk level, or null ("Risk not assessed").
+ * The backend copies the twin's baseline risk band into every scenario's `risk` (response_model.py) — it is not
+ * scenario-specific — so a value equal to `provenance.inputs.baselineRisk`, or one with no baseline to compare
+ * against, is not shown as scenario risk. Nothing is calculated or inferred here.
+ */
+export const scenarioRisk = <T extends string>(
+  risk: T | null | undefined,
+  provenance: ScenarioProvenance | null | undefined,
+): T | null => {
+  const baseline = provenance?.inputs?.baselineRisk;
+  if (!risk || !baseline) return null;
+  return risk.toLowerCase() === baseline.toLowerCase() ? null : risk;
+};
+
+/** Recovery is a fixed parameter-table figure per regimen and dose variant; no patient input is used in it. */
+export const RECOVERY_LABEL = "Estimated recovery";
+export const RECOVERY_NOTE = "Regimen-level estimate · not patient-specific";
+
 const OUTCOMES = ["predictedResponse", "tumorChange", "survival5y", "sideEffectRisk", "recoveryWeeks"] as const;
 
 type Outcomes = Pick<Scenario, (typeof OUTCOMES)[number]>;

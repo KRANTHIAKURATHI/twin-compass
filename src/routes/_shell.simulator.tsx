@@ -23,7 +23,10 @@ import {
   NOT_CALCULATED,
   REGIMEN_OPTIONS,
   SELECT_REGIMEN_MESSAGE,
+  RECOVERY_LABEL,
+  RECOVERY_NOTE,
   describeRunRegimen,
+  scenarioRisk,
   supportedRegimen,
   hasOutcomes,
   previousRunWithResults,
@@ -92,7 +95,7 @@ const fromApi = (s: Scenario): DisplayScenario => ({
   sideEffectRisk: s.sideEffectRisk,
   recoveryWeeks: s.recoveryWeeks,
   confidence: s.confidence,
-  risk: s.risk,
+  risk: scenarioRisk(s.risk, s.provenance),
   baselineSizeMm: s.baselineSizeMm ?? null,
   projectedSizeMm: s.projectedSizeMm ?? null,
   cycles: s.cycles ?? null,
@@ -207,8 +210,10 @@ function SimulatorPage() {
       return;
     }
     setRegimenError(false);
+    // A name is what asks the backend to evaluate a custom scenario, so it is
+    // sent only for a queued one; an unqueued run is just the standard variants.
     const draft: RunSimulationInput = {
-      name: builder.name.trim() || regimen,
+      ...(pendingDraft ? { name: pendingDraft.name } : {}),
       regimen,
       dosage: builder.dosage.trim(),
       durationWeeks: Number(builder.duration) || 0,
@@ -485,9 +490,10 @@ function SimulatorPage() {
                   </div>
                   <div className="rounded-lg bg-muted/60 p-2.5">
                     <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="size-3" aria-hidden="true" /> Recovery
+                      <Clock className="size-3" aria-hidden="true" /> {RECOVERY_LABEL}
                     </p>
                     <p className="mt-0.5 font-semibold">{show(s.recoveryWeeks, " wks")}</p>
+                    <p className="text-[11px] text-muted-foreground">{RECOVERY_NOTE}</p>
                     {s.cycles !== null && (
                       <p className="text-[11px] text-muted-foreground">over {s.cycles} cycles</p>
                     )}

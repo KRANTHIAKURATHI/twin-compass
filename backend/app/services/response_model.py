@@ -203,8 +203,17 @@ def project_scenarios(
     risk: str | None,
     regimen: str,
     duration_weeks: int | None = None,
+    custom_name: str | None = None,
+    custom_dosage: str | None = None,
+    custom_notes: str | None = None,
 ) -> tuple[list[dict[str, object]], dict[str, object]]:
     """Project every scenario variant for one twin state.
+
+    A `custom_name` appends one more scenario - the clinician's own queued
+    scenario - after the standard variants, which are computed exactly as before.
+    It runs through the same projection at the regimen's standard intensity and
+    the requested duration. Dosage and notes are recorded on it but the model
+    has no dose-response relationship for them, so they change no number.
 
     Returns the scenarios and a provenance block describing what the projection
     was based on - including, when it could not run, the reason why.
@@ -259,6 +268,28 @@ def project_scenarios(
         # this is what survives to be read back when a run is reopened.
         scenario["provenance"] = provenance
         scenarios.append(scenario)
+
+    if custom_name:
+        detail = " · ".join(
+            part for part in (custom_dosage, f"{duration_weeks} weeks" if duration_weeks else None) if part
+        )
+        label = f"{regimen} · {detail}" if detail else regimen
+        # Its own projection call and id, not a relabelled copy of another card.
+        own = Variant(custom_name, "", 1.0, 1.0, 1.0)
+        if reason:
+            custom = _empty_scenario(custom_name, label, risk)
+            custom["basis"] = reason
+        else:
+            assert effect is not None and tumor_size_mm is not None
+            custom = _project_one(own, effect, label, tumor_size_mm, ki67, survival_probability, risk, duration_weeks)
+            custom["basis"] = (
+                f"Custom scenario · kinetic projection · {subtype} · {effect.source}. "
+                "Dosage and notes are recorded but not modelled."
+            )
+        custom["custom"] = True
+        custom["customConfig"] = {"dosage": custom_dosage, "durationWeeks": duration_weeks, "notes": custom_notes}
+        custom["provenance"] = provenance
+        scenarios.append(custom)
     return scenarios, provenance
 
 

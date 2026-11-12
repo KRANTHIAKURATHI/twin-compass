@@ -215,3 +215,47 @@ def test_new_provenance_does_not_change_the_projection_numbers() -> None:
     again = project_scenarios(regimen="AC-T + Trastuzumab", **HER2_TWIN)[0][0]
     assert stripped == {k: v for k, v in again.items() if k != "provenance"}
     assert all(scenario[f] is not None for f in OUTCOME_FIELDS)
+
+
+# --- custom (queued) scenario -------------------------------------------------------------------------------
+
+
+def _standard(regimen: str = "AC-T + Trastuzumab", **extra):
+    return project_scenarios(regimen=regimen, **HER2_TWIN, **extra)
+
+
+def test_custom_scenario_is_added_after_the_four_standard_ones_and_leaves_them_unchanged() -> None:
+    base, _ = _standard()
+    with_custom, _ = _standard(custom_name="Dose-dense-AC-t", custom_dosage="60", custom_notes="n")
+    assert [s["name"] for s in with_custom] == [s["name"] for s in base] + ["Dose-dense-AC-t"]
+    for old, new in zip(base, with_custom):
+        # ids are hash-derived per process; every other field must be identical.
+        assert {k: v for k, v in old.items() if k != "id"} == {k: v for k, v in new.items() if k != "id"}
+
+
+def test_custom_scenario_is_its_own_evaluated_result_with_provenance() -> None:
+    scenarios, provenance = _standard(duration_weeks=8, custom_name="Dose-dense-AC-t", custom_dosage="60")
+    custom = scenarios[-1]
+    assert custom["custom"] is True
+    assert custom["name"] == "Dose-dense-AC-t"
+    assert custom["id"] not in {s["id"] for s in scenarios[:-1]}
+    assert custom["regimen"] == "AC-T + Trastuzumab · 60 · 8 weeks"
+    assert custom["customConfig"] == {"dosage": "60", "durationWeeks": 8, "notes": None}
+    assert custom["tumorChange"] is not None and custom["recoveryWeeks"] is not None
+    assert custom["confidence"] is None
+    assert "not modelled" in custom["basis"]
+    assert custom["provenance"] is provenance and provenance["parametersVerified"] is False
+
+
+def test_custom_scenario_stays_unavailable_when_the_projection_cannot_run() -> None:
+    scenarios, provenance = project_scenarios(regimen="Not yet started", custom_name="X", **HER2_TWIN)
+    custom = scenarios[-1]
+    assert provenance["unavailableReason"]
+    assert custom["name"] == "X" and custom["basis"] == provenance["unavailableReason"]
+    for field in OUTCOME_FIELDS:
+        assert custom[field] is None
+
+
+def test_no_custom_name_means_no_custom_scenario() -> None:
+    scenarios, _ = _standard(custom_dosage="60")
+    assert len(scenarios) == 4 and not any(s.get("custom") for s in scenarios)
