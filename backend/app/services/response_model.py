@@ -37,7 +37,9 @@ outside what the table covers.
 
 from __future__ import annotations
 
+import hashlib
 import math
+import re
 from dataclasses import dataclass
 
 # Flipped only after a clinician has reviewed REGIMEN_PARAMETERS against primary
@@ -187,9 +189,17 @@ def classify_regimen(regimen: str | None) -> str | None:
         return None
     text = regimen.lower()
     for family, keywords in _REGIMEN_KEYWORDS:
-        if any(word in text for word in keywords):
+        if any(_mentions(text, word) for word in keywords):
             return family
     return None
+
+
+def _mentions(text: str, word: str) -> bool:
+    """Whether `word` is named in `text`. Short abbreviations (act, tc, fec ...) must stand alone: as bare substrings
+    they matched ordinary words, so "active surveillance" was classified, and projected, as an anthracycline regimen."""
+    if len(word) > 4:
+        return word in text
+    return re.search(rf"(?<![a-z0-9]){re.escape(word)}(?![a-z0-9])", text) is not None
 
 
 def project_scenarios(
@@ -338,7 +348,7 @@ def _project_one(
     survival5y = _survival_after(survival_probability, effect.relative_risk_reduction * variant.intensity)
 
     return {
-        "id": f"SC-{abs(hash((variant.name, label))) % 10**8:08d}",
+        "id": _scenario_id(variant.name, label),
         "name": variant.name,
         "regimen": label,
         "predictedResponse": round(_clamp(response, 0.0, 0.95) * 100, 1),
@@ -360,9 +370,14 @@ def _project_one(
     }
 
 
+def _scenario_id(name: str, label: str) -> str:
+    """Stable across processes (Python's hash() is salted per process), so the same scenario always has the same id."""
+    return "SC-" + hashlib.sha1(f"{name}{label}".encode()).hexdigest()[:8]
+
+
 def _empty_scenario(name: str, label: str, risk: str | None) -> dict[str, object]:
     return {
-        "id": f"SC-{abs(hash((name, label))) % 10**8:08d}",
+        "id": _scenario_id(name, label),
         "name": name,
         "regimen": label,
         "predictedResponse": None,
@@ -443,6 +458,10 @@ def _survival_after(baseline: float | None, relative_risk_reduction: float) -> f
     conjured from the regimen alone.
     """
     if baseline is None:
+        return None
+    if not 0.0 <= baseline <= 1.0:
+        # A recorded survival is a 0-1 probability. A value outside that range (97.62 entered as a percentage, a
+        # negative number) cannot be projected from; it is reported as no projection rather than clamped into one.
         return None
     mortality = 1.0 - baseline
     return _clamp(1.0 - mortality * (1.0 - _clamp(relative_risk_reduction, 0.0, 0.9)), 0.0, 1.0)

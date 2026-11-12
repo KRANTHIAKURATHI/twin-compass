@@ -18,6 +18,7 @@ from app.services.audit import PATIENT_AUDIT_FIELDS, pick_patient_fields, record
 from app.services.clinical_queries import resolve_patient
 from app.services.patient_access import access_predicate, grant_care_team, require_patient_access
 from app.services.response_model import VARIANTS, project_scenarios
+from app.services.twin_state import active_twin_state, drifted_fields
 
 _NO_DEFAULT_CLINICAL_COLUMNS = ("stage", "grade", "nodes_involved", "er_status", "pr_status", "her2_status")
 
@@ -393,7 +394,13 @@ async def promote_simulation(
     # differ from what was recorded at run time if the clinician chose again.
     requested = (payload or {}).get("selectedScenario")
     selected = _resolve_promoted(scenarios, simulation["selected"], requested)
+    if selected is not None and selected.get("cycles") is None:
+        # No projection was made for this scenario (investigational, or the twin/regimen could not be projected).
+        # Promoting it would write its label - not a treatment - into the patient's plan.
+        raise ConflictError("This scenario has no projection, so it cannot be promoted to a treatment plan.")
     regimen = selected.get("regimen") if selected else simulation["selected"]
+    # The plan's cycle count is the one the projection used; 6 only for a legacy run that stored no scenario detail.
+    total_cycles = int(selected["cycles"]) if selected is not None else 6
     started_on = datetime.now(timezone.utc).date().isoformat()
     next_dose = datetime.now(timezone.utc).date().isoformat()
     # treatment_plans.patient_id is UNIQUE: a patient has one plan. Promoting
@@ -407,7 +414,7 @@ async def promote_simulation(
                     (id, patient_id, regimen, cycle, total_cycles, started_on, next_dose,
                      adherence, side_effects, medications)
                 VALUES
-                    (:id, :patient_id, :regimen, 1, 6, :started_on, :next_dose, 0,
+                    (:id, :patient_id, :regimen, 1, :total_cycles, :started_on, :next_dose, 0,
                      CAST(:side_effects AS jsonb), CAST(:medications AS jsonb))
                 ON CONFLICT (patient_id) DO UPDATE SET
                     regimen = EXCLUDED.regimen, cycle = EXCLUDED.cycle,
@@ -421,6 +428,7 @@ async def promote_simulation(
                 "id": str(uuid.uuid4()),
                 "patient_id": simulation["patient_id"],
                 "regimen": regimen,
+                "total_cycles": total_cycles,
                 "started_on": started_on,
                 "next_dose": next_dose,
                 "side_effects": json.dumps([]),
@@ -428,6 +436,13 @@ async def promote_simulation(
             },
         )
     ).scalar_one()
+    # Promotion makes this the patient's treatment: the patient's current treatment and status follow the plan, in the
+    # same transaction as the plan and the run's decision (committed once below, so all of it or none of it).
+    # Clinical fields, the twin and every other patient column are left alone.
+    await session.execute(
+        text("UPDATE patients SET current_treatment = :regimen, status = 'In Treatment' WHERE id = :patient_id"),
+        {"regimen": regimen, "patient_id": simulation["patient_id"]},
+    )
     notes = (payload or {}).get("notes") or "Promoted to treatment plan."
     if selected is not None and selected.get("name") != simulation["selected"]:
         # Keep the run's headline figures describing the scenario that was promoted.
@@ -454,53 +469,17 @@ async def promote_simulation(
 
 
 async def _twin_state(session: AsyncSession, patient: Mapping[str, object]) -> tuple[dict[str, object], str | None]:
-    """The state a simulation runs against: the active twin, else the patient row.
+    """The state a simulation runs against: the active twin's snapshot, else the patient row.
 
-    A simulation asks "what would this treatment do to *this* tumour", so the
-    tumour it starts from has to be the twin's - the versioned, reviewed snapshot
-    a clinician signed off on. The patients table holds the same fields but they
-    are the live, unversioned values; a run recorded against them cannot be
-    reproduced later because nothing pins down what they were at the time.
+    The twin is the versioned, reviewed state a clinician signed off on; the patients table holds the live,
+    unversioned values, so a run recorded against them could not be reproduced later. With an Active twin the state
+    is its snapshot only - a field the twin lacks stays missing and the projection says so; it is never filled from
+    the patient row. Shared with the prediction endpoints (`app.services.twin_state`).
 
-    Returns the merged state and the twin version it came from (None when the
-    patient has no twin yet, in which case the patient row is all there is).
+    Returns the state and the twin version it came from (None when the patient has no Active twin, in which case the
+    patient row is all there is).
     """
-    twin = (
-        await session.execute(
-            text(
-                """
-                SELECT version, snapshot, tumor_size_mm, survival, risk
-                FROM twin_versions
-                WHERE patient_id = :pid
-                ORDER BY CASE WHEN lower(status) = 'active' THEN 0 ELSE 1 END, created_at DESC
-                LIMIT 1
-                """
-            ),
-            {"pid": patient["id"]},
-        )
-    ).mappings().first()
-
-    state: dict[str, object] = {
-        key: patient[key]
-        for key in (
-            "tumor_size_mm", "survival_probability", "risk", "stage",
-            "ki67", "er_status", "pr_status", "her2_status",
-        )
-    }
-    if twin is None:
-        return state, None
-
-    # The snapshot jsonb is the richest record - it is what the twin was built
-    # from. The version's own columns are the fallback for anything missing.
-    snapshot = twin["snapshot"] if isinstance(twin["snapshot"], dict) else {}
-    for key in state:
-        value = snapshot.get(key)
-        if value is not None and value != "":
-            state[key] = value
-    for snapshot_key, column in (("tumor_size_mm", "tumor_size_mm"), ("survival_probability", "survival"), ("risk", "risk")):
-        if state[snapshot_key] is None and twin[column] is not None:
-            state[snapshot_key] = twin[column]
-    return state, twin["version"]
+    return await active_twin_state(session, patient)
 
 
 def _as_float(value: object) -> float | None:
@@ -626,6 +605,20 @@ async def update_patient(
     row = result.mappings().first()
     if row is None:
         raise HTTPException(status_code=404, detail="Patient not found.")
+    # The active twin froze the clinical state when it was cut. Changing a field the twin holds makes the twin differ
+    # from the record, so it is marked Stale (a sync state: it no longer tracks the record) until it is resynced.
+    # Nothing is recomputed and no new version is cut here.
+    twin_stale = False
+    if drifted_fields(changed):
+        marked = await session.execute(
+            text(
+                "UPDATE patients SET twin_status = 'Stale' WHERE id = :pid AND twin_status = 'Synced' "
+                "AND EXISTS (SELECT 1 FROM twin_versions WHERE patient_id = :pid AND lower(status) = 'active') "
+                "RETURNING id"
+            ),
+            {"pid": values["patient_id"]},
+        )
+        twin_stale = marked.first() is not None
     if changed:
         # Values are recorded only for allow-listed clinical fields; any other changed
         # column (name, contact details, notes, ...) appears by name in `changedFields` only.
@@ -636,10 +629,17 @@ async def update_patient(
             action="patient.updated",
             target=row["patient_code"],
             before=pick_patient_fields(current, audited),
-            after={**pick_patient_fields(row, audited), "changedFields": changed},
+            after={
+                **pick_patient_fields(row, audited),
+                "changedFields": changed,
+                **({"twinStatus": "Stale"} if twin_stale else {}),
+            },
         )
     await session.commit()
-    return {"ok": True, "data": _patient_response(row), "message": "Patient updated."}
+    data = _patient_response(row)
+    if twin_stale:
+        data["twinStatus"] = "Stale"
+    return {"ok": True, "data": data, "message": "Patient updated."}
 
 
 @router.delete("/patients/{patient_id}")

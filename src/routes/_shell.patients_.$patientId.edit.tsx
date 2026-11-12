@@ -6,7 +6,7 @@ import { PatientForm } from "@/components/patients/PatientForm";
 import { patientService } from "@/services";
 import type { Patient } from "@/types/models";
 
-export const Route = createFileRoute("/_shell/patients/$patientId/edit")({
+export const Route = createFileRoute("/_shell/patients_/$patientId/edit")({
   loader: async ({ params }) => {
     const patient = await patientService.get(params.patientId);
     if (!patient) throw notFound();

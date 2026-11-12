@@ -23,6 +23,7 @@ import {
   NOT_CALCULATED,
   REGIMEN_OPTIONS,
   SELECT_REGIMEN_MESSAGE,
+  CUSTOM_SCENARIO_NOTE,
   RECOVERY_LABEL,
   RECOVERY_NOTE,
   describeRunRegimen,
@@ -64,6 +65,8 @@ type DisplayScenario = {
   name: string;
   regimen: string;
   recommended: boolean;
+  /** A clinician-queued scenario (its dose and notes are not modelled). */
+  custom?: boolean;
   evaluated: boolean;
   predictedResponse: number | null;
   tumorChange: number | null;
@@ -87,7 +90,9 @@ const fromApi = (s: Scenario): DisplayScenario => ({
   id: s.id,
   name: s.name,
   regimen: s.regimen,
-  recommended: s.recommended,
+  // A stored `recommended` flag (present on a few legacy runs) was never a clinical ranking, so it is not shown.
+  recommended: false,
+  custom: s.custom === true,
   evaluated: true,
   predictedResponse: s.predictedResponse,
   tumorChange: s.tumorChange,
@@ -261,6 +266,7 @@ function SimulatorPage() {
       name: builder.name.trim(),
       regimen: detail ? `${builderRegimen} · ${detail}` : builderRegimen,
       recommended: false,
+      custom: true,
       evaluated: false,
       predictedResponse: null,
       tumorChange: null,
@@ -369,8 +375,9 @@ function SimulatorPage() {
           </div>
           <p className="text-xs text-muted-foreground">
             {patient.lastUpdated
-              ? `Baseline twin state · last synced ${new Date(patient.lastUpdated).toLocaleString()}`
-              : "Baseline twin state · never synced"}
+              ? `Current patient record · last updated ${new Date(patient.lastUpdated).toLocaleString()}`
+              : "Current patient record · never updated"}
+            {" "}Each run uses the active twin — see “Inputs used”.
           </p>
         </CardContent>
       </Card>
@@ -713,7 +720,11 @@ function SimulatorPage() {
                   <TableBody>
                     {allScenarios.map((s) => (
                       <TableRow key={s.id} className={cn(selectedScenario === s.id && "bg-primary-soft/50")}>
-                        <TableCell className="font-medium">{s.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {s.name}
+                          <span className="block text-xs font-normal text-muted-foreground">{s.regimen}</span>
+                          {s.custom && <span className="block text-[11px] font-normal text-muted-foreground">{CUSTOM_SCENARIO_NOTE}</span>}
+                        </TableCell>
                         <TableCell>{cell(s, s.predictedResponse, "%")}</TableCell>
                         <TableCell className={cn((s.tumorChange ?? 0) < 0 && "text-success")}>
                           {cell(s, s.tumorChange, "%")}

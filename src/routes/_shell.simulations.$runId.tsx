@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   CONFIDENCE_EXPLANATION,
   CONFIDENCE_NOT_APPLICABLE,
+  CUSTOM_SCENARIO_NOTE,
   NOT_CALCULATED,
   hasOutcomes,
   runUnavailableReason,
@@ -156,6 +157,8 @@ function SimulationDetail() {
                           </span>
                         )}
                       </span>
+                      <span className="block text-xs font-normal text-muted-foreground">{s.regimen}</span>
+                      {s.custom && <span className="block text-[11px] font-normal text-muted-foreground">{CUSTOM_SCENARIO_NOTE}</span>}
                     </TableCell>
                     <TableCell>{cell(s, s.predictedResponse, "%")}</TableCell>
                     <TableCell>{cell(s, s.tumorChange, "%")}</TableCell>

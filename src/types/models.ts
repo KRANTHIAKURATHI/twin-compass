@@ -288,6 +288,9 @@ export interface Scenario {
   projectedSizeMm?: number | null;
   /** Number of cycles the projection ran over. */
   cycles?: number | null;
+  /** True for a clinician-queued scenario. Its dose and notes are recorded but not modelled by the projection. */
+  custom?: boolean;
+  customConfig?: { dosage: string | null; durationWeeks: number | null; notes: string | null } | null;
   /**
    * Where this card's numbers came from, or - when they are all null - why
    * there are none. Rendered under every card so a reader never has to guess

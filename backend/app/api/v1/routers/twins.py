@@ -21,6 +21,7 @@ from app.db.session import get_db_session
 from app.dependencies.auth import CurrentUser, require_roles
 from app.services.audit import record_audit
 from app.services.patient_access import access_predicate
+from app.services.twin_state import TWIN_CLINICAL_KEYS, missing_twin_fields
 from app.services.clinical_queries import resolve_patient
 
 router = APIRouter(tags=["digital-twins"])
@@ -215,12 +216,12 @@ async def cut_twin_version(
     version = _next_version(versions)
     now = _now()
 
-    snapshot = {
-        key: patient[key]
-        for key in ("patient_code", "name", "age", "stage", "tumor_size_mm", "er_status",
-                    "pr_status", "her2_status", "ki67", "grade", "nodes_involved", "risk",
-                    "survival_probability")
-    }
+    # Everything prediction and simulation read from a twin is in the snapshot, as recorded: a field the patient row
+    # does not hold is stored as null - never defaulted - and named in the summary so the gap is visible.
+    snapshot = {key: patient[key] for key in ("patient_code", "name", *TWIN_CLINICAL_KEYS)}
+    gaps = missing_twin_fields(snapshot)
+    if gaps:
+        summary = f"{summary} Not recorded: {', '.join(gaps)}."
     await session.execute(
         text("UPDATE twin_versions SET status = 'Superseded' WHERE patient_id = :pid AND status = 'Active'"),
         {"pid": pid},

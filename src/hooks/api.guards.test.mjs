@@ -80,3 +80,39 @@ test("the frontend ships no fixture data and no fixture fallback", () => {
   assert.ok(!client.includes("withFallback") && !client.includes("mockResolve"), "no fixture fallback in the API client");
   assert.ok(!readFileSync(join(root, "services/index.ts"), "utf8").includes("withFallback"), "services call the API directly");
 });
+
+// --- patient edit / create routes ----------------------------------------------------------------------------------
+
+test("the edit route is a sibling of the patient detail route, not its child, so it renders the form", () => {
+  const tree = readFileSync(new URL("../routeTree.gen.ts", import.meta.url), "utf8");
+  // A child of `/patients/$patientId` would never render: the detail page has no <Outlet />.
+  assert.ok(!tree.includes("ShellPatientsPatientIdRouteWithChildren"), "the detail route must have no children");
+  assert.match(tree, /id: '\/patients_\/\$patientId\/edit',\s*path: '\/patients\/\$patientId\/edit',\s*getParentRoute: \(\) => ShellRoute/);
+  const edit = readFileSync(new URL("../routes/_shell.patients_.$patientId.edit.tsx", import.meta.url), "utf8");
+  assert.ok(edit.includes('createFileRoute("/_shell/patients_/$patientId/edit")'));
+  assert.ok(edit.includes('<PatientForm mode="edit" patient={patient} />'), "the existing form, no second one");
+  assert.ok(edit.includes("patientService.get(params.patientId)"), "loads the current patient");
+});
+
+test("PatientForm loads the patient, saves through useUpdatePatient and returns to the detail page", () => {
+  const form = readFileSync(new URL("../components/patients/PatientForm.tsx", import.meta.url), "utf8");
+  assert.ok(form.includes("useState<FormState>(() => initial(patient))"), "edit mode starts from the patient's values");
+  assert.ok(form.includes("useUpdatePatient(patient?.id") && form.includes("await updatePatient.mutateAsync(payload)"));
+  assert.ok(form.includes('navigate({ to: "/patients/$patientId", params: { patientId: patient!.id } })'));
+  assert.ok(/useUpdatePatient[\s\S]*patientService\.update\(id, payload\)/.test(readFileSync(new URL("./api.ts", import.meta.url), "utf8")));
+});
+
+test("Add patient opens the full PatientForm route and keeps no second, minimal form", () => {
+  const index = readFileSync(new URL("../routes/_shell.patients.index.tsx", import.meta.url), "utf8");
+  assert.ok(index.includes('to="/patients/new"'));
+  assert.ok(!index.includes("useCreatePatient") && !index.includes("DialogContent") && !index.includes("newHer2"), "no duplicate dialog");
+  const route = readFileSync(new URL("../routes/_shell.patients.new.tsx", import.meta.url), "utf8");
+  assert.ok(route.includes('<PatientForm mode="create" />'));
+  const form = readFileSync(new URL("../components/patients/PatientForm.tsx", import.meta.url), "utf8");
+  // Every input the prediction pipeline needs, and blank fields are omitted rather than defaulted.
+  for (const field of ["age", "tumorSizeMm", "nodesInvolved", "grade", "ki67", "stage", "erStatus", "prStatus", "her2Status"]) {
+    assert.ok(new RegExp(`${field}:`).test(form.split("function toPayload")[1].split("export function PatientForm")[0]), `payload sends ${field}`);
+  }
+  assert.ok(form.includes('value.trim() === "" ? undefined'));
+  assert.ok(form.includes("navigate(newId ? { to: \"/patients/$patientId\", params: { patientId: newId } }"), "create -> patient detail");
+});

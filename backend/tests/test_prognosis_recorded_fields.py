@@ -34,6 +34,7 @@ def db(db_sessionmaker, client):
     cols = ", ".join(f"{c} DEFAULT {_LIVE_DEFAULTS[c]}" if c in _LIVE_DEFAULTS else c for c in (x.strip() for x in _COLS.split(",")))
     run(f"CREATE TABLE patients ({cols})")
     run("CREATE TABLE users (id)")
+    run("CREATE TABLE twin_versions (patient_id, version, status, created_at, tumor_size_mm, survival, risk, snapshot)")
     run("CREATE TABLE audit_logs (id, time, actor, actor_role, action, target, after)")
     return run
 

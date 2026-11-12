@@ -54,6 +54,8 @@ def check_patient_columns(patient: dict[str, Any]) -> tuple[dict[str, object], l
             fields[name] = (
                 _STAGES[str(value).strip().lower()] if column == "stage"
                 else _STATUSES[str(value).strip().lower()] if column.endswith("_status")
+                # Already validated as exactly 1, 2 or 3; "2.0" (a numeric stored as text) becomes the integer 2.
+                else int(float(value)) if column == "grade"
                 else value
             )
     return fields, missing, invalid

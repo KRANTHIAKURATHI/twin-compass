@@ -295,3 +295,26 @@ test("the selector is pre-filled once from a supported last-run regimen, never f
   // Run itself still sends only what the selector holds.
   assert.ok(page.includes("const regimen = regimenToRun?.regimen;"));
 });
+
+// --- scenario comparison: null is not zero, nothing is ranked or recommended --------------------------------------------
+
+test("a stored 0 is a value and a null is not: the comparison never turns one into the other", () => {
+  const zero = scenario("z", { predictedResponse: 0, tumorChange: 0, survival5y: 0, sideEffectRisk: 0, recoveryWeeks: 0 }, prov());
+  assert.equal(hasOutcomes(zero), true, "0 is a recorded value");
+  assert.equal(hasOutcomes(scenario("n", NONE, prov())), false, "all-null is no projection");
+  assert.equal(hasOutcomes({ ...NONE, survival5y: 0 }), true);
+  // The clinical-trial card: no numbers and no backend reason -> investigational, never a zero-valued result.
+  assert.equal(scenarioStatus(scenario("trial", NONE, prov({ unavailableReason: null }), { name: "Clinical trial" })), "investigational");
+  assert.equal(scenarioStatus(scenario("u", NONE, prov({ unavailableReason: "no regimen" }))), "unavailable");
+});
+
+test("the comparison pages show custom metadata, ignore a legacy 'recommended' flag, and rank nothing", () => {
+  for (const file of ["../routes/_shell.simulator.tsx", "../routes/_shell.simulations.$runId.tsx"]) {
+    const page = readFileSync(new URL(file, import.meta.url), "utf8");
+    assert.ok(page.includes("CUSTOM_SCENARIO_NOTE") && page.includes("{s.regimen}"), `${file}: regimen + custom marker`);
+    assert.ok(!/\.sort\(|best treatment|best scenario|optimal|winner/i.test(page), `${file}: no ranking`);
+  }
+  const sim = readFileSync(new URL("../routes/_shell.simulator.tsx", import.meta.url), "utf8");
+  assert.ok(sim.includes("recommended: false,") && !sim.includes("recommended: s.recommended"));
+  assert.ok(!sim.includes("Baseline twin state"));
+});

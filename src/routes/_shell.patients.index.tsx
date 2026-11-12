@@ -10,20 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Patient, PatientStatus } from "@/types/models";
-import { useCreatePatient, useDeletePatient, usePatients } from "@/hooks/api";
+import { useDeletePatient, usePatients } from "@/hooks/api";
 
 export const Route = createFileRoute("/_shell/patients/")({
   head: () => ({
@@ -58,16 +49,12 @@ const receptor = (value?: string | null) => (value === "Positive" ? "+" : value 
 
 function PatientsPage() {
   const { data: sourcePatients = [], isLoading } = usePatients();
-  const createPatient = useCreatePatient();
   const deletePatient = useDeletePatient();
   const [query, setQuery] = useState("");
   const [stage, setStage] = useState("all");
   const [status, setStatus] = useState("all");
   const [sortAsc, setSortAsc] = useState(true);
   const [page, setPage] = useState(1);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [newStage, setNewStage] = useState("II");
-  const [newHer2, setNewHer2] = useState("Negative");
 
   const filtered = useMemo(() => {
     const rows = sourcePatients.filter((p) => {
@@ -91,87 +78,12 @@ function PatientsPage() {
         description="All patients under your care, with biomarkers, treatment and twin status."
         crumbs={[{ label: "Home", to: "/" }, { label: "Patients" }]}
         actions={
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="size-4" aria-hidden="true" /> Add patient
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Create patient</DialogTitle>
-                <DialogDescription>Register a new patient and generate their digital twin.</DialogDescription>
-              </DialogHeader>
-              <form
-                className="grid gap-4 sm:grid-cols-2"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  const form = new FormData(e.currentTarget);
-                  const age = form.get("age");
-                  const tumor = form.get("tumorSize");
-                  // Every field on the form is sent. Blank optional inputs are
-                  // omitted rather than written as 0, so an unknown tumour
-                  // size stays unknown instead of becoming a measurement.
-                  await createPatient.mutateAsync({
-                    name: String(form.get("name") ?? "").trim(),
-                    ...(age ? { age: Number(age) } : {}),
-                    ...(tumor ? { tumorSizeMm: Number(tumor) } : {}),
-                    stage: newStage as Patient["stage"],
-                    her2Status: newHer2 as Patient["her2Status"],
-                  });
-                  setCreateOpen(false);
-                }}
-              >
-                <div className="grid gap-2 sm:col-span-2">
-                  <Label htmlFor="p-name">Full name</Label>
-                  <Input id="p-name" name="name" placeholder="Full name" required />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="p-age">Age</Label>
-                  <Input id="p-age" name="age" type="number" min={18} max={110} placeholder="52" required />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="p-tumor">Tumor size (mm)</Label>
-                  <Input id="p-tumor" name="tumorSize" type="number" min={1} placeholder="22" />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="p-stage">Cancer stage</Label>
-                  <Select value={newStage} onValueChange={setNewStage}>
-                    <SelectTrigger id="p-stage">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["0", "I", "II", "III", "IV"].map((s) => (
-                        <SelectItem key={s} value={s}>
-                          Stage {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="p-her2">HER2 status</Label>
-                  <Select value={newHer2} onValueChange={setNewHer2}>
-                    <SelectTrigger id="p-her2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Positive">Positive</SelectItem>
-                      <SelectItem value="Negative">Negative</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <DialogFooter className="sm:col-span-2">
-                  <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={createPatient.isPending}>
-                    {createPatient.isPending ? "Creating…" : "Create patient"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          // The full clinical form lives on its own route; this page no longer keeps a second, minimal form.
+          <Button asChild>
+            <Link to="/patients/new">
+              <Plus className="size-4" aria-hidden="true" /> Add patient
+            </Link>
+          </Button>
         }
       />
 
@@ -239,7 +151,11 @@ function PatientsPage() {
                 icon={Users}
                 title="No patients recorded"
                 description="No patient records exist yet. Use “Add patient” to create the first one."
-                action={<Button onClick={() => setCreateOpen(true)}>Add patient</Button>}
+                action={
+                  <Button asChild>
+                    <Link to="/patients/new">Add patient</Link>
+                  </Button>
+                }
               />
             ) : (
               <EmptyState

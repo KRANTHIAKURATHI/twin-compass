@@ -64,6 +64,9 @@ export const scenarioRisk = <T extends string>(
 };
 
 /** Recovery is a fixed parameter-table figure per regimen and dose variant; no patient input is used in it. */
+/** Shown with a custom scenario: its dose and notes are stored with it but are not inputs to the projection. */
+export const CUSTOM_SCENARIO_NOTE = "Custom scenario · dose and notes are recorded, not modelled";
+
 export const RECOVERY_LABEL = "Estimated recovery";
 export const RECOVERY_NOTE = "Regimen-level estimate · not patient-specific";
 

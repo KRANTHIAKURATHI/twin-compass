@@ -67,7 +67,7 @@ def db(db_sessionmaker, client):
         return asyncio.run(_go())
 
     run(f"CREATE TABLE patients ({_PATIENT_COLS})")
-    run("CREATE TABLE twin_versions (patient_id, version, status, created_at)")
+    run("CREATE TABLE twin_versions (patient_id, version, status, created_at, tumor_size_mm, survival, risk, snapshot)")
     run("CREATE TABLE prediction_runs (id, patient_id, date, twin_version, model, survival, "
         "recurrence, response, confidence, status)")
     run("CREATE TABLE timeline_events (id, patient_id, date, title, detail, kind)")

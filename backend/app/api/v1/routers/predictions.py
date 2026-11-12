@@ -37,6 +37,7 @@ from app.dependencies.auth import CurrentUser, require_roles
 from app.schemas.clinical import PredictionRequest
 from app.services.clinical_queries import resolve_patient
 from app.services.notifications import notify_roles
+from app.services.twin_state import active_twin_state
 
 router = APIRouter(tags=["predictions"])
 
@@ -89,6 +90,14 @@ async def latest_prediction(
     return runs[0] if runs else None
 
 
+def _input_state(version: str | None) -> dict[str, object]:
+    """Which clinical state a model input was built from, so a result never implies a source it did not use."""
+    return {
+        "basis": "active digital twin snapshot" if version else "current patient record (no active digital twin)",
+        "twinVersion": version,
+    }
+
+
 def _prognosis(patient: dict[str, object]) -> dict[str, object]:
     """METABRIC OS/RFS research estimates (worker thread). scikit-survival is imported lazily inside, and a missing
     dependency or artifact makes each model report `unavailable` rather than failing the request."""
@@ -106,7 +115,9 @@ async def patient_prognosis(
     """Computed on request from the patient's recorded clinical fields (not stored). Research models, not validated;
     prognostic only - not treatment response."""
     patient = await resolve_patient(session, patient_id, _user)
-    return await anyio.to_thread.run_sync(_prognosis, dict(patient))
+    # The active twin's state, not the live row: the estimate describes the twin the clinician is looking at.
+    state, _version = await active_twin_state(session, patient)
+    return await anyio.to_thread.run_sync(_prognosis, dict(state))
 
 
 @router.get("/predictions/{patient_id}/history")
@@ -413,18 +424,13 @@ async def run_prediction(
     """
     patient = await resolve_patient(session, payload.patient_id, _user)
     pid = str(patient["id"])
-    active = (
-        await session.execute(
-            text(
-                "SELECT version FROM twin_versions WHERE patient_id = :pid "
-                "ORDER BY (status = 'Active') DESC, created_at DESC LIMIT 1"
-            ),
-            {"pid": pid},
-        )
-    ).mappings().first()
+    # The model input is the active twin's snapshot - the same state a treatment simulation runs against - so the
+    # `twin_version` recorded on the run is the state it actually used. With no Active twin the patient's current row
+    # is all there is and the run records "none". A field the twin lacks is missing (422), never taken from the row.
+    state, twin_version = await active_twin_state(session, patient)
 
-    result, model_label = await anyio.to_thread.run_sync(_run_model, dict(patient))
-    prognosis = await anyio.to_thread.run_sync(_prognosis, dict(patient))
+    result, model_label = await anyio.to_thread.run_sync(_run_model, dict(state))
+    prognosis = await anyio.to_thread.run_sync(_prognosis, dict(state))
     now = datetime.now(timezone.utc).isoformat()
     run_id = str(uuid.uuid4())
 
@@ -443,7 +449,7 @@ async def run_prediction(
             "id": run_id,
             "pid": pid,
             "date": now,
-            "twin_version": (active["version"] if active else None) or "none",
+            "twin_version": twin_version or "none",
             "model": model_label,
             # Heuristic formulas over the classifier output (see
             # `app.ml.model.predict_from_severity`), stored as percentages.
@@ -468,7 +474,7 @@ async def run_prediction(
             "pid": pid,
             "date": now,
             "title": "Prediction run recorded",
-            "detail": f"{model_label}; twin version {(active['version'] if active else 'none')}.",
+            "detail": f"{model_label}; twin version {twin_version or 'none'}.",
         },
     )
     await session.commit()
@@ -484,6 +490,10 @@ async def run_prediction(
 
     runs = await _history(session, pid)
     # `prognosis` is additive: METABRIC OS/RFS research estimates, computed for this response and not stored in the run.
+    # `modelInfo` is additive: which model produced the run, on what data, and that it is not clinically validated.
+    from app.ml.interface import get_prediction_model
+
     return {
         "ok": True, "data": runs[0] if runs else None, "message": "Prediction run recorded.", "prognosis": prognosis,
+        "modelInfo": {**get_prediction_model().metadata.as_dict(), "inputState": _input_state(twin_version)},
     }
