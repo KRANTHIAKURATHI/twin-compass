@@ -24,13 +24,13 @@ import {
   REGIMEN_OPTIONS,
   SELECT_REGIMEN_MESSAGE,
   describeRunRegimen,
+  supportedRegimen,
   hasOutcomes,
   previousRunWithResults,
   runUnavailableReason,
   scenarioStatus,
   unavailableExplanation,
 } from "@/lib/simulationDisplay";
-import { realRegimen } from "@/lib/simulationRegimen";
 import { cn } from "@/lib/utils";
 import { usePatients, usePromoteSimulation, useRunSimulation, useSimulationRuns } from "@/hooks/api";
 import type { RiskLevel, RunSimulationInput, Scenario, ScenarioProvenance } from "@/types/models";
@@ -169,17 +169,10 @@ function SimulatorPage() {
   const shownHasOutcomes = (shown ?? []).some(hasOutcomes);
   const shownReason = runUnavailableReason(shown ?? []);
   const previousRun = shown && !shownHasOutcomes ? previousRunWithResults(priorRuns, activeRunId) : null;
-  const regimenToRun = describeRunRegimen(
-    builder.regimen,
-    (shown ?? []).map((s) => s.requestedRegimen),
-    patient?.currentTreatment,
-  );
-  // A regimen the builder holds that is not one of the supported choices (copied from a card) still needs an option.
-  const builderRegimen = realRegimen(builder.regimen);
-  const regimenChoices =
-    builderRegimen && !REGIMEN_OPTIONS.some((o) => o.value === builderRegimen)
-      ? [...REGIMEN_OPTIONS, { label: builderRegimen, value: builderRegimen }]
-      : REGIMEN_OPTIONS;
+  // Only a supported regimen chosen in the selector can be run; nothing is inherited from the displayed run.
+  const regimenToRun = describeRunRegimen(builder.regimen);
+  const builderRegimen = regimenToRun?.regimen;
+  const regimenChoices = REGIMEN_OPTIONS;
 
   if (patientsLoading) {
     return (
@@ -204,11 +197,9 @@ function SimulatorPage() {
     // Only a scenario that was actually projected can be selected; the pending
     // builder draft has no result and is not sent.
     const selectedName = selected?.evaluated ? selected.name : undefined;
-    // A chosen regimen names what the next run should evaluate. Without one, a
-    // real regimen recorded on the scenarios on screen, then the patient's
-    // recorded treatment — the panel under the builder says which. A placeholder
-    // ("Current treatment", "Not yet started", empty) is never sent, and no
-    // other regimen is substituted.
+    // Only a supported regimen chosen in the selector is sent. Placeholders
+    // ("Current treatment", "Not yet started", empty) and the displayed run's
+    // regimen are never substituted.
     const regimen = regimenToRun?.regimen;
     if (!regimen) {
       setRegimenError(true);
@@ -216,15 +207,13 @@ function SimulatorPage() {
       return;
     }
     setRegimenError(false);
-    const draft: RunSimulationInput = builder.regimen.trim()
-      ? {
-          name: builder.name.trim() || regimen,
-          regimen,
-          dosage: builder.dosage.trim(),
-          durationWeeks: Number(builder.duration) || 0,
-          notes: builder.notes.trim(),
-        }
-      : { regimen };
+    const draft: RunSimulationInput = {
+      name: builder.name.trim() || regimen,
+      regimen,
+      dosage: builder.dosage.trim(),
+      durationWeeks: Number(builder.duration) || 0,
+      notes: builder.notes.trim(),
+    };
     if (selectedName) draft.selectedScenario = selectedName;
     const result = await runSimulation.mutateAsync({ patientId, draft });
     // The run's own result is what gets displayed. It used to be awaited and
@@ -286,7 +275,7 @@ function SimulatorPage() {
     // the run was projected for is, and is empty if that was only a placeholder.
     setBuilder({
       name: `${s.name} (copy)`,
-      regimen: realRegimen(s.requestedRegimen) ?? "",
+      regimen: supportedRegimen(s.requestedRegimen) ?? "",
       dosage: "",
       duration: "",
       notes: "",
@@ -636,11 +625,7 @@ function SimulatorPage() {
               >
                 {regimenError || !regimenToRun
                   ? SELECT_REGIMEN_MESSAGE
-                  : regimenToRun.source === "builder"
-                    ? `Next run will evaluate: ${regimenToRun.regimen}`
-                    : regimenToRun.source === "patient-record"
-                      ? `No regimen selected — next run will use the patient's recorded treatment: ${regimenToRun.regimen}`
-                      : `No regimen selected — next run will repeat the displayed run's regimen: ${regimenToRun.regimen}`}
+                  : `Next run will evaluate: ${regimenToRun.regimen}`}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
